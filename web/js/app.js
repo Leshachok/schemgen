@@ -601,6 +601,16 @@ function init(){
   $("mDocs").addEventListener("click", function(){ setMode("docs"); });
 
   /* ---------- builder live preview: web vs Compose Multiplatform ---------- */
+  function defaultComposeUrl(){
+    // Local dev: the Compose module's own dev server. Deployed (GitHub Pages,
+    // any real host): a same-origin "compose-preview/" build sits next to this
+    // page - see .github/workflows/pages.yml.
+    if (location.hostname && location.hostname!=="localhost" && location.hostname!=="127.0.0.1"){
+      return new URL("compose-preview/", location.href).href;
+    }
+    return "http://localhost:8080";
+  }
+  $("bwUrl").value = defaultComposeUrl();
   var bwstate = { framework:"web", url:$("bwUrl").value, loaded:false };
   function sendToCompose(){
     var frame = $("bwFrame");

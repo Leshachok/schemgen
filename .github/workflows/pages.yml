@@ -1,0 +1,51 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build Compose Multiplatform (wasmJs) preview
+        working-directory: compose-renderer
+        run: ./gradlew wasmJsBrowserDistribution --no-daemon
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp -r web/. _site/
+          mkdir -p _site/compose-preview
+          cp -r compose-renderer/composeApp/build/dist/wasmJs/productionExecutable/. _site/compose-preview/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
