@@ -12,8 +12,8 @@
 <div class="topbar">
   <div class="brand">Wagon scheme format<span>prototype</span></div>
   <div class="seg">
-    <button id="mPreview" aria-pressed="true">Catalogue</button>
-    <button id="mBuilder" aria-pressed="false">Builder</button>
+    <button id="mPreview" aria-pressed="false">Catalogue</button>
+    <button id="mBuilder" aria-pressed="true">Builder</button>
     <button id="mDocs" aria-pressed="false">Docs</button>
   </div>
   <div class="spacer"></div>
@@ -23,7 +23,7 @@
 </div>
 
 <!-- ================= CATALOGUE ================= -->
-<div class="shell" id="previewPane">
+<div class="shell" id="previewPane" hidden>
   <div class="col col-left">
     <div class="sec-h">Schemes</div>
     <div class="slist" id="tabs"></div>
@@ -67,7 +67,7 @@
 </div>
 
 <!-- ================= BUILDER ================= -->
-<div class="shell" id="builderPane" hidden>
+<div class="shell" id="builderPane">
   <div class="col col-left">
     <div class="sec-h">Palette</div>
     <div class="pal" id="palette"></div>

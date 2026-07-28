@@ -3,7 +3,7 @@
 
 function init(){
   function $(id){ return document.getElementById(id); }
-  var mode="catalogue";
+  var mode="builder";
 
   function toast(msg){
     var t=$("toast"); t.textContent=msg; t.classList.add("on");
@@ -646,7 +646,7 @@ function init(){
     $("bwStatus").textContent = "Loading "+bwstate.url+" ...";
   });
 
-  setMode("catalogue");
+  setMode("builder");
 }
 
 if (typeof document!=="undefined"){
