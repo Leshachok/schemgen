@@ -1,6 +1,7 @@
 :root {
     --navy:#213786; --navy-dim:#4A5A9E; --fill:#F7F6F8; --border:#E1E2E5; --border-firm:#D4D5D6;
     --off:#EDEEF0; --off-text:#9AA0A6; --sel:#0F7B5A; --sel-soft:#E6F3ED;
+    --seat-selected:#EA580C;
     --bg:#F4F5F7; --surface:#FFFFFF; --ink:#15171B; --muted:#6B7078; --faint:#9AA0A6;
     --warn:#B4531B; --err:#B3261E;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

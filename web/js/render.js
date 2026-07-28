@@ -82,7 +82,7 @@ function drawSeat(svg, scheme, it, x, y, w, h, state){
   var selected=state.selected && state.selected.has(id);
   var fill="var(--navy)", stroke="none", sw=0, tf="#fff", backFill="var(--navy)";
   if (!known){ fill="#E3E4E7"; stroke="#C7CAD1"; sw=1; tf="var(--off-text)"; backFill="#C7CAD1"; }
-  else if (selected){ fill="var(--sel)"; backFill="var(--sel)"; }
+  else if (selected){ fill="var(--seat-selected)"; backFill="var(--seat-selected)"; }
   else if (!avail){ fill="var(--off)"; stroke="var(--border-firm)"; sw=1; tf="var(--off-text)"; backFill="var(--border-firm)"; }
   else if (it.inclusive){ fill="#fff"; stroke="var(--navy)"; sw=2; tf="var(--navy)"; }
 
@@ -119,12 +119,13 @@ function drawSeat(svg, scheme, it, x, y, w, h, state){
   svg.appendChild(g);
 }
 
-function previewItem(it, size){
+function previewItem(it, size, stateOverride){
   var pad=9, sp=itemSpan(it);
   var w = it.type==="separator" ? T.sepW*2 : size;
   var h = size*sp.rows + (sp.rows-1)*(T.rowPitch-T.seat)*(size/T.seat);
   var svg=el("svg",{ width:w+pad*2, height:h+pad*2, viewBox:"0 0 "+(w+pad*2)+" "+(h+pad*2) });
   var scheme={ key:"preview" }, state={ selected:null, allAvail:true, showBack:true };
+  if (stateOverride) for (var k in stateOverride) state[k]=stateOverride[k];
   if (it.seat!=null) drawSeat(svg, scheme, it, pad, pad, w, h, state);
   else if (it.type==="separator") drawSeparator(svg, pad, pad, w, h);
   else if (it.type==="half_table") drawHalfTable(svg, pad, pad, w, h, it.facing);

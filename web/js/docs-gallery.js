@@ -1,19 +1,19 @@
-/* Live-rendered reference galleries for the Docs tab - built with the same
-   render() used by Catalogue/Builder, so these previews can never drift out
-   of sync with the actual renderer. Hand-written, not generated. */
+/* Live-rendered reference galleries for the Docs tab - built with render.js's
+   own previewItem() (the same tight single-item renderer the Builder uses for
+   its palette/drag-ghost previews), so these can never drift out of sync with
+   the actual renderer. Hand-written, not generated. */
 "use strict";
 
-function demoScheme(item, rows){
-  return { key:"docs-demo", rev:1, class:"demo", hull:"plain",
-    decks:[{ id:"d", rows: rows||1, columns:[{ items:[item] }] }] };
-}
+/** previewItem()'s own preview scheme key is a fixed "preview" (see render.js) -
+    mirrored here so the hash search lines up with what it'll actually compute. */
+var DOCS_PREVIEW_KEY = "preview";
 
-function docsSwatch(caption, scheme, state){
+function docsSwatch(caption, item, size, stateOverride){
   var wrap = document.createElement("div");
   wrap.className = "docs-swatch";
   var stage = document.createElement("div");
   stage.className = "docs-swatch-stage";
-  stage.appendChild(render(scheme, state));
+  stage.appendChild(previewItem(item, size, stateOverride));
   wrap.appendChild(stage);
   var label = document.createElement("div");
   label.className = "docs-swatch-label";
@@ -28,16 +28,18 @@ function docsGalleryRow(){
   return row;
 }
 
-/** A seat id/key pair guaranteed to hash to "unavailable" (allAvail:false),
-    found at render time rather than hardcoded so it stays correct even if
-    format.js's hash() ever changes. */
+/** A seat id guaranteed to hash to "unavailable" (allAvail:false) under
+    previewItem()'s fixed scheme key, found at render time rather than
+    hardcoded so it stays correct even if format.js's hash() ever changes. */
 function findUnavailableSeatId(){
   for (var i=1;i<=40;i++){
     var id=String(i);
-    if (!isAvailable("docs-demo", id, false)) return id;
+    if (!isAvailable(DOCS_PREVIEW_KEY, id, false)) return id;
   }
   return "1";
 }
+
+var SWATCH_SIZE = 40;
 
 function buildSeatGallery(){
   var root = document.createElement("div");
@@ -45,38 +47,29 @@ function buildSeatGallery(){
   var kindsH = document.createElement("h4"); kindsH.textContent="Kinds";
   root.appendChild(kindsH);
   var kinds = docsGalleryRow();
-  kinds.appendChild(docsSwatch("sit", demoScheme({seat:"1",kind:"sit",facing:"top",row:1}),
-    {selected:null, allAvail:true, showBack:true}));
-  kinds.appendChild(docsSwatch("sleep · lower", demoScheme({seat:"1",kind:"sleep",berth:"lower",row:1}),
-    {selected:null, allAvail:true, showBack:true}));
-  kinds.appendChild(docsSwatch("sleep · upper", demoScheme({seat:"1",kind:"sleep",berth:"upper",row:1}),
-    {selected:null, allAvail:true, showBack:true}));
-  kinds.appendChild(docsSwatch("luxury", demoScheme({seat:"1",kind:"luxury",row:1},2),
-    {selected:null, allAvail:true, showBack:true}));
+  kinds.appendChild(docsSwatch("sit", {seat:"1",kind:"sit",facing:"top"}, SWATCH_SIZE));
+  kinds.appendChild(docsSwatch("sleep · lower", {seat:"1",kind:"sleep",berth:"lower"}, SWATCH_SIZE));
+  kinds.appendChild(docsSwatch("sleep · upper", {seat:"1",kind:"sleep",berth:"upper"}, SWATCH_SIZE));
+  kinds.appendChild(docsSwatch("luxury", {seat:"1",kind:"luxury",span:{rows:2}}, SWATCH_SIZE));
   root.appendChild(kinds);
 
   var statesH = document.createElement("h4"); statesH.textContent="States";
   root.appendChild(statesH);
   var states = docsGalleryRow();
-  states.appendChild(docsSwatch("available", demoScheme({seat:"1",kind:"sit",facing:"top",row:1}),
-    {selected:null, allAvail:true, showBack:true}));
-  states.appendChild(docsSwatch("unavailable", demoScheme({seat:findUnavailableSeatId(),kind:"sit",facing:"top",row:1}),
-    {selected:null, allAvail:false, showBack:true}));
-  states.appendChild(docsSwatch("selected", demoScheme({seat:"sel",kind:"sit",facing:"top",row:1}),
-    {selected:new Set(["sel"]), allAvail:true, showBack:true, draw:function(){}}));
-  states.appendChild(docsSwatch("inclusive", demoScheme({seat:"1",kind:"sleep",berth:"lower",inclusive:true,row:1}),
-    {selected:null, allAvail:true, showBack:true}));
-  states.appendChild(docsSwatch("unknown kind", demoScheme({seat:"1",kind:"???",row:1}),
-    {selected:null, allAvail:true, showBack:true}));
+  states.appendChild(docsSwatch("available", {seat:"1",kind:"sit",facing:"top"}, SWATCH_SIZE));
+  states.appendChild(docsSwatch("unavailable", {seat:findUnavailableSeatId(),kind:"sit",facing:"top"}, SWATCH_SIZE,
+    {allAvail:false}));
+  states.appendChild(docsSwatch("selected", {seat:"sel",kind:"sit",facing:"top"}, SWATCH_SIZE,
+    {selected:new Set(["sel"]), draw:function(){}}));
+  states.appendChild(docsSwatch("inclusive", {seat:"1",kind:"sleep",berth:"lower",inclusive:true}, SWATCH_SIZE));
+  states.appendChild(docsSwatch("unknown kind", {seat:"1",kind:"???"}, SWATCH_SIZE));
   root.appendChild(states);
 
   var sizesH = document.createElement("h4"); sizesH.textContent="Sizes";
   root.appendChild(sizesH);
   var sizes = docsGalleryRow();
-  sizes.appendChild(docsSwatch("sit / sleep — 1 row (default)", demoScheme({seat:"1",kind:"sit",facing:"top",row:1},2),
-    {selected:null, allAvail:true, showBack:true}));
-  sizes.appendChild(docsSwatch("luxury — 2 rows (default)", demoScheme({seat:"1",kind:"luxury",row:1},2),
-    {selected:null, allAvail:true, showBack:true}));
+  sizes.appendChild(docsSwatch("sit / sleep — 1 row (default)", {seat:"1",kind:"sit",facing:"top"}, SWATCH_SIZE));
+  sizes.appendChild(docsSwatch("luxury — 2 rows (default)", {seat:"1",kind:"luxury",span:{rows:2}}, SWATCH_SIZE));
   root.appendChild(sizes);
 
   return root;
@@ -86,8 +79,7 @@ function buildFacilityGallery(){
   var root = document.createElement("div");
   var row = docsGalleryRow();
   FACILITIES.forEach(function(type){
-    row.appendChild(docsSwatch(FAC_LABEL[type]||type, demoScheme({type:type,row:1}),
-      {selected:null, allAvail:true, showBack:true}));
+    row.appendChild(docsSwatch(FAC_LABEL[type]||type, {type:type}, SWATCH_SIZE));
   });
   root.appendChild(row);
   return root;
