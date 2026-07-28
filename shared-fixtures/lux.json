@@ -1,0 +1,362 @@
+{
+  "key": "LUX-18",
+  "rev": 1,
+  "class": "lux",
+  "hull": "plain",
+  "decks": [
+    {
+      "id": "main",
+      "rows": 2,
+      "columns": [
+        {
+          "items": [
+            {
+              "type": "wc",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "1",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "2",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "3",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "4",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "5",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "6",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "7",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "8",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "9",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "10",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "11",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "12",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "13",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "14",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "15",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "16",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "17",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "18",
+              "kind": "luxury",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "electrical",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

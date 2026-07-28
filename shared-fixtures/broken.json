@@ -1,0 +1,85 @@
+{
+  "key": "TEST-BAD",
+  "rev": 1,
+  "class": "seated",
+  "hull": "plain",
+  "decks": [
+    {
+      "id": "main",
+      "rows": 2,
+      "columns": [
+        {
+          "items": [
+            {
+              "seat": "1",
+              "kind": "sleep",
+              "row": 1
+            },
+            {
+              "seat": "2",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "1",
+              "kind": "sit",
+              "facing": "top",
+              "row": 1
+            },
+            {
+              "seat": "4",
+              "kind": "sit",
+              "facing": "top",
+              "row": 1
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "5",
+              "kind": "hammock",
+              "row": 1
+            },
+            {
+              "seat": "6",
+              "kind": "sit",
+              "facing": "top",
+              "row": 2,
+              "span": {
+                "rows": 4
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "teleporter",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

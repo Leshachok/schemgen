@@ -1,0 +1,441 @@
+{
+  "key": "KUP-34",
+  "rev": 1,
+  "class": "kupe",
+  "hull": "plain",
+  "decks": [
+    {
+      "id": "main",
+      "rows": 3,
+      "columns": [
+        {
+          "items": [
+            {
+              "type": "wc",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "3",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "1",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "4",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "2",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "7",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "5",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "8",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "6",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "11",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "9",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "12",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "10",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "15",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "13",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "16",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "14",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "19",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "17",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "20",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "18",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "23",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "21",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "24",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "22",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "27",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "25",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "28",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "26",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "31",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "29",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "32",
+              "kind": "sleep",
+              "berth": "upper",
+              "row": 1
+            },
+            {
+              "seat": "30",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "33",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 1,
+              "inclusive": true,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "34",
+              "kind": "sleep",
+              "berth": "lower",
+              "row": 1,
+              "inclusive": true,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "inclusive",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "luggage",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

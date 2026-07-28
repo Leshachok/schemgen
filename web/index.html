@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wagon scheme format — prototype</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+
+<div class="topbar">
+  <div class="brand">Wagon scheme format<span>prototype</span></div>
+  <div class="seg">
+    <button id="mPreview" aria-pressed="true">Catalogue</button>
+    <button id="mBuilder" aria-pressed="false">Builder</button>
+    <button id="mDocs" aria-pressed="false">Docs</button>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" id="btnCopy">Copy JSON</button>
+  <button class="btn" id="btnDownload">Download</button>
+  <button class="btn primary" id="btnTemplate">Use as template</button>
+</div>
+
+<!-- ================= CATALOGUE ================= -->
+<div class="shell" id="previewPane">
+  <div class="col col-left">
+    <div class="sec-h">Schemes</div>
+    <div class="slist" id="tabs"></div>
+  </div>
+
+  <div class="col col-mid">
+    <div class="card">
+      <div class="card-h">
+        <h2 id="title">—</h2>
+        <div class="spacer"></div>
+        <div class="toggles">
+          <label><input type="checkbox" id="allAvail"> All available</label>
+          <label><input type="checkbox" id="showGrid"> Grid</label>
+          <label><input type="checkbox" id="showBack" checked> Seat backs</label>
+        </div>
+      </div>
+      <div class="card-b"><div class="meta" id="meta" style="margin-bottom:14px"></div><div id="stage"></div></div>
+      <div class="legend">
+        <span><i style="background:var(--navy)"></i>available</span>
+        <span><i style="background:var(--off);border:1px solid var(--border-firm)"></i>unavailable</span>
+        <span><i style="background:#fff;border:2px solid var(--navy)"></i>inclusive</span>
+        <span><i style="background:var(--sel)"></i>selected</span>
+        <span><i style="background:var(--fill);border:1px solid var(--border-firm)"></i>facility</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h2>Selection</h2></div>
+      <div class="card-b" style="overflow:visible"><div class="picked" id="picked"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h">
+        <h2>Scheme JSON</h2><div class="spacer"></div>
+        <button class="btn" id="toggleJsonP">Show</button>
+      </div>
+      <div id="jsonWrapP" hidden>
+        <div class="card-b"><textarea id="jsonP" spellcheck="false"></textarea></div>
+        <div class="card-b" style="padding-top:0"><div class="msgs" id="msgsP"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= BUILDER ================= -->
+<div class="shell" id="builderPane" hidden>
+  <div class="col col-left">
+    <div class="sec-h">Palette</div>
+    <div class="pal" id="palette"></div>
+    <div class="pal-note" id="palNote">Drag onto the canvas, or select then click a cell. Click an active tool to clear it.</div>
+  </div>
+
+  <div class="col col-mid builder-grid">
+    <div class="card">
+      <div class="card-h">
+        <h2>Canvas</h2>
+        <div class="spacer"></div>
+        <label class="meta" style="display:flex;gap:6px;align-items:center">next №
+          <input type="text" id="bNext" value="1" style="width:70px"></label>
+        <button class="btn danger" id="bClear">Clear</button>
+      </div>
+      <div class="card-b">
+        <div class="meta" style="margin-bottom:12px">
+          Drag right/bottom edge to resize · <b>+</b> inserts · <b>✕</b> deletes · drag an item to move it
+        </div>
+        <div id="bCanvas"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h2>Live preview</h2><div class="spacer"></div>
+        <select id="bwFramework">
+          <option value="web">Web (reference)</option>
+          <option value="compose">Compose Multiplatform (Web)</option>
+        </select>
+        <div class="meta" id="bMeta"></div></div>
+      <div class="card-b">
+        <div id="bStage"></div>
+        <div id="bwCompose" hidden>
+          <div class="meta" style="margin-bottom:10px;display:flex;gap:8px;align-items:center">
+            <input type="text" id="bwUrl" style="width:220px" value="http://localhost:8080">
+            <button class="btn" id="bwLoad">Reload</button>
+            <span id="bwStatus"></span>
+          </div>
+          <iframe class="fw-frame" id="bwFrame" style="height:50vh"></iframe>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="propCard" hidden>
+      <div class="card-h"><h2>Selected item</h2></div>
+      <div class="prop" id="prop"></div>
+    </div>
+    <div class="card">
+      <div class="card-h">
+        <h2>Scheme JSON</h2><div class="spacer"></div>
+        <button class="btn" id="toggleJsonB">Show</button>
+      </div>
+      <div id="jsonWrapB" hidden>
+        <div class="card-b"><textarea id="jsonB" spellcheck="false"></textarea></div>
+        <div class="card-b" style="padding-top:0"><div class="msgs" id="msgsB"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= DOCS ================= -->
+<div id="docsPane" hidden>
+  <div class="docs-wrap">
+    <div class="card docs-card" id="docsBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+<script src="js/format.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/schemes.js"></script>
+<script src="js/render.js"></script>
+<script src="js/docs.js"></script>
+<script src="js/docs-render.js"></script>
+<script src="js/docs-gallery.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

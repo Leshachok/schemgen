@@ -1,0 +1,16 @@
+[versions]
+# Current stable as of 2026-07-28 - see https://kotlinlang.org/docs/releases.html
+# and https://blog.jetbrains.com/kotlin/2026/05/compose-multiplatform-1-11-0/
+# Bump these together; Compose Multiplatform tracks a specific Kotlin baseline.
+kotlin = "2.4.10"
+compose-multiplatform = "1.11.1"
+kotlinx-serialization = "1.8.0"
+
+[plugins]
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+[libraries]
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }

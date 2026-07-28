@@ -1,0 +1,310 @@
+{
+  "key": "HALFTBL-20",
+  "rev": 1,
+  "class": "seated",
+  "hull": "plain",
+  "decks": [
+    {
+      "id": "main",
+      "rows": 3,
+      "columns": [
+        {
+          "items": [
+            {
+              "type": "wc",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "76",
+              "kind": "sit",
+              "facing": "left",
+              "row": 1
+            },
+            {
+              "seat": "77",
+              "kind": "sit",
+              "facing": "left",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "half_table",
+              "facing": "top",
+              "row": 1
+            },
+            {
+              "type": "half_table",
+              "facing": "bottom",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "78",
+              "kind": "sit",
+              "facing": "right",
+              "row": 1
+            },
+            {
+              "seat": "79",
+              "kind": "sit",
+              "facing": "right",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "80",
+              "kind": "sit",
+              "facing": "left",
+              "row": 1
+            },
+            {
+              "seat": "81",
+              "kind": "sit",
+              "facing": "left",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "half_table",
+              "facing": "top",
+              "row": 1
+            },
+            {
+              "type": "half_table",
+              "facing": "bottom",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "82",
+              "kind": "sit",
+              "facing": "right",
+              "row": 1
+            },
+            {
+              "seat": "83",
+              "kind": "sit",
+              "facing": "right",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "84",
+              "kind": "sit",
+              "facing": "left",
+              "row": 1
+            },
+            {
+              "seat": "85",
+              "kind": "sit",
+              "facing": "left",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "half_table",
+              "facing": "top",
+              "row": 1
+            },
+            {
+              "type": "half_table",
+              "facing": "bottom",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "86",
+              "kind": "sit",
+              "facing": "right",
+              "row": 1
+            },
+            {
+              "seat": "87",
+              "kind": "sit",
+              "facing": "right",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "88",
+              "kind": "sit",
+              "facing": "left",
+              "row": 1
+            },
+            {
+              "seat": "89",
+              "kind": "sit",
+              "facing": "left",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "half_table",
+              "facing": "top",
+              "row": 1
+            },
+            {
+              "type": "half_table",
+              "facing": "bottom",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "90",
+              "kind": "sit",
+              "facing": "right",
+              "row": 1
+            },
+            {
+              "seat": "91",
+              "kind": "sit",
+              "facing": "right",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "92",
+              "kind": "sit",
+              "facing": "left",
+              "row": 1
+            },
+            {
+              "seat": "93",
+              "kind": "sit",
+              "facing": "left",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "half_table",
+              "facing": "top",
+              "row": 1
+            },
+            {
+              "type": "half_table",
+              "facing": "bottom",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "94",
+              "kind": "sit",
+              "facing": "right",
+              "row": 1
+            },
+            {
+              "seat": "95",
+              "kind": "sit",
+              "facing": "right",
+              "row": 2
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
