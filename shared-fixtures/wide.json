@@ -1,0 +1,106 @@
+{
+  "key": "WIDE-4",
+  "rev": 1,
+  "decks": [
+    {
+      "rows": 3,
+      "columns": [
+        {
+          "items": [
+            {
+              "type": "baggage",
+              "row": 1,
+              "span": {
+                "rows": 2,
+                "cols": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": []
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "seat": "1",
+              "kind": "sit",
+              "facing": "right",
+              "row": 1
+            },
+            {
+              "seat": "2",
+              "kind": "sit",
+              "facing": "right",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "table",
+              "row": 1,
+              "span": {
+                "rows": 2,
+                "cols": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": []
+        },
+        {
+          "items": [
+            {
+              "seat": "3",
+              "kind": "sit",
+              "facing": "left",
+              "row": 1
+            },
+            {
+              "seat": "4",
+              "kind": "sit",
+              "facing": "left",
+              "row": 2
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "separator",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "toilet",
+              "row": 1,
+              "span": {
+                "rows": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

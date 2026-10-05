@@ -24,30 +24,57 @@ var ONE_CELL_TYPES = ["driver","chair"];
 var CHAIR_DEFAULT_FACING = "right";
 
 function rowY(deck,row){ return T.padY + (row-1)*T.rowPitch; }
+/* only these may be several columns wide (D48): seats, separators, half-tables and
+   one-cell items stay one column, whatever span.cols says */
+function canSpanCols(it){
+  return it.seat==null && it.type!=="separator" && it.type!=="half_table"
+    && ONE_CELL_TYPES.indexOf(it.type)===-1;
+}
 function itemSpan(it){
-  if (ONE_CELL_TYPES.indexOf(it.type)!==-1) return { rows:1 };
-  var s=it.span||{}; return { rows:s.rows||1 };
+  if (ONE_CELL_TYPES.indexOf(it.type)!==-1) return { rows:1, cols:1 };
+  var s=it.span||{};
+  return { rows:s.rows||1, cols:canSpanCols(it) ? s.cols||1 : 1 };
 }
 function itemWidth(it){
   return it.type==="separator" ? T.sepW : T.seat;
 }
-function colWidth(col){
+/* a column holding nothing of its own but covered by a wide item is as wide as a
+   seat, not a gap - otherwise the item would squash it */
+function colWidth(col, covered){
   var items=col.items||[];
-  if (!items.length) return T.gapW;
-  var w=0;
+  if (!items.length) return covered ? T.seat : T.gapW;
+  var w=covered ? T.seat : 0;
   items.forEach(function(it){ w=Math.max(w, itemWidth(it)); });
   return w;
 }
 function layout(deck){
-  var x=T.padX, out=[];
-  (deck.columns||[]).forEach(function(col,i){
-    var w=colWidth(col);
+  var x=T.padX, out=[], cols=deck.columns||[], covered={};
+  cols.forEach(function(col,i){
+    (col.items||[]).forEach(function(it){
+      for (var c=1;c<itemSpan(it).cols;c++) covered[i+c]=1; });
+  });
+  cols.forEach(function(col,i){
+    var w=colWidth(col, covered[i]);
     out.push({ col:col, index:i, x:x, w:w });
     x += w + T.colGap;
   });
   var rows=deck.rows||1;
   return { cols:out, width:Math.max(x-T.colGap+T.padX,140),
            height:rowY(deck,rows)+T.seat+T.padY };
+}
+/* where an item placed in column pc lands; rows and columns past the deck's edge
+   are clipped. Drawing and hit-testing both use this. */
+function itemBox(deck, L, pc, it){
+  var sp=itemSpan(it), row=it.row||1;
+  var y=rowY(deck,row);
+  var yEnd=rowY(deck, Math.min(row+sp.rows-1, deck.rows||1));
+  var h=yEnd+T.seat-y;
+  if (sp.cols>1){
+    var last=L.cols[Math.min(pc.index+sp.cols-1, L.cols.length-1)];
+    return { x:pc.x, y:y, w:last.x+last.w-pc.x, h:h };
+  }
+  var w=itemWidth(it);
+  return { x:pc.x+(pc.w-w)/2, y:y, w:w, h:h };
 }
 
 /* ---------- validation ---------- */
@@ -67,17 +94,24 @@ function validate(scheme){
       if (levelsSeen[deck.level]) msgs.push({level:"e", text:"two decks with level \""+deck.level+"\"."});
       levelsSeen[deck.level]=1;
     }
-    var seen={}, cells={}, maxRow=deck.rows||1;
+    var seen={}, cells={}, maxRow=deck.rows||1, maxCol=(deck.columns||[]).length;
     (deck.columns||[]).forEach(function(col,ci){
       (col.items||[]).forEach(function(it){
         var sp=itemSpan(it), row=it.row||1;
         if (row+sp.rows-1 > maxRow)
           msgs.push({level:"e", text:"col "+ci+": item at row "+row+" spans "+sp.rows+" rows, past rows="+maxRow+"."});
-        for (var r=row;r<row+sp.rows;r++){
-          var k=ci+":"+r;
-          if (cells[k]) msgs.push({level:"e", text:"col "+ci+" row "+r+": two items in one cell."});
-          cells[k]=1;
-        }
+        if (ci+sp.cols > maxCol)
+          msgs.push({level:"e", text:"col "+ci+": item at row "+row+" spans "+sp.cols+" columns, past the last column."});
+        if (it.span && it.span.cols!=null && it.span.cols!==1 && !canSpanCols(it)
+            && ONE_CELL_TYPES.indexOf(it.type)===-1)
+          msgs.push({level:"w", text:"col "+ci+": "+(it.seat!=null ? "seat "+it.seat : it.type)
+            +" is always one column wide — span.cols ignored."});
+        for (var c=ci;c<Math.min(ci+sp.cols,maxCol);c++)
+          for (var r=row;r<row+sp.rows;r++){
+            var k=c+":"+r;
+            if (cells[k]) msgs.push({level:"e", text:"col "+c+" row "+r+": two items in one cell."});
+            cells[k]=1;
+          }
         if (it.seat!=null){
           var id=String(it.seat);
           if (seen[id]) msgs.push({level:"e", text:"duplicate seat number \""+id+"\"."});

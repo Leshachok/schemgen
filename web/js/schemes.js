@@ -149,6 +149,21 @@ function bus53(){
   return { key:"BUS-53", rev:1, vehicle:"bus",
     decks:[{ rows:5, columns:cols }] };
 }
+/* Wide items (D48): a baggage bay and a shared table, each two columns wide. The
+   columns they cover are empty - the item in the first column fills them. */
+function wideDemo(){
+  var cols=[
+    Col([{ type:"baggage", row:1, span:{rows:2, cols:2} }]), Col(),
+    Sep(2),
+    Col([ sit(1,"right",1), sit(2,"right",2) ]),
+    Col([{ type:"table", row:1, span:{rows:2, cols:2} }]), Col(),
+    Col([ sit(3,"left",1), sit(4,"left",2) ]),
+    Sep(2),
+    F("toilet",2)
+  ];
+  return { key:"WIDE-4", rev:1,
+    decks:[{ rows:3, columns:cols }] };
+}
 function broken(){
   var cols=[
     Col([ { seat:"1", kind:"sleep", row:1 }, berth(2,"lower",2) ]),
@@ -176,6 +191,7 @@ var SCHEMES = [
   { group:"Hand-written", id:"skoda2",     label:"Škoda deck 2",  build:skoda2 },
   { group:"Hand-written", id:"halftable",  label:"Half-tables",   build:halfTableDemo },
   { group:"Hand-written", id:"bus53",      label:"Автобус 2+2",   build:bus53 },
+  { group:"Hand-written", id:"wide",       label:"Wide items",    build:wideDemo },
   { group:"Hand-written", id:"broken",     label:"Broken (test)", build:broken }
 ];
 AUTO.forEach(function(s,i){

@@ -32,9 +32,12 @@ fun itemWidth(item: Item): Float {
     return if (isSeparator(item)) T.SEP_W else T.SEAT
 }
 
-fun colWidth(column: Column): Float {
-    if (column.items.isEmpty()) return T.GAP_W
-    return column.items.maxOf { itemWidth(it) }
+/** A column holding nothing of its own but covered by a wide item is as wide as a
+ *  seat, not a gap - otherwise the item would squash it. Mirrors format.js. */
+fun colWidth(column: Column, covered: Boolean = false): Float {
+    if (column.items.isEmpty()) return if (covered) T.SEAT else T.GAP_W
+    val w = column.items.maxOf { itemWidth(it) }
+    return if (covered) maxOf(w, T.SEAT) else w
 }
 
 data class PlacedColumn(val column: Column, val index: Int, val x: Float, val w: Float)
@@ -42,9 +45,13 @@ data class PlacedColumn(val column: Column, val index: Int, val x: Float, val w:
 data class DeckLayout(val columns: List<PlacedColumn>, val width: Float, val height: Float)
 
 fun layout(deck: Deck): DeckLayout {
+    val covered = mutableSetOf<Int>()
+    deck.columns.forEachIndexed { i, col ->
+        col.items.forEach { item -> for (c in 1 until spanCols(item)) covered += i + c }
+    }
     var x = T.PAD_X
     val placed = deck.columns.mapIndexed { i, col ->
-        val w = colWidth(col)
+        val w = colWidth(col, i in covered)
         val p = PlacedColumn(col, i, x, w)
         x += w + T.COL_GAP
         p
@@ -64,6 +71,15 @@ fun clampedEndRow(item: Item, maxRow: Int): Int =
 fun spanRows(item: Item): Int =
     if (item is StructuralItem && item.type in Vocabulary.ONE_CELL_TYPES) 1 else item.span.rows
 
+/** Only these may be several columns wide (D48): seats, separators, half-tables and
+ *  one-cell items stay one column, whatever `span.cols` says. */
+fun canSpanCols(item: Item): Boolean =
+    item is StructuralItem && item.type != "separator" && item.type != "half_table" &&
+        item.type !in Vocabulary.ONE_CELL_TYPES
+
+/** Columns an item covers, counting its own. */
+fun spanCols(item: Item): Int = if (canSpanCols(item)) item.span.cols.coerceAtLeast(1) else 1
+
 /** Where one item lands on a deck - the single geometry both drawing and tap
  *  hit-testing use, so what you see is exactly what you can tap. */
 data class ItemBox(val item: Item, val x: Float, val y: Float, val w: Float, val h: Float) {
@@ -75,8 +91,16 @@ fun itemBoxes(deck: Deck, deckLayout: DeckLayout = layout(deck)): List<ItemBox> 
         pc.column.items.map { item ->
             val y = rowY(item.row)
             val yEnd = rowY(clampedEndRow(item, deck.rows.coerceAtLeast(1)))
-            val w = itemWidth(item)
-            ItemBox(item, pc.x + (pc.w - w) / 2f, y, w, yEnd + T.SEAT - y)
+            val h = yEnd + T.SEAT - y
+            val cols = spanCols(item)
+            if (cols > 1) {
+                // clipped at the deck's last column, like the row clamp above
+                val last = deckLayout.columns[minOf(pc.index + cols - 1, deckLayout.columns.lastIndex)]
+                ItemBox(item, pc.x, y, last.x + last.w - pc.x, h)
+            } else {
+                val w = itemWidth(item)
+                ItemBox(item, pc.x + (pc.w - w) / 2f, y, w, h)
+            }
         }
     }
 

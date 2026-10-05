@@ -23,10 +23,7 @@ function render(scheme, state){
     }
     L.cols.forEach(function(pc){
       (pc.col.items||[]).forEach(function(it){
-        var sp=itemSpan(it), row=it.row||1;
-        var y=rowY(deck,row);
-        var yEnd=rowY(deck, Math.min(row+sp.rows-1, deck.rows||1));
-        var h=yEnd+T.seat-y, w=itemWidth(it), x=pc.x + (pc.w-w)/2;
+        var b=itemBox(deck, L, pc, it), x=b.x, y=b.y, w=b.w, h=b.h;
         if (it.seat!=null) drawSeat(svg, scheme, it, x, y, w, h, state);
         else if (it.type==="separator") drawSeparator(svg, x, y, w, h);
         else if (it.type==="half_table") drawHalfTable(svg, x, y, w, h, it.facing);
@@ -131,7 +128,7 @@ function drawSeat(svg, scheme, it, x, y, w, h, state){
 
 function previewItem(it, size, stateOverride){
   var pad=9, sp=itemSpan(it);
-  var w = it.type==="separator" ? T.sepW*2 : size;
+  var w = it.type==="separator" ? T.sepW*2 : size*sp.cols + (sp.cols-1)*T.colGap*(size/T.seat);
   var h = size*sp.rows + (sp.rows-1)*(T.rowPitch-T.seat)*(size/T.seat);
   var svg=el("svg",{ width:w+pad*2, height:h+pad*2, viewBox:"0 0 "+(w+pad*2)+" "+(h+pad*2) });
   var scheme={ key:"preview" }, state={ mode:"view", showBack:true };

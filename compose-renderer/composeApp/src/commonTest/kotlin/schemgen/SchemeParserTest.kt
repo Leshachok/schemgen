@@ -105,4 +105,32 @@ class SchemeParserTest {
         assertEquals(null, schemgen.layout.seatAt(deck, driver.x + 1, driver.y + 1), "the driver is not a seat")
         assertEquals(null, schemgen.layout.seatAt(deck, 1f, 1f), "padding hits nothing")
     }
+
+    @Test
+    fun wideItemsCoverTheirColumns() {
+        val scheme = SchemeParser.parse(Fixtures.WIDE)
+        val msgs = validate(scheme)
+        assertTrue(msgs.none { it.level != Level.OK }, "unexpected messages: $msgs")
+        val deck = scheme.decks[0]
+        val L = schemgen.layout.layout(deck)
+        // a column only covered by a wide item is seat-wide, not a gap
+        assertEquals(schemgen.layout.T.SEAT, L.columns[1].w)
+        val table = schemgen.layout.itemBoxes(deck, L)
+            .first { (it.item as? schemgen.model.StructuralItem)?.type == "table" }
+        assertEquals(L.columns[4].x, table.x)
+        assertEquals(L.columns[5].x + L.columns[5].w, table.x + table.w)
+    }
+
+    @Test
+    fun wideItemRules() {
+        fun msgs(cols: String) = validate(SchemeParser.parse("""{"decks":[{"rows":1,"columns":[$cols]}]}"""))
+        val table2 = """{"items":[{"type":"table","row":1,"span":{"cols":2}}]}"""
+        val seat = """{"items":[{"seat":"1","kind":"sit","row":1}]}"""
+        assertTrue(msgs("$table2,$seat").any { it.level == Level.ERROR && "two items" in it.text },
+            "a wide item overlapping the next column's item must fail")
+        assertTrue(msgs(table2).any { it.level == Level.ERROR && "past the last column" in it.text })
+        val wideSeat = msgs("""{"items":[{"seat":"1","kind":"sit","row":1,"span":{"cols":2}}]},{"items":[]}""")
+        assertTrue(wideSeat.none { it.level == Level.ERROR }, "cols on a seat is ignored, not an error: $wideSeat")
+        assertTrue(wideSeat.any { it.level == Level.WARN && "one column wide" in it.text })
+    }
 }

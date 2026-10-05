@@ -88,9 +88,12 @@ apart by field presence, not by a discriminator:
 |---|---|---|---|---|
 | `row` | integer ≥ 1 | yes | `1` | Top row the item occupies. |
 | `span.rows` | integer ≥ 1 | no | `1` | How many rows the item covers, downward from `row`. A WC two rows tall is `"span": { "rows": 2 }`. |
+| `span.cols` | integer ≥ 1 | no | `1` | Non-seat items only (spec D48). How many columns the item covers, rightward from its own. A baggage bay two seats long is `"span": { "rows": 2, "cols": 2 }` in one column, with the next column left empty. Ignored with a warning on seats, `separator`, `half_table`, `driver` and `chair`. |
 
-Every item is exactly one column wide; there is no `span.cols` (spec D41). Two items may not
-share a cell, and `row + span.rows − 1` may not exceed the deck's `rows`.
+Two items may not share a cell — a wide item's covered cells count — `row + span.rows − 1` may
+not exceed the deck's `rows`, and a wide item may not run past the last column. A column
+holding nothing but cells covered by a wide item is drawn seat-wide, not as a gap. Example:
+`shared-fixtures/wide.json` (sample "Wide items").
 
 #### Seat fields
 
@@ -120,12 +123,12 @@ Removed, do not write: `class` (fare class — that belongs to availability), `b
 
 | `type` | Drawn as | Sizing |
 |---|---|---|
-| `table` | Plain light block, no icon | Resizable: `span.rows` 1–3 |
+| `table` | Plain light block, no icon | Resizable: `span.rows` 1–3, `span.cols` as needed |
 | `half_table` | Light block of half a row's height, in the top or bottom half | Fixed: one row, no `span` |
 | `driver` | Light block with a steering-wheel icon (stand-in until the real asset exists) | Fixed: exactly one cell; a `span` is ignored with a warning. No `facing` |
 | `chair` | Free-standing bar stool — a round seat with a back arc, no block behind it | Fixed: exactly one cell, like `driver`; turned by `facing` |
 | `separator` | Thin vertical line, slightly taller than the rows it covers; its column is narrow | `span.rows` = the rows it divides — it can stop short of the aisle |
-| facility | Light block with the facility icon centred and scaled to fit | `span.rows` as needed |
+| facility | Light block with the facility icon centred and scaled to fit | `span.rows` and `span.cols` as needed |
 
 Removed, do not write: facility `label`; the old `"table": true` / `"separator": true` /
 `"facility": "wc"` shapes — every typed item uses `type`.
@@ -192,7 +195,8 @@ warnings still render.
 | Unknown `level` value | warning |
 | Unknown `vehicle` value | warning |
 | `span` on a `driver` | warning (ignored) |
-| Item runs past the deck's `rows` | error |
+| `span.cols` on a seat, `separator` or `half_table` | warning (ignored) |
+| Item runs past the deck's `rows`, or past its last column | error |
 | Two items in one cell | error |
 | Duplicate seat number within a deck | error |
 | `sleep` seat without a valid `berth`, or `berth` on any other kind | error |

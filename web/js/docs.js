@@ -118,13 +118,14 @@ Builder (own domain, stores nothing) ──JSON file / admin API──▶ Wagon 
 | D38 | **Removed: \`class\`, \`hull\`, \`artwork\`, seat \`class\`, facility \`label\`** | Format review, 2026-10-05: none of them changed what a passenger sees. \`class\` was display-only (D12) and the admin already knows a wagon type's class. \`hull\` was \`"plain"\` in every scheme ever written — \`nose_left\` / \`nose_right\` never occurred and no renderer drew a nose, so its only effect was a corner radius. \`artwork\`, per-seat fare \`class\` and facility \`label\` were specified but never implemented anywhere; fare class already belongs to the availability payload (§4.6). Both \`class\` and \`hull\` were also train-only, which D36 rules out for required fields. Unused fields in a published format are not free — every renderer team has to wonder whether to support them. |
 | D39 | **\`deck.id\` replaced by optional \`deck.level\`: \`lower\` \\| \`upper\`** | \`id\` was \`"main"\` everywhere and nothing read it, yet a double-deck vehicle needs to tell the passenger which deck they are looking at, and \`"main"\` cannot. \`level\` is optional for a one-deck scheme and required — and unique — when a scheme has several decks. Škoda stays two schemes (D20); each now carries the level it shows (\`SKD-D1\` lower, \`SKD-D2\` upper, which its stairs confirm). |
 | D40 | **No doors on any vehicle** | D9 extends to buses. Wagon schemes show only the aisle, and buses follow the same convention. The driver's place is the one bus-only item (§4.7). |
-| D41 | **\`span.cols\` removed — every item is one column wide** | Implemented in layout but never set by any scheme, sample, import or builder action. Horizontal size is already expressed by columns; a second way to make an item wide would be a second source of truth for the same thing. If a wide item is ever needed, adding an optional field back is additive. |
+| D41 | **\`span.cols\` removed — every item is one column wide** | Implemented in layout but never set by any scheme, sample, import or builder action. Horizontal size is already expressed by columns; a second way to make an item wide would be a second source of truth for the same thing. If a wide item is ever needed, adding an optional field back is additive. **Superseded by D48.** |
 | D42 | **Top-level \`vehicle\`: \`train\` \\| \`bus\`, absent means \`train\`** | Chosen over a separate bus key space: one explicit field says what a scheme describes, so an exported file is self-describing and a key can never be read in the wrong namespace. **It changes nothing visual** — a bus is drawn by exactly the rules a wagon is, and the driver's place is its own item (D43). Its only rendered effect is the accessibility label ("Bus BUS-53" vs "Wagon …"). It also leaves a switch in place should a vehicle ever need different rendering. Kept deliberately (2026-10-05) although the admins already know the vehicle type: dropping it later would cost more than carrying it. Defaulting to \`train\` keeps every scheme written before buses valid without touching a published revision (D5). An unknown value warns and renders as a train. |
 | D43 | **\`driver\` is a typed item, always exactly one cell, no \`facing\`** | The one bus-only element (no doors, D40). A fixed size means no span to author and no resize handle in the builder, like \`half_table\` (D29); a \`span\` on it is ignored with a warning rather than an error, so a stray field cannot break a published scheme. No \`facing\`: the wheel reads the same whichever way the vehicle is drawn. No icon exists yet — the steering-wheel glyph is a stand-in, like \`kid\` and the stairs. |
 | D44 | **Builder edits vehicle and decks: at most two decks, levels kept valid by construction** | Two decks is the most \`level\` can name. Adding a second deck fills in \`lower\` / \`upper\` on both, and picking the other deck's level swaps the two, so the builder never produces a duplicate or missing level (D39) — the validator still catches hand-edited JSON. Removing a deck that has items takes a second click, the same no-silent-data-loss rule as D27. The builder writes \`vehicle\` explicitly, including \`"train"\`, so an exported file always says what it is. |
 | D45 | **Two interaction modes, a renderer input: \`view\` and \`select\`** | Different consumers need different behaviour — an admin preview shows a scheme, a sales app sells seats from it. \`view\`: every known seat looks available, nothing is tappable, no availability needed. \`select\`: the app passes the available seat numbers; those are blue and tappable, every other seat grey and inert (the §4.6 rule). A mode is runtime input like availability (D4), never a scheme field. A highlight in \`view\` mode and separate \`occupied\` / \`held\` looks are deliberately left out until a consumer needs them — both are additive. |
 | D46 | **The app owns the selection; the renderer only reports taps** | The renderer calls back with the tapped seat number and never changes \`selected\` itself; the app updates its set and passes it back in. Selection rules — a maximum, one seat per passenger, deselect-on-tap — differ per product and belong to the app. It also keeps every renderer stateless and identical: same inputs, same picture. |
 | D47 | **Facility names and art come from the Android sales app** | The sales apps already ship every facility a real wagon has, drawn from one design system (iOS uses the same glyphs as PNGs). Their names are the Android drawable names with the \`ic_\` prefix, the class prefix (\`ps_\`, \`ks_\`) and the size suffix dropped: \`wc\`→\`toilet\`, \`wc_accessible\`→\`invalid_toilet\`, \`luggage\`→\`baggage\`, \`bicycle\`→\`bike\`, \`inclusive\`→\`handicapped\`, \`electrical\`→\`shield\` (\`ic_is_shield\`). Two are adjusted where the literal name would mislead: the standalone marker is \`handicapped_wheelchair\`, not \`invalid\` (reads as "not valid" next to validator messages), and stairs are \`steps_up\` / \`steps_down\` (Android's down drawable is plain \`ic_ps_steps\`). New from the apps: \`wardrobe\`, \`cafe\`, \`coffee_machine\`, and \`chair\` — a bar stool, one cell, with an optional \`facing\` that turns its back arc like a seat back (default \`right\`), drawn without a facility block. \`baggage\`, \`steps_up\` and \`steps_down\` replace mislabelled or stand-in art. \`kid\` and \`driver\` have no counterpart in either app and keep their names. A clean rename, no aliases: nothing is published yet, and old names now render as the unknown-type placeholder. |
+| D48 | **\`span.cols\` is back, for non-seat items only — reverses D41** | A baggage bay, a shared table or a toilet block can be longer than one seat, and the catalogue already draws them so: the importer emits such a block as two neighbouring one-column items with nothing tying them together, so a builder edit can move or delete half of it. A wide item covers the next \`cols − 1\` columns the way \`span.rows\` covers rows downward; it does not widen its own column, which is how the D41-era field worked and why reverting that commit was not the fix. A column covered by a wide item is drawn seat-wide even when empty, or it would collapse to a gap and squash the item. Seats stay one column: a wide seat raises questions about the back bracket, berth bars and what a passenger reads it as, and no real layout needs one. \`separator\`, \`half_table\`, \`driver\` and \`chair\` stay one column too. \`cols\` on any of those is ignored with a warning, not an error, like D43's span on the driver. In the builder, inserting a column inside a wide item widens it and deleting one narrows it, so the item keeps its neighbours. |
 
 ### Rejected
 
@@ -233,7 +234,7 @@ Any wagon class may contain inclusive seats: an inclusive compartment in sleepin
 | \`berth\` | \`lower\` \\| \`middle\` \\| \`upper\` | Required when \`kind = sleep\`. **Always write explicitly** — see below. |
 | \`inclusive\` | bool, default \`false\` | Renders as an outlined seat. |
 | \`facing\` | \`left\` \\| \`right\` \\| \`top\` \\| \`bottom\` | Optional, only when \`kind = sit\`. Draws the seat-back bracket. |
-| \`span\` | \`{rows}\`, default \`{1}\` | \`luxury\` observed at \`{rows: 2}\`. No \`cols\` (D41). |
+| \`span\` | \`{rows}\`, default \`{1}\` | \`luxury\` observed at \`{rows: 2}\`. Seats have no \`cols\` — always one column (D48). |
 
 
 **Never let absence encode a value.** The picker draws nothing for a middle berth, but the
@@ -275,7 +276,7 @@ production sales apps draw today.
 | Field | Values |
 |---|---|
 | \`type\` | one of the above, or unknown → inert placeholder |
-| \`span\` | \`{rows}\` — required, these vary a lot (§3) |
+| \`span\` | \`{rows, cols}\` — \`rows\` required, these vary a lot (§3); \`cols\` optional, default 1 (D48) |
 
 ### 4.4 Structural
 
@@ -291,7 +292,8 @@ renderer, no special case anywhere in layout.
 | gap (horizontal space) | a column with \`items: []\` |
 | corridor / aisle (vertical space) | **not a field.** A row that no column places an item on. Every row uses the same pitch; an "aisle" row is just a row that happens to be empty. |
 | separator | \`{ type: "separator", row, span }\` — placed exactly like a table, in whichever column and row range it needs. Rendered as a thin line, positioned with full control: it can cover only a bay, stop short of open space, or run the full deck. |
-| table | \`{ type: "table", row, span }\` — resizable, full row height by default. |
+| table | \`{ type: "table", row, span }\` — resizable in both directions, full row height by default. |
+| wide item | \`span.cols\` > 1 on a facility or table: it covers that many columns from its own rightward, which must be free in those rows. Usually the covered columns are empty (\`items: []\`); they are drawn seat-wide, not as gaps (D48). |
 | half-table | \`{ type: "half_table", row, facing: "top" \\| "bottom" }\` — fixed at half the row's height, occupying only the top or bottom half. Not resizable; carries no \`span\`. |
 
 Every non-seat item — facility or structural — shares this one shape: \`type\` names what it
@@ -488,7 +490,7 @@ real authoring mistakes:
 | Doors on buses? | No — no doors on any vehicle (D40). |
 | Wagon class, hull shape? | Removed from the format (D38). |
 | How is a double-deck vehicle's deck named? | \`deck.level\`, \`lower\` / \`upper\` (D39). |
-| Wide items (\`span.cols\`)? | Removed (D41). |
+| Wide items (\`span.cols\`)? | Back for non-seat items only (D48, reverses D41). |
 | Bus vs train? | Top-level \`vehicle\`, default \`train\` (D42). |
 | Driver's place? | \`driver\` item, one cell, no \`facing\` (D43). |
 | \`inclusive\` vs \`inclusive_marker\`? | Both kept — now \`handicapped\` and \`handicapped_wheelchair\` (D47). |
@@ -608,6 +610,9 @@ Known gaps:
 - Facility art now comes from the Android sales app (D47). The old Figma \`luggage\` export,
   which drew a face and a monitor, is replaced by the app's briefcase; \`kid\` and \`driver\`
   are still stand-ins.
+- The Figma importer predates wide items (D48): a block two seats long still comes out as
+  two neighbouring one-column items (several \`CAT-*\` samples have such baggage pairs).
+  Merging them into one wide item is importer work, not done yet.
 - The live preview stacks a double-deck scheme's decks but doesn't caption them with their
   level yet — only the deck tabs above the canvas and the accessibility label say which is
   which.
@@ -761,9 +766,12 @@ apart by field presence, not by a discriminator:
 |---|---|---|---|---|
 | \`row\` | integer ≥ 1 | yes | \`1\` | Top row the item occupies. |
 | \`span.rows\` | integer ≥ 1 | no | \`1\` | How many rows the item covers, downward from \`row\`. A WC two rows tall is \`"span": { "rows": 2 }\`. |
+| \`span.cols\` | integer ≥ 1 | no | \`1\` | Non-seat items only (spec D48). How many columns the item covers, rightward from its own. A baggage bay two seats long is \`"span": { "rows": 2, "cols": 2 }\` in one column, with the next column left empty. Ignored with a warning on seats, \`separator\`, \`half_table\`, \`driver\` and \`chair\`. |
 
-Every item is exactly one column wide; there is no \`span.cols\` (spec D41). Two items may not
-share a cell, and \`row + span.rows − 1\` may not exceed the deck's \`rows\`.
+Two items may not share a cell — a wide item's covered cells count — \`row + span.rows − 1\` may
+not exceed the deck's \`rows\`, and a wide item may not run past the last column. A column
+holding nothing but cells covered by a wide item is drawn seat-wide, not as a gap. Example:
+\`shared-fixtures/wide.json\` (sample "Wide items").
 
 #### Seat fields
 
@@ -793,12 +801,12 @@ Removed, do not write: \`class\` (fare class — that belongs to availability), 
 
 | \`type\` | Drawn as | Sizing |
 |---|---|---|
-| \`table\` | Plain light block, no icon | Resizable: \`span.rows\` 1–3 |
+| \`table\` | Plain light block, no icon | Resizable: \`span.rows\` 1–3, \`span.cols\` as needed |
 | \`half_table\` | Light block of half a row's height, in the top or bottom half | Fixed: one row, no \`span\` |
 | \`driver\` | Light block with a steering-wheel icon (stand-in until the real asset exists) | Fixed: exactly one cell; a \`span\` is ignored with a warning. No \`facing\` |
 | \`chair\` | Free-standing bar stool — a round seat with a back arc, no block behind it | Fixed: exactly one cell, like \`driver\`; turned by \`facing\` |
 | \`separator\` | Thin vertical line, slightly taller than the rows it covers; its column is narrow | \`span.rows\` = the rows it divides — it can stop short of the aisle |
-| facility | Light block with the facility icon centred and scaled to fit | \`span.rows\` as needed |
+| facility | Light block with the facility icon centred and scaled to fit | \`span.rows\` and \`span.cols\` as needed |
 
 Removed, do not write: facility \`label\`; the old \`"table": true\` / \`"separator": true\` /
 \`"facility": "wc"\` shapes — every typed item uses \`type\`.
@@ -865,7 +873,8 @@ warnings still render.
 | Unknown \`level\` value | warning |
 | Unknown \`vehicle\` value | warning |
 | \`span\` on a \`driver\` | warning (ignored) |
-| Item runs past the deck's \`rows\` | error |
+| \`span.cols\` on a seat, \`separator\` or \`half_table\` | warning (ignored) |
+| Item runs past the deck's \`rows\`, or past its last column | error |
 | Two items in one cell | error |
 | Duplicate seat number within a deck | error |
 | \`sleep\` seat without a valid \`berth\`, or \`berth\` on any other kind | error |

@@ -285,10 +285,33 @@ function init(){
     bstate.scheme=parsed; bstate.sel=null; drawBuilder();
   }, $("msgsB"));
 
-  function insertColumnAt(i){ deck().columns.splice(i,0,Col()); drawBuilder(); }
+  /* writes only the non-default parts, so a one-cell item has no span at all */
+  function setSpan(it, rows, cols){
+    var sp={};
+    if (rows>1) sp.rows=rows;
+    if (cols>1) sp.cols=cols;
+    if (sp.rows||sp.cols) it.span=sp; else delete it.span;
+  }
+  /* wide items reaching from the left into column i, with the column they sit in */
+  function eachCovering(d, i, fn){
+    d.columns.forEach(function(col,ci){
+      if (ci>=i) return;
+      (col.items||[]).forEach(function(it){
+        var sp=itemSpan(it);
+        if (ci+sp.cols-1>=i) fn(it, sp);
+      });
+    });
+  }
+  /* a column inserted inside a wide item widens it, so it keeps its neighbours */
+  function insertColumnAt(i){
+    var d=deck();
+    eachCovering(d, i, function(it, sp){ setSpan(it, sp.rows, sp.cols+1); });
+    d.columns.splice(i,0,Col()); drawBuilder();
+  }
   function deleteColumnAt(i){
     var d=deck();
     if (d.columns.length<=1) return;
+    eachCovering(d, i, function(it, sp){ setSpan(it, sp.rows, sp.cols-1); });
     d.columns.splice(i,1);
     if (bstate.sel && bstate.sel.ci===i) bstate.sel=null;
     drawBuilder();
@@ -312,14 +335,31 @@ function init(){
       if ((it.row||1)>row) it.row=(it.row||1)-1; }); });
     drawBuilder();
   }
-  function itemAt(ci,r){
-    var col=deck().columns[ci];
-    if (!col) return null;
-    var found=null;
-    (col.items||[]).forEach(function(it){
-      var sp=itemSpan(it), row=it.row||1;
-      if (r>=row && r<row+sp.rows) found=it; });
+  /* the item covering a cell and the column it sits in - a wide item covers
+     cells in columns to its right */
+  function ownerAt(ci,r){
+    var d=deck(), found=null;
+    if (!d.columns[ci]) return null;
+    d.columns.forEach(function(col,c){
+      if (c>ci) return;
+      (col.items||[]).forEach(function(it){
+        var sp=itemSpan(it), row=it.row||1;
+        if (r>=row && r<row+sp.rows && ci<c+sp.cols) found={ item:it, ci:c };
+      });
+    });
     return found;
+  }
+  function itemAt(ci,r){ var o=ownerAt(ci,r); return o ? o.item : null; }
+  /* every cell of the block free, apart from cells held by `self` */
+  function fits(ci,row,rows,cols,self){
+    var d=deck();
+    if (ci+cols>d.columns.length || row+rows-1>d.rows) return false;
+    for (var c=ci;c<ci+cols;c++)
+      for (var r=row;r<row+rows;r++){
+        var o=itemAt(c,r);
+        if (o && o!==self) return false;
+      }
+    return true;
   }
   function deleteItem(ci,it){
     var col=deck().columns[ci], idx=col.items.indexOf(it);
@@ -372,14 +412,16 @@ function init(){
       var x=colX(ci);
       for (var rr2=1;rr2<=d.rows;rr2++){
         (function(rr){
-          var y=rowYc(rr), it=itemAt(ci,rr);
-          if (it && (it.row||1)!==rr) return;
-          var sp=it?itemSpan(it):{rows:1};
+          var y=rowYc(rr), own=ownerAt(ci,rr), it=own ? own.item : null;
+          if (it && ((it.row||1)!==rr || own.ci!==ci)) return;
+          var sp=it?itemSpan(it):{rows:1,cols:1};
           var visRows = it ? Math.min(sp.rows, d.rows-rr+1) : 1;
+          var visCols = it ? Math.min(sp.cols, d.columns.length-ci) : 1;
           var cellH=it ? visRows*CELL+(visRows-1)*RGAP : CELL;
+          var cellW=visCols*CELL+(visCols-1)*8;
           var isSel=!!(bstate.sel && bstate.sel.item===it && it);
           var cellG=el("g",{});
-          var rect=el("rect",{ x:x,y:y,width:CELL,height:cellH,rx:5,
+          var rect=el("rect",{ x:x,y:y,width:cellW,height:cellH,rx:5,
             fill: it ? (it.seat!=null ? "var(--navy)" : "var(--fill)") : "#fff",
             stroke: isSel ? "var(--sel)" : "var(--border-firm)",
             "stroke-width": isSel ? 2 : 1,
@@ -394,14 +436,14 @@ function init(){
               : it.type==="half_table" ? (it.facing==="bottom"?"▄":"▀")
               : it.type==="table" ? "TBL"
               : (FAC_LABEL[it.type]||it.type||"?");
-            var t=el("text",{ x:x+CELL/2, y:y+cellH/2, "text-anchor":"middle",
+            var t=el("text",{ x:x+cellW/2, y:y+cellH/2, "text-anchor":"middle",
               "dominant-baseline":"central","font-size":10,"font-weight":600,
               fill: it.seat!=null ? "#fff" : "var(--muted)", style:"pointer-events:none" });
             t.textContent=label; cellG.appendChild(t);
 
             var cross=el("g",{ opacity:0, style:"cursor:pointer" });
-            cross.appendChild(el("circle",{ cx:x+CELL, cy:y, r:7, fill:"#fff", stroke:"var(--err)" }));
-            var xt=el("text",{ x:x+CELL, y:y, "text-anchor":"middle","dominant-baseline":"central",
+            cross.appendChild(el("circle",{ cx:x+cellW, cy:y, r:7, fill:"#fff", stroke:"var(--err)" }));
+            var xt=el("text",{ x:x+cellW, y:y, "text-anchor":"middle","dominant-baseline":"central",
               "font-size":9, fill:"var(--err)" });
             xt.textContent="✕"; cross.appendChild(xt);
             cross.addEventListener("click", function(e){ e.stopPropagation(); deleteItem(ci,it); });
@@ -410,10 +452,11 @@ function init(){
             cellG.appendChild(cross);
             attachMove(rect, ci, rr, it);
             if (isSel && !isSeat(it) && !isFixedSize(it)){
-              var handle=el("rect",{ x:x+CELL-6, y:y+cellH-6, width:12, height:12, rx:3,
-                fill:"var(--sel)", stroke:"#fff","stroke-width":1.5, style:"cursor:ns-resize" });
+              var handle=el("rect",{ x:x+cellW-6, y:y+cellH-6, width:12, height:12, rx:3,
+                fill:"var(--sel)", stroke:"#fff","stroke-width":1.5,
+                style:"cursor:"+(canSpanCols(it) ? "nwse-resize" : "ns-resize") });
               handle.addEventListener("click", function(e){ e.stopPropagation(); });
-              attachResize(handle, it);
+              attachResize(handle, ci, it);
               cellG.appendChild(handle);
             }
           }
@@ -445,11 +488,14 @@ function init(){
             if (ghost) ghost.remove();
             var box=svg.getBoundingClientRect();
             var hit=cellFromPoint(ev.clientX-box.left, ev.clientY-box.top, d);
-            if (hit && !(hit.ci===ci && hit.r===r) && !itemAt(hit.ci,hit.r)){
+            var msp=itemSpan(it);
+            if (hit && !(hit.ci===ci && hit.r===r)
+                && fits(hit.ci, hit.r, Math.min(msp.rows, d.rows-hit.r+1),
+                        Math.min(msp.cols, d.columns.length-hit.ci), it)){
               var oc=d.columns[ci], idx=oc.items.indexOf(it);
               if (idx>-1) oc.items.splice(idx,1);
               it.row=hit.r;
-              clampSpanToFit(it, d.rows);
+              clampSpanToFit(it, d.rows, hit.ci, d.columns.length);
               var nc=d.columns[hit.ci];
               nc.items=nc.items||[]; nc.items.push(it);
               bstate.sel={ ci:hit.ci, item:it };
@@ -461,15 +507,22 @@ function init(){
         document.addEventListener("pointerup",up);
       });
     }
-    function attachResize(handle, it){
+    /* drags rows, and columns too for items that may be wide (D48); a drag past
+       another item stops at the largest size that still fits */
+    function attachResize(handle, ci, it){
       handle.addEventListener("pointerdown", function(e){
         e.preventDefault(); e.stopPropagation();
-        var sy=e.clientY, start=itemSpan(it).rows, row=it.row||1;
-        var maxSpan=d.rows-row+1;
+        var sx=e.clientX, sy=e.clientY, start=itemSpan(it), row=it.row||1;
+        var wide=canSpanCols(it);
         function move(ev){
-          var dr=Math.round((ev.clientY-sy)/(CELL+RGAP));
-          var target=Math.max(1, Math.min(maxSpan, start+dr));
-          if (target===1) delete it.span; else it.span={rows:target};
+          var rows=Math.max(1, Math.min(d.rows-row+1, start.rows+Math.round((ev.clientY-sy)/(CELL+RGAP))));
+          var cols=!wide ? 1 : Math.max(1, Math.min(d.columns.length-ci,
+            start.cols+Math.round((ev.clientX-sx)/(CELL+8))));
+          while (cols>1 && !fits(ci,row,rows,cols,it)) cols--;
+          while (rows>1 && !fits(ci,row,rows,cols,it)) rows--;
+          var now=itemSpan(it);
+          if ((rows===now.rows && cols===now.cols) || !fits(ci,row,rows,cols,it)) return;
+          setSpan(it, rows, cols);
           drawBuilder();
         }
         function up(){ document.removeEventListener("pointermove",move);
@@ -491,8 +544,9 @@ function init(){
         var target=Math.max(1, start+Math.round((ev.clientX-sx)/(CELL+8)));
         while (d.columns.length<target) d.columns.push(Col());
         while (d.columns.length>target && d.columns.length>1){
-          var last=d.columns[d.columns.length-1];
-          if ((last.items||[]).length) break;
+          var last=d.columns[d.columns.length-1], held=false;
+          eachCovering(d, d.columns.length-1, function(){ held=true; });
+          if ((last.items||[]).length || held) break;
           d.columns.pop();
         }
         if (d.columns.length!==applied){ applied=d.columns.length; drawBuilder(); }
@@ -551,12 +605,11 @@ function init(){
     drawProp();
   }
 
-  function clampSpanToFit(it, deckRows){
-    var maxSpan=Math.max(1, deckRows-(it.row||1)+1);
-    var current=itemSpan(it).rows;
-    if (current>maxSpan){
-      if (maxSpan===1) delete it.span; else it.span={ rows:maxSpan };
-    }
+  function clampSpanToFit(it, deckRows, ci, deckCols){
+    var sp=itemSpan(it);
+    var rows=Math.min(sp.rows, Math.max(1, deckRows-(it.row||1)+1));
+    var cols=ci==null ? sp.cols : Math.min(sp.cols, Math.max(1, deckCols-ci));
+    if (rows!==sp.rows || cols!==sp.cols) setSpan(it, rows, cols);
   }
 
   function cellClick(ci,r){
@@ -653,10 +706,22 @@ function init(){
       sp.type="number"; sp.min="1"; sp.max="10"; sp.value=itemSpan(it).rows;
       sp.addEventListener("change", function(){
         var v=Math.max(1, parseInt(sp.value,10)||1);
-        if (v===1) delete it.span; else it.span={rows:v};
+        setSpan(it, v, itemSpan(it).cols);
         drawBuilder();
       });
       field("row span", sp);
+    }
+    if (canSpanCols(it)){
+      var cs=document.createElement("input");
+      cs.type="number"; cs.min="1"; cs.max="10"; cs.value=itemSpan(it).cols;
+      cs.addEventListener("change", function(){
+        var cur=itemSpan(it), v=Math.max(1, parseInt(cs.value,10)||1);
+        v=Math.min(v, deck().columns.length-bstate.sel.ci);
+        if (fits(bstate.sel.ci, it.row||1, cur.rows, v, it)) setSpan(it, cur.rows, v);
+        else toast("Those columns aren't free");
+        drawBuilder();
+      });
+      field("col span", cs);
     }
     if (!isSeat(it) && !isFixedSize(it)){
       var h=document.createElement("div"); h.className="hint";

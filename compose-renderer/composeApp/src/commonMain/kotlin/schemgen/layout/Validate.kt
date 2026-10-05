@@ -41,6 +41,7 @@ fun validate(scheme: Scheme): List<Message> {
         val seen = mutableSetOf<String>()
         val cells = mutableSetOf<String>()
         val maxRow = deck.rows.coerceAtLeast(1)
+        val maxCol = deck.columns.size
 
         deck.columns.forEachIndexed { ci, col ->
             col.items.forEach { item: Item ->
@@ -52,10 +53,23 @@ fun validate(scheme: Scheme): List<Message> {
                         "col $ci: item at row $row spans $spanRows rows, past rows=$maxRow."
                     )
                 }
-                for (r in row until row + spanRows) {
-                    val key = "$ci:$r"
-                    if (!cells.add(key)) {
-                        msgs += Message(Level.ERROR, "col $ci row $r: two items in one cell.")
+                val spanCols = spanCols(item)
+                if (ci + spanCols > maxCol) {
+                    msgs += Message(
+                        Level.ERROR,
+                        "col $ci: item at row $row spans $spanCols columns, past the last column."
+                    )
+                }
+                val oneCell = item is StructuralItem && item.type in Vocabulary.ONE_CELL_TYPES
+                if (item.span.cols != 1 && !canSpanCols(item) && !oneCell) {
+                    val what = if (item is SeatItem) "seat ${item.seat}" else (item as StructuralItem).type
+                    msgs += Message(Level.WARN, "col $ci: $what is always one column wide — span.cols ignored.")
+                }
+                for (c in ci until minOf(ci + spanCols, maxCol)) {
+                    for (r in row until row + spanRows) {
+                        if (!cells.add("$c:$r")) {
+                            msgs += Message(Level.ERROR, "col $c row $r: two items in one cell.")
+                        }
                     }
                 }
 
