@@ -1,11 +1,8 @@
 {
   "key": "PLZ-54",
   "rev": 1,
-  "class": "platskart",
-  "hull": "plain",
   "decks": [
     {
-      "id": "main",
       "rows": 4,
       "columns": [
         {

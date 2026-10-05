@@ -1,11 +1,8 @@
 {
   "key": "HALFTBL-20",
   "rev": 1,
-  "class": "seated",
-  "hull": "plain",
   "decks": [
     {
-      "id": "main",
       "rows": 3,
       "columns": [
         {

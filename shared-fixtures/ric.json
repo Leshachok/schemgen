@@ -1,11 +1,8 @@
 {
   "key": "RIC-30",
   "rev": 1,
-  "class": "ric",
-  "hull": "plain",
   "decks": [
     {
-      "id": "main",
       "rows": 4,
       "columns": [
         {

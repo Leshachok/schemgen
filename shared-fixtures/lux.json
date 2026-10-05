@@ -1,11 +1,8 @@
 {
   "key": "LUX-18",
   "rev": 1,
-  "class": "lux",
-  "hull": "plain",
   "decks": [
     {
-      "id": "main",
       "rows": 2,
       "columns": [
         {

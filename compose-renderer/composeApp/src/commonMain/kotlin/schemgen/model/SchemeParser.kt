@@ -21,8 +21,6 @@ import kotlinx.serialization.json.jsonPrimitive
  * kotlinx.serialization's polymorphic/@Serializable machinery, because the JSON
  * has no discriminator field - matching the JS reference implementation's own
  * dynamic dispatch is more important than idiomatic serialization here.
- *
- * NOT YET VERIFIED AGAINST A REAL COMPILE - see compose-renderer/README.md.
  */
 object SchemeParser {
 
@@ -33,8 +31,6 @@ object SchemeParser {
         return Scheme(
             key = root["key"]?.jsonPrimitive?.contentOrNull,
             rev = root["rev"]?.jsonPrimitive?.intOrNull,
-            wagonClass = root["class"]?.jsonPrimitive?.contentOrNull,
-            hull = root["hull"]?.jsonPrimitive?.contentOrNull,
             decks = (root["decks"] as? JsonArray)?.map(::parseDeck) ?: emptyList()
         )
     }
@@ -42,7 +38,7 @@ object SchemeParser {
     private fun parseDeck(el: JsonElement): Deck {
         val o = el.jsonObject
         return Deck(
-            id = o["id"]?.jsonPrimitive?.contentOrNull ?: "main",
+            level = o["level"]?.jsonPrimitive?.contentOrNull,
             rows = o["rows"]?.jsonPrimitive?.intOrNull ?: 1,
             columns = (o["columns"] as? JsonArray)?.map(::parseColumn) ?: emptyList()
         )

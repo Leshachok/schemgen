@@ -11,9 +11,9 @@ function render(scheme, state){
     var L=layout(deck);
     var svg=el("svg",{ width:L.width, height:L.height,
       viewBox:"0 0 "+L.width+" "+L.height, role:"group",
-      "aria-label":"Wagon "+(scheme.key||"") });
+      "aria-label":"Scheme "+(scheme.key||"")+(deck.level?", "+deck.level+" deck":"") });
     svg.appendChild(el("rect",{ x:2,y:2,width:L.width-4,height:L.height-4,
-      rx: scheme.hull==="plain"?12:24, fill:"#fff", stroke:"var(--border-firm)" }));
+      rx:12, fill:"#fff", stroke:"var(--border-firm)" }));
     if (state.showGrid){
       for (var r=1;r<=(deck.rows||1);r++){
         var gy=rowY(deck,r)+T.seat/2;

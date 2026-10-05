@@ -1,11 +1,8 @@
 {
   "key": "TEST-BAD",
   "rev": 1,
-  "class": "seated",
-  "hull": "plain",
   "decks": [
     {
-      "id": "main",
       "rows": 2,
       "columns": [
         {

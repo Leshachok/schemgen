@@ -41,7 +41,7 @@ data class StructuralItem(
 data class Column(val items: List<Item> = emptyList())
 
 data class Deck(
-    val id: String,
+    val level: String? = null,   // lower | upper; required only when a scheme has several decks
     val rows: Int,
     val columns: List<Column> = emptyList()
     // Deliberately no `aisleAfterRow` - the aisle concept was removed from the format
@@ -51,8 +51,6 @@ data class Deck(
 data class Scheme(
     val key: String?,
     val rev: Int?,
-    val wagonClass: String?,   // JSON key is "class" - a Kotlin keyword, mapped in SchemeParser
-    val hull: String?,
     val decks: List<Deck> = emptyList()
 )
 
@@ -61,6 +59,7 @@ object Vocabulary {
     val KINDS = listOf("sit", "sleep", "luxury")
     val BERTHS = listOf("lower", "middle", "upper")
     val FACING = listOf("left", "right", "top", "bottom")
+    val LEVELS = listOf("lower", "upper")
     val FACILITIES = listOf(
         "wc", "wc_accessible", "luggage", "bicycle", "inclusive", "inclusive_marker",
         "electrical", "kid", "stairs_up", "stairs_down"

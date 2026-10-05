@@ -43,6 +43,12 @@ spec with rationale, not just notes.
   right until a golden-fixture test says otherwise (roadmap phase 2, not built yet).
 - **No aisle field.** Removed from the format entirely — a wagon with space just
   leaves a row unoccupied. Don't reintroduce `aisleAfterRow`.
+- **Removed fields stay removed** (D38, D39): `class`, `hull`, `artwork`, seat
+  `class`, facility `label`, `deck.id`. Decks are named by optional `level`
+  (`lower`/`upper`), required and unique when a scheme has several decks. No doors
+  on any vehicle (D40).
+- **`docs/developer-guide.md` is the field reference.** Any format change updates
+  it alongside the spec, `format.js`, the Kotlin model and the fixtures.
 - **Every non-seat item uses one field, `type`** (`wc`, `table`, `half_table`,
   `separator`, ...) — not per-kind boolean flags. This was a real inconsistency
   that got fixed once; don't reintroduce `table: true` style shapes.

@@ -99,8 +99,8 @@ for ci,c in enumerate(cards):
     seatcount=sum(1 for col in columns for it in col['items'] if 'seat' in it)
     if seatcount<8: continue
     out.append({'seats':seatcount,'rows':nrows,'cols':ncols,
-                'scheme':{'key':'AUTO-%d'%seatcount,'rev':1,'class':'seated','hull':'plain',
-                          'decks':[{'id':'main','rows':nrows,'columns':columns}]}})
+                'scheme':{'key':'AUTO-%d'%seatcount,'rev':1,
+                          'decks':[{'rows':nrows,'columns':columns}]}})
 
 out.sort(key=lambda o:o['seats'])
 print('usable wagons converted:', len(out))

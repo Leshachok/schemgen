@@ -6,6 +6,7 @@
 var KINDS = ["sit","sleep","luxury"];
 var BERTHS = ["lower","middle","upper"];
 var FACING = ["left","right","top","bottom"];
+var LEVELS = ["lower","upper"];
 var FACILITIES = ["wc","wc_accessible","luggage","bicycle","inclusive","inclusive_marker",
                   "electrical","kid","stairs_up","stairs_down"];
 var STRUCTURAL_TYPES = ["table","half_table","separator"];
@@ -45,7 +46,16 @@ function validate(scheme){
   var msgs=[];
   if (!scheme || !Array.isArray(scheme.decks) || !scheme.decks.length)
     return [{level:"e", text:"No decks in scheme."}];
-  scheme.decks.forEach(function(deck){
+  var multi=scheme.decks.length>1, levelsSeen={};
+  scheme.decks.forEach(function(deck, di){
+    if (deck.level!=null && LEVELS.indexOf(deck.level)===-1)
+      msgs.push({level:"w", text:"deck "+di+": unknown level \""+deck.level+"\"."});
+    if (multi && deck.level==null)
+      msgs.push({level:"e", text:"deck "+di+": level is required when a scheme has several decks."});
+    if (deck.level!=null){
+      if (levelsSeen[deck.level]) msgs.push({level:"e", text:"two decks with level \""+deck.level+"\"."});
+      levelsSeen[deck.level]=1;
+    }
     var seen={}, cells={}, maxRow=deck.rows||1;
     (deck.columns||[]).forEach(function(col,ci){
       (col.items||[]).forEach(function(it){

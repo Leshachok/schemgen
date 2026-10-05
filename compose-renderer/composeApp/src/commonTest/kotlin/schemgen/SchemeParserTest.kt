@@ -7,14 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/**
- * NOT YET RUN - this sandbox has no network access to fetch the Kotlin/Compose
- * toolchain, so these tests have never actually executed. They're written to the
- * same standard as the checks already run against the JS reference (see the
- * node-based smoke tests referenced in docs/wagon-scheme-format.md's history) -
- * please run `./gradlew allTests` locally and fix whatever this sandbox couldn't
- * catch before trusting this module.
- */
+/** Run with `./gradlew composeApp:wasmJsBrowserTest`. */
 class SchemeParserTest {
 
     @Test
@@ -43,5 +36,20 @@ class SchemeParserTest {
         val scheme = SchemeParser.parse(Fixtures.BROKEN)
         val errors = validate(scheme).filter { it.level == Level.ERROR }
         assertTrue(errors.isNotEmpty(), "the broken fixture should never validate clean")
+    }
+
+    @Test
+    fun severalDecksNeedDistinctLevels() {
+        val deck = """{"rows":1,"columns":[{"items":[{"seat":"1","kind":"sit","row":1}]}]}"""
+        fun errors(decks: String) = validate(SchemeParser.parse("""{"decks":[$decks]}"""))
+            .filter { it.level == Level.ERROR }
+
+        assertTrue(errors(deck).isEmpty(), "a single deck needs no level")
+        assertTrue(errors("$deck,$deck").isNotEmpty(), "two decks without level must fail")
+        val lower = deck.replaceFirst("{", """{"level":"lower",""")
+        val upper = deck.replaceFirst("{", """{"level":"upper",""")
+        assertTrue(errors("$lower,$upper").isEmpty(), "lower + upper is valid")
+        assertTrue(errors("$lower,$lower").isNotEmpty(), "duplicate levels must fail")
+        assertEquals("lower", SchemeParser.parse("""{"decks":[$lower]}""").decks[0].level)
     }
 }

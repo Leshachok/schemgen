@@ -111,6 +111,9 @@ Builder (own domain, stores nothing) ──JSON file / admin API──▶ Wagon 
 | D35 | **The builder is a separate, stateless authoring tool** | Hosted on its own domain. It configures a scheme and exports it — as a JSON file or through an API into an admin panel. It stores no schemes and is not a catalogue: the admin panels are the source of truth (§1.3). Editing an existing scheme means loading its JSON in, not looking it up. |
 | D36 | **Buses use the same format** | A bus is rows and columns of seats with an empty row for the aisle, optional facilities, sometimes two decks — everything the format already expresses. Bus availability has the same shape as train availability (§1.2). A second format would mean a second set of three renderers. Train-specific fields must therefore become optional, and bus-only elements are new `type` values, not a new structure — see §4.7. |
 | D37 | **This project is the format, the renderers and the builder — nothing else** | Availability, booking, partner integration and scheme storage all live elsewhere (§1.1). Keeping the renderer's input/output this narrow is what lets five consumer apps embed it without inheriting anyone's backend. |
+| D38 | **Removed: `class`, `hull`, `artwork`, seat `class`, facility `label`** | Format review, 2026-10-05: none of them changed what a passenger sees. `class` was display-only (D12) and the admin already knows a wagon type's class. `hull` was `"plain"` in every scheme ever written — `nose_left` / `nose_right` never occurred and no renderer drew a nose, so its only effect was a corner radius. `artwork`, per-seat fare `class` and facility `label` were specified but never implemented anywhere; fare class already belongs to the availability payload (§4.6). Both `class` and `hull` were also train-only, which D36 rules out for required fields. Unused fields in a published format are not free — every renderer team has to wonder whether to support them. |
+| D39 | **`deck.id` replaced by optional `deck.level`: `lower` \| `upper`** | `id` was `"main"` everywhere and nothing read it, yet a double-deck vehicle needs to tell the passenger which deck they are looking at, and `"main"` cannot. `level` is optional for a one-deck scheme and required — and unique — when a scheme has several decks. Škoda stays two schemes (D20); each now carries the level it shows (`SKD-D1` lower, `SKD-D2` upper, which its stairs confirm). |
+| D40 | **No doors on any vehicle** | D9 extends to buses. Wagon schemes show only the aisle, and buses follow the same convention. The driver's place is the one bus-only item (§4.7). |
 
 ### Rejected
 
@@ -163,7 +166,6 @@ difference. The renderer owns pixel size; the format does not encode it.
 | `inclusive` | Seat drawn as outline (white fill, navy border) instead of solid. Accompanied by a wheelchair marker item nearby. |
 | `luxury` | No indicator — the seat is simply 2 rows tall. |
 | aisle-side seat | No indicator — position relative to the empty aisle row is the only cue (D25). |
-| `facing` | Seat-back bracket around the seat. **Deferred**, see §4.2. |
 
 ### Facilities — two visual families
 
@@ -219,9 +221,8 @@ Any wagon class may contain inclusive seats: an inclusive compartment in sleepin
 | `kind` | `sit` \| `sleep` \| `luxury` | Closed enum, three values. |
 | `berth` | `lower` \| `middle` \| `upper` | Required when `kind = sleep`. **Always write explicitly** — see below. |
 | `inclusive` | bool, default `false` | Renders as an outlined seat. |
-| `facing` | `left` \| `right` \| `top` \| `bottom` | Only when `kind = sit`. **Deferred** — backend cannot supply it yet. |
+| `facing` | `left` \| `right` \| `top` \| `bottom` | Optional, only when `kind = sit`. Draws the seat-back bracket. |
 | `span` | `{rows, cols}`, default `{1,1}` | `luxury` observed at `{2,1}`. |
-| `class` | fare class id | Only when it varies *within* one wagon (Škoda double-decker does). |
 
 
 **Never let absence encode a value.** The picker draws nothing for a middle berth, but the
@@ -229,9 +230,9 @@ JSON must still say `"berth": "middle"`. If middle is an absent field, then a mi
 an unfinished scheme, and a writer predating berth support all look identical, and no
 validator can separate them. Render absence; store presence.
 
-**Keep `facing` in the schema despite the deferral.** Adding an optional field to a live
-format is free; retrofitting one into 400 immutable published revisions is not. Populate it
-when the backend can.
+**`facing` is optional.** It was once marked deferred because the backend could not supply
+it; in practice the builder writes it on every `sit` seat and both renderers draw it. A seat
+without it simply has no bracket.
 
 **`byAisle` was removed (D25).** It duplicated information already carried by the seat's
 `row` relative to the empty aisle row — a side place is identifiable purely by position, so a
@@ -258,7 +259,6 @@ Confirmed list, with assets supplied. Not final — more may appear.
 |---|---|
 | `type` | one of the above, or unknown → inert placeholder |
 | `span` | `{rows, cols}` — required, these vary a lot (§3) |
-| `label` | optional short text override |
 
 ### 4.4 Structural
 
@@ -289,20 +289,22 @@ The **aisle is not a column, not an item and not a field** (D24) — it is a row
 placed on. `table`, `half_table` and `separator` are content items inside a column, not
 column types.
 
-### 4.5 Deck / wagon level
+### 4.5 Scheme and deck level
 
-| Field | Values | Notes |
-|---|---|---|
-| `key` | e.g. `П19` | Existing wagon-type key. Bus key space is open, §7. |
-| `rev` | int | Immutable once published. |
-| `class` | `kupe` \| `platskart` \| `lux` \| `ric` \| `seated` | **Informational only.** Drives no behaviour (D12). Train-specific — optional for buses, §4.7. |
-| `rows` | int | Per deck. |
-| `decks` | array | Double-deckers have 2. |
-| `hull` | `plain` \| `nose_left` \| `nose_right` | Covers the observed head-car taper. Train-specific, §4.7. |
-| `artwork` | optional URL | Decorative SVG behind the grid. Escape hatch only, see §6. |
+| Field | On | Values | Notes |
+|---|---|---|---|
+| `key` | scheme | e.g. `П19` | Vehicle-type key. Bus key space is open, §7. Renderers must not depend on it. |
+| `rev` | scheme | int | Immutable once published. Renderers must not depend on it. |
+| `decks` | scheme | array | Double-deckers have 2. |
+| `level` | deck | `lower` \| `upper` | Optional with one deck; required and unique with several (D39). |
+| `rows` | deck | int | Grid height. |
+| `columns` | deck | array | Left to right. |
 
 Not present, deliberately: compartment numbers (D11), gender/children flags (D13), seat
-counts (D12), doors (D9), aisle position (D24).
+counts (D12), doors (D9, D40), aisle position (D24), wagon class and hull shape (D38).
+
+Field-by-field reference, with defaults and what each value changes on screen:
+`docs/developer-guide.md`.
 
 ### 4.6 Runtime state — availability payload, NOT layout
 
@@ -333,23 +335,17 @@ What carries over unchanged: the grid, empty-row aisles, `decks` (double-deck co
 `luggage`, availability and reconciliation. A typical 2+2 coach is two seat columns, an empty
 row, two more seat columns.
 
-What is train-specific and must not be required for a bus:
+The two train-only top-level fields, `class` and `hull`, were removed (D38). What remains:
 
-- `class` — the enum is wagon classes. Either omitted for buses or widened; it is
-  informational either way.
-- `hull` — `nose_left` / `nose_right` describe a locomotive-end taper. A bus has a distinct
-  front and rear; whether that needs a hull value or is purely the renderer's business is
-  open.
 - `key` — wagon-type keys. Buses need their own key space, or a top-level discriminator
   (e.g. `vehicle: "train" | "bus"`) so a key cannot be read in the wrong namespace.
+- **Driver's place** — the one bus-only item, a new `type` value (D30). No icon exists yet;
+  it gets a stand-in, like `kid` and the stairs. Thanks to D6, older renderers draw an inert
+  placeholder for it.
+- **No doors** (D40).
 
-Likely bus-only items, as new `type` values (D30): `driver`, and probably `door` /
-`entrance` — for buses these orient the passenger in a way they do not in a wagon, so D9
-may not carry over. Thanks to D6, adding them later is safe: older renderers draw an inert
-placeholder.
-
-None of this is decided yet — see §7. Validate against two or three real bus layouts before
-choosing, the same way the grid model was validated against the wagon catalogue (§3).
+Still worth checking against two or three real bus layouts, the same way the grid model was
+validated against the wagon catalogue (§3).
 
 ---
 
@@ -359,11 +355,8 @@ choosing, the same way the grid model was validated against the wagon catalogue 
 {
   "key": "П19",
   "rev": 3,
-  "class": "platskart",
-  "hull": "plain",
   "decks": [
     {
-      "id": "main",
       "rows": 5,
       "columns": [
         { "items": [ {"seat": "5",  "kind": "sleep", "berth": "upper", "row": 1},
@@ -390,8 +383,9 @@ list was settled in favour of columns (D14).
   The 6px of drift in the design files is noise, not data.
 - **Never derive anything from a seat number.** No ordering, no berth level, no side
   detection, no validation (D10).
-- **`artwork` is an escape hatch, not a path.** The moment decorative SVG becomes the normal
-  way to draw a wagon, we are back to maintaining assets per wagon type.
+- **No decorative artwork in the format.** `artwork` was specified once as an escape hatch
+  and removed unused (D38). The moment decorative SVG becomes the normal way to draw a
+  vehicle, we are back to maintaining assets per vehicle type.
 - **Unknown enum value = inert grey placeholder, never a crash.** Write this into the
   conformance suite as a test, not just into the spec.
 - **Runtime state never enters the layout file.** If a field changes between two trains of
@@ -420,10 +414,8 @@ real authoring mistakes:
 3. **Is the facility list final?** Marked "close to complete but not final".
 4. **Web vs mobile layout behaviour.** Sizes differ (D33). Whether layout behaviour also
    differs — scroll direction, rotating the vehicle on narrow screens — is undecided.
-5. **Bus top level.** Separate key space vs a `vehicle` discriminator; what `class` and
-   `hull` mean for a bus (§4.7).
-6. **Bus-only items.** Are the driver and doors drawn on bus schemes? Needs real bus
-   layouts.
+5. **Bus top level.** Separate key space vs a `vehicle` discriminator (§4.7).
+6. **Driver's place.** Its size on the grid and whether it needs a `facing`. No icon yet.
 7. **Two admins, one builder.** The builder pushes to the wagon admin (Compose) and the bus
    admin (Vue/Nuxt). One shared import API, or one per admin? Owned by the admin teams.
 8. **Naming.** "Wagon scheme" is baked into the spec title, file names and code. Rename to
@@ -434,7 +426,7 @@ real authoring mistakes:
 
 | Question | Answer |
 |---|---|
-| Is direction drawn? | Yes — seat-back bracket. Deferred anyway (backend). |
+| Is direction drawn? | Yes — seat-back bracket, from the optional `facing`. |
 | What is the `23×2` bar? | Berth level. |
 | Does `luxury` have variants? | No — just large, 2 rows. |
 | Does `side` need a berth? | Yes, and `side` is not a kind at all (D8). `byAisle` was later removed too — position says it (D25). |
@@ -457,6 +449,9 @@ real authoring mistakes:
 | Does the builder store schemes? | No — admins are the source of truth (D35). |
 | Buses: own format? | No, same format (D36). Bus schemes are authored on UZ's side even for partner buses. |
 | Which apps show buses? | Sales iOS, sales Android, web sales; authored into the bus admin. |
+| Doors on buses? | No — no doors on any vehicle (D40). |
+| Wagon class, hull shape? | Removed from the format (D38). |
+| How is a double-deck vehicle's deck named? | `deck.level`, `lower` / `upper` (D39). |
 
 ---
 
@@ -567,8 +562,14 @@ cards in `uz_web__master_.svg` converted without manual work, covering seat coun
 to 70+. Seat *numbers* are sequential rather than real, because the SVG export outlines all
 text — recovering the real numbers needs the Figma REST API, which keeps layer names.
 
-Known gap: two supplied icons (`Group_31`, `Group_34`) arrived unlabelled and are read as
-`bicycle` and `inclusive`; `kid`, `stairs_up` and `stairs_down` are stand-ins pending assets.
+Known gaps:
+
+- Two supplied icons (`Group_31`, `Group_34`) arrived unlabelled and are read as `bicycle`
+  and `inclusive`; `kid`, `stairs_up` and `stairs_down` are stand-ins pending assets. The
+  `luggage` asset itself draws a face and a monitor — likely another mislabelled export (§7 Q1).
+- **The builder edits exactly one deck.** It cannot add a second deck or set `level`, so a
+  double-deck train or bus can only be written by hand in JSON today. The format, the
+  validator and both renderers already handle several decks.
 
 ## 11. Compose renderer verification status
 

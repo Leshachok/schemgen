@@ -59,12 +59,12 @@ fun SchemeView(scheme: Scheme) {
     Column(
         modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())
     ) {
-        scheme.decks.forEach { deck -> DeckCanvas(deck, scheme.hull) }
+        scheme.decks.forEach { deck -> DeckCanvas(deck) }
     }
 }
 
 @Composable
-private fun DeckCanvas(deck: Deck, hull: String?) {
+private fun DeckCanvas(deck: Deck) {
     val L = layout(deck)
     val textMeasurer = rememberTextMeasurer()
     Canvas(
@@ -72,20 +72,20 @@ private fun DeckCanvas(deck: Deck, hull: String?) {
             .padding(top = 8.dp)
             .size(width = L.width.dp, height = L.height.dp)
     ) {
-        // hull - filled background plus a border, matching render.js's single
+        // outline - filled background plus a border, matching render.js's single
         // rect with both fill and stroke (Compose needs two draw calls for that).
-        val hullRadius = if (hull == "plain") 12f else 24f
+        val outlineRadius = 12f
         drawRoundRect(
             color = Color.White,
             topLeft = Offset(2f, 2f),
             size = Size(L.width - 4f, L.height - 4f),
-            cornerRadius = CornerRadius(hullRadius)
+            cornerRadius = CornerRadius(outlineRadius)
         )
         drawRoundRect(
             color = BORDER,
             topLeft = Offset(2f, 2f),
             size = Size(L.width - 4f, L.height - 4f),
-            cornerRadius = CornerRadius(hullRadius),
+            cornerRadius = CornerRadius(outlineRadius),
             style = Stroke(width = 1f)
         )
 

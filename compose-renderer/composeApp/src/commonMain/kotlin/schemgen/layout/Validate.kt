@@ -20,7 +20,20 @@ fun validate(scheme: Scheme): List<Message> {
     if (scheme.decks.isEmpty()) return listOf(Message(Level.ERROR, "No decks in scheme."))
 
     var seatCount = 0
-    scheme.decks.forEach { deck ->
+    val multi = scheme.decks.size > 1
+    val levelsSeen = mutableSetOf<String>()
+    scheme.decks.forEachIndexed { di, deck ->
+        val lvl = deck.level
+        if (lvl != null && lvl !in Vocabulary.LEVELS) {
+            msgs += Message(Level.WARN, "deck $di: unknown level \"$lvl\".")
+        }
+        if (multi && lvl == null) {
+            msgs += Message(Level.ERROR, "deck $di: level is required when a scheme has several decks.")
+        }
+        if (lvl != null && !levelsSeen.add(lvl)) {
+            msgs += Message(Level.ERROR, "two decks with level \"$lvl\".")
+        }
+
         val seen = mutableSetOf<String>()
         val cells = mutableSetOf<String>()
         val maxRow = deck.rows.coerceAtLeast(1)

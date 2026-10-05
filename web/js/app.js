@@ -97,7 +97,7 @@ function init(){
     var s=pstate.scheme, deck=(s.decks||[])[0]||{};
     $("title").textContent=(s.key||"—")+" · rev "+(s.rev!=null?s.rev:"?");
     $("meta").innerHTML="<b>"+countSeats(s)+"</b> seats · <b>"+(deck.columns||[]).length
-      +"</b> columns · <b>"+(deck.rows||0)+"</b> rows · "+(s["class"]||"—");
+      +"</b> columns · <b>"+(deck.rows||0)+"</b> rows"+(deck.level?" · "+deck.level+" deck":"");
     $("stage").innerHTML="";
     try { $("stage").appendChild(render(s,pstate)); }
     catch(e){ $("stage").textContent="Render failed: "+e.message; }
@@ -148,8 +148,8 @@ function init(){
     return { label:FAC_LABEL[f], make:function(n,r){ return { type:f, row:r }; } };
   }));
 
-  var bstate={ scheme:{ key:"NEW-1", rev:1, "class":"seated", hull:"plain",
-      decks:[{ id:"main", rows:3, columns:[Col(),Col(),Col(),Col(),Col(),Col()] }] },
+  var bstate={ scheme:{ key:"NEW-1", rev:1,
+      decks:[{ rows:3, columns:[Col(),Col(),Col(),Col(),Col(),Col()] }] },
     tool:TOOLS[0], toolIndex:0, sel:null };
 
   function deck(){ return bstate.scheme.decks[0]; }

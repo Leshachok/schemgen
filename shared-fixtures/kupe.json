@@ -1,11 +1,8 @@
 {
   "key": "KUP-34",
   "rev": 1,
-  "class": "kupe",
-  "hull": "plain",
   "decks": [
     {
-      "id": "main",
       "rows": 3,
       "columns": [
         {
