@@ -9,6 +9,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -59,18 +61,24 @@ fun SchemeView(scheme: Scheme) {
     Column(
         modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())
     ) {
-        scheme.decks.forEach { deck -> DeckCanvas(deck) }
+        scheme.decks.forEach { deck -> DeckCanvas(deck, deckLabel(scheme, deck)) }
     }
 }
 
+/** Accessibility label, same wording as render.js: "Bus BUS-53, lower deck". */
+private fun deckLabel(scheme: Scheme, deck: Deck): String =
+    (if (scheme.vehicle == "bus") "Bus " else "Wagon ") + (scheme.key ?: "") +
+        (deck.level?.let { ", $it deck" } ?: "")
+
 @Composable
-private fun DeckCanvas(deck: Deck) {
+private fun DeckCanvas(deck: Deck, label: String) {
     val L = layout(deck)
     val textMeasurer = rememberTextMeasurer()
     Canvas(
         modifier = Modifier
             .padding(top = 8.dp)
             .size(width = L.width.dp, height = L.height.dp)
+            .semantics { contentDescription = label }
     ) {
         // outline - filled background plus a border, matching render.js's single
         // rect with both fill and stroke (Compose needs two draw calls for that).

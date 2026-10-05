@@ -51,7 +51,7 @@ field anywhere in the format.
 
 | Field | Type | Required | Default | What it changes |
 |---|---|---|---|---|
-| `vehicle` | `"train"` \| `"bus"` | no | `"train"` | Names the vehicle in the accessibility label ("Bus BUS-53"). Nothing else is drawn differently — a bus is the same grid of seats and items. An unknown value warns and is treated as `train`. |
+| `vehicle` | `"train"` \| `"bus"` | no | `"train"` | **Nothing visible.** Says what the file describes; the only rendered effect is the accessibility label ("Bus BUS-53" vs "Wagon BUS-53"). A bus is drawn by exactly the same rules as a wagon — its driver's place is the `driver` item, not this field. An unknown value warns and is treated as `train`. |
 | `key` | string | yes | — | Nothing visible. Identifies the vehicle type, e.g. `"KUP-34"`. Renderers may use it in an accessibility label but must not depend on it. |
 | `rev` | integer | yes | — | Nothing visible. Revision of this scheme; a published revision is never edited, a change publishes a new `rev`. |
 | `decks` | array of Deck | yes | — | One drawing per deck, stacked in array order. An empty or missing array is an error. |
