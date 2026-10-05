@@ -1,15 +1,30 @@
 # schemgen
 
-A platform-driven format for describing train wagon seat layouts, plus a browser
-prototype (catalogue, builder, cross-framework preview) and the first native
-renderer (Compose Multiplatform, web target).
+A platform-driven format for describing seat layouts of train wagons and buses,
+plus a browser prototype (builder, sample catalogue, cross-framework preview) and
+the first native renderer (Compose Multiplatform, web target).
 
 The problem this solves: hundreds of wagon types, each currently hand-drawn as
 per-platform assets (Android alone had 400-500 files). A new wagon type means a
 new app build and a store review on every platform. The fix is a small JSON
 format any platform can render natively, authored through a no-code builder
-instead of by hand. Read `docs/wagon-scheme-format.md` for the full design
-history, decisions, and rationale — this README is just a map of the repo.
+instead of by hand. Buses use the same format, for the combined bus + train
+ticket. Read `docs/wagon-scheme-format.md` for the full design history,
+decisions, and rationale — this README is just a map of the repo.
+
+## Renderers and consumers
+
+Three renderers, each published as its own library for other teams' apps:
+
+| Renderer | Consumers |
+|---|---|
+| Compose Multiplatform (Android, iOS, wasm) | Android sales app, conductor app, wagon admin |
+| SwiftUI | iOS sales app |
+| Web (TS core + Vue component) | web sales, bus admin |
+
+Only the Compose one exists so far. The builder is a separate, stateless tool:
+it exports scheme JSON to the admin panels, which store and publish schemes.
+See spec §1.3 and §9.
 
 ## Layout
 
@@ -20,7 +35,6 @@ compose-renderer/    Compose Multiplatform module, wasmJs target - NOT YET
                      COMPILED, see compose-renderer/README.md
 docs/                the format spec + decision log + roadmap
 shared-fixtures/     real scheme JSON, used to check every renderer agrees
-android/, ios/       placeholders for future native targets
 ```
 
 ## Quick start
