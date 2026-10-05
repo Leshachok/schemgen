@@ -28,9 +28,7 @@ fun rowY(row: Int): Float = T.PAD_Y + (row - 1) * T.ROW_PITCH
 fun isSeparator(item: Item): Boolean = item is StructuralItem && item.type == "separator"
 
 fun itemWidth(item: Item): Float {
-    if (isSeparator(item)) return T.SEP_W
-    val cols = item.span.cols
-    return cols * T.SEAT + (cols - 1) * T.COL_GAP
+    return if (isSeparator(item)) T.SEP_W else T.SEAT
 }
 
 fun colWidth(column: Column): Float {

@@ -16,11 +16,9 @@ var FAC_LABEL = { wc:"WC", wc_accessible:"WC+", luggage:"Baggage", bicycle:"Bicy
   stairs_up:"Up", stairs_down:"Down" };
 
 function rowY(deck,row){ return T.padY + (row-1)*T.rowPitch; }
-function itemSpan(it){ var s=it.span||{}; return { rows:s.rows||1, cols:s.cols||1 }; }
+function itemSpan(it){ var s=it.span||{}; return { rows:s.rows||1 }; }
 function itemWidth(it){
-  if (it.type==="separator") return T.sepW;
-  var c=itemSpan(it).cols;
-  return c*T.seat + (c-1)*T.colGap;
+  return it.type==="separator" ? T.sepW : T.seat;
 }
 function colWidth(col){
   var items=col.items||[];

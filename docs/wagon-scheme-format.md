@@ -114,6 +114,7 @@ Builder (own domain, stores nothing) ──JSON file / admin API──▶ Wagon 
 | D38 | **Removed: `class`, `hull`, `artwork`, seat `class`, facility `label`** | Format review, 2026-10-05: none of them changed what a passenger sees. `class` was display-only (D12) and the admin already knows a wagon type's class. `hull` was `"plain"` in every scheme ever written — `nose_left` / `nose_right` never occurred and no renderer drew a nose, so its only effect was a corner radius. `artwork`, per-seat fare `class` and facility `label` were specified but never implemented anywhere; fare class already belongs to the availability payload (§4.6). Both `class` and `hull` were also train-only, which D36 rules out for required fields. Unused fields in a published format are not free — every renderer team has to wonder whether to support them. |
 | D39 | **`deck.id` replaced by optional `deck.level`: `lower` \| `upper`** | `id` was `"main"` everywhere and nothing read it, yet a double-deck vehicle needs to tell the passenger which deck they are looking at, and `"main"` cannot. `level` is optional for a one-deck scheme and required — and unique — when a scheme has several decks. Škoda stays two schemes (D20); each now carries the level it shows (`SKD-D1` lower, `SKD-D2` upper, which its stairs confirm). |
 | D40 | **No doors on any vehicle** | D9 extends to buses. Wagon schemes show only the aisle, and buses follow the same convention. The driver's place is the one bus-only item (§4.7). |
+| D41 | **`span.cols` removed — every item is one column wide** | Implemented in layout but never set by any scheme, sample, import or builder action. Horizontal size is already expressed by columns; a second way to make an item wide would be a second source of truth for the same thing. If a wide item is ever needed, adding an optional field back is additive. |
 
 ### Rejected
 
@@ -222,7 +223,7 @@ Any wagon class may contain inclusive seats: an inclusive compartment in sleepin
 | `berth` | `lower` \| `middle` \| `upper` | Required when `kind = sleep`. **Always write explicitly** — see below. |
 | `inclusive` | bool, default `false` | Renders as an outlined seat. |
 | `facing` | `left` \| `right` \| `top` \| `bottom` | Optional, only when `kind = sit`. Draws the seat-back bracket. |
-| `span` | `{rows, cols}`, default `{1,1}` | `luxury` observed at `{2,1}`. |
+| `span` | `{rows}`, default `{1}` | `luxury` observed at `{rows: 2}`. No `cols` (D41). |
 
 
 **Never let absence encode a value.** The picker draws nothing for a middle berth, but the
@@ -258,7 +259,7 @@ Confirmed list, with assets supplied. Not final — more may appear.
 | Field | Values |
 |---|---|
 | `type` | one of the above, or unknown → inert placeholder |
-| `span` | `{rows, cols}` — required, these vary a lot (§3) |
+| `span` | `{rows}` — required, these vary a lot (§3) |
 
 ### 4.4 Structural
 
@@ -452,6 +453,8 @@ real authoring mistakes:
 | Doors on buses? | No — no doors on any vehicle (D40). |
 | Wagon class, hull shape? | Removed from the format (D38). |
 | How is a double-deck vehicle's deck named? | `deck.level`, `lower` / `upper` (D39). |
+| Wide items (`span.cols`)? | Removed (D41). |
+| `inclusive` vs `inclusive_marker`? | Both kept — two distinct facilities. |
 
 ---
 

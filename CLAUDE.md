@@ -43,8 +43,8 @@ spec with rationale, not just notes.
   right until a golden-fixture test says otherwise (roadmap phase 2, not built yet).
 - **No aisle field.** Removed from the format entirely — a wagon with space just
   leaves a row unoccupied. Don't reintroduce `aisleAfterRow`.
-- **Removed fields stay removed** (D38, D39): `class`, `hull`, `artwork`, seat
-  `class`, facility `label`, `deck.id`. Decks are named by optional `level`
+- **Removed fields stay removed** (D38, D39, D41): `class`, `hull`, `artwork`, seat
+  `class`, facility `label`, `deck.id`, `span.cols`. Decks are named by optional `level`
   (`lower`/`upper`), required and unique when a scheme has several decks. No doors
   on any vehicle (D40).
 - **`docs/developer-guide.md` is the field reference.** Any format change updates

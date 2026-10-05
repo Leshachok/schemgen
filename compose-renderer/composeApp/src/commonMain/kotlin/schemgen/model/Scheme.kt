@@ -8,7 +8,8 @@ package schemgen.model
  * the same. [SchemeParser] is what turns raw JSON into these types.
  */
 
-data class Span(val rows: Int = 1, val cols: Int = 1)
+/** Rows only - every item is exactly one column wide (D41). */
+data class Span(val rows: Int = 1)
 
 sealed interface Item {
     val row: Int

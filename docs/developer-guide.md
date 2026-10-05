@@ -87,9 +87,9 @@ apart by field presence, not by a discriminator:
 |---|---|---|---|---|
 | `row` | integer ≥ 1 | yes | `1` | Top row the item occupies. |
 | `span.rows` | integer ≥ 1 | no | `1` | How many rows the item covers, downward from `row`. A WC two rows tall is `"span": { "rows": 2 }`. |
-| `span.cols` | integer ≥ 1 | no | `1` | Makes the item that many seat-widths wide (and its column with it). No scheme has ever used it; under review for removal. |
 
-Two items may not share a cell, and `row + span.rows − 1` may not exceed the deck's `rows`.
+Every item is exactly one column wide; there is no `span.cols` (spec D41). Two items may not
+share a cell, and `row + span.rows − 1` may not exceed the deck's `rows`.
 
 #### Seat fields
 

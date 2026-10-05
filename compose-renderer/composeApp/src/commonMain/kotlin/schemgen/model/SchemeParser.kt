@@ -78,10 +78,7 @@ object SchemeParser {
     private fun parseSpan(el: JsonElement?): Span {
         if (el == null) return Span()
         val o = el.jsonObject
-        return Span(
-            rows = o["rows"]?.jsonPrimitive?.intOrNull ?: 1,
-            cols = o["cols"]?.jsonPrimitive?.intOrNull ?: 1
-        )
+        return Span(rows = o["rows"]?.jsonPrimitive?.intOrNull ?: 1)
     }
 
     /**
