@@ -42,10 +42,9 @@ import schemgen.model.StructuralItem
 import schemgen.model.Vocabulary
 
 /**
- * v1 scope: seat blocks, facility/table/half-table blocks, separators, all with
- * the JS reference's color roles. NOT yet ported: the seat-back bracket path,
- * berth bars, real facility icons (SVG asset parity is a later fixture-driven
- * pass) - see compose-renderer/README.md for what's deliberately deferred.
+ * Seat blocks (with seat-back bracket and berth bars), facility blocks with
+ * icons, tables, half-tables and separators, using the JS reference's color
+ * roles. Pixel parity with web/js/render.js is not yet fixture-verified.
  */
 
 private val NAVY = Color(0xFF213786)

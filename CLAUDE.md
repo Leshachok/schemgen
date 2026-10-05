@@ -48,9 +48,11 @@ spec with rationale, not just notes.
   that got fixed once; don't reintroduce `table: true` style shapes.
 - **Seat numbers are opaque strings.** No numbering convention exists — never
   derive logic (sorting, berth inference, validation) from a seat number.
-- **`compose-renderer/` has never been compiled.** Written without network access
-  to the Kotlin/Gradle toolchain. Treat it as a strong draft, not working code,
-  until someone runs `./gradlew wasmJsBrowserRun` and reports back.
+- **`compose-renderer/` builds and runs** (verified 2026-10-05, spec §11). The run
+  task is `wasmJsBrowserDevelopmentRun` — `wasmJsBrowserRun` no longer exists. Tests:
+  `composeApp:wasmJsBrowserTest`. For headless screenshots, Chrome needs
+  `--use-angle=swiftshader --enable-unsafe-swiftshader`, and host pages must be served
+  over http, not `file://`.
 
 ## Before changing web/js/*.js
 

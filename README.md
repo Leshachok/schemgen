@@ -31,8 +31,8 @@ See spec §1.3 and §9.
 ```
 web/                the reference implementation - open web/index.html directly,
                      no server or build step needed
-compose-renderer/    Compose Multiplatform module, wasmJs target - NOT YET
-                     COMPILED, see compose-renderer/README.md
+compose-renderer/    Compose Multiplatform module, wasmJs target - builds and
+                     runs, see compose-renderer/README.md
 docs/                the format spec + decision log + roadmap
 shared-fixtures/     real scheme JSON, used to check every renderer agrees
 ```
@@ -47,7 +47,7 @@ For the Compose Multiplatform preview specifically:
 
 ```
 cd compose-renderer
-./gradlew wasmJsBrowserRun    # starts a dev server, usually http://localhost:8080
+./gradlew wasmJsBrowserDevelopmentRun    # dev server on http://localhost:8080
 ```
 
 Then in the web app's **Preview** tab, select "Compose Multiplatform (Web)", Load
@@ -60,11 +60,10 @@ The web prototype is functional and has been exercised in a real browser
 (headless Chromium) after every change — see `docs/wagon-scheme-format.md` §10
 for what's been verified and how.
 
-The Compose module is real, complete Kotlin source but **has never been
-compiled** — it was written without network access to the Kotlin/Gradle/Compose
-toolchain. Treat it as a strong first draft. See
-`compose-renderer/README.md` and `docs/wagon-scheme-format.md` §11 before
-relying on it.
+The Compose module builds, its tests pass, and it renders schemes sent from a
+host page (verified 2026-10-05, see `docs/wagon-scheme-format.md` §11). Not yet
+checked: pixel parity with the web reference, and the Android/iOS targets, which
+aren't configured yet.
 
 ## Regenerating generated files
 

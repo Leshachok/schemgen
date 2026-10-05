@@ -2,48 +2,24 @@
 
 Compose Multiplatform module for schemgen. Web (`wasmJs`) target only for now —
 Android and iOS targets are commented scaffolding in `composeApp/build.gradle.kts`,
-meant to be uncommented in roadmap phase 3 (see `docs/wagon-scheme-format.md` §9).
+meant to be enabled in roadmap phase 5 (see `docs/wagon-scheme-format.md` §9).
 
-## ⚠️ Verification status
+## Verification status
 
-**This module has never been compiled.** It was written in a sandboxed environment
-with no network access, so nothing here has been built, run, or tested beyond
-static review against current (July 2026) Compose Multiplatform documentation.
-Before trusting any of it:
+Builds, tests pass, and renders schemes sent by postMessage — verified 2026-10-05,
+details in `docs/wagon-scheme-format.md` §11.
 
 ```
-./gradlew wasmJsBrowserRun
+./gradlew wasmJsBrowserDevelopmentRun          # dev server, http://localhost:8080
+./gradlew composeApp:wasmJsBrowserTest         # commonTest in headless Chrome
 ```
 
-...and fix whatever the compiler finds. Likely trouble spots, roughly in order of
-how much I'd bet on them:
+(`wasmJsBrowserRun`, the name used in older notes, no longer exists in current
+Kotlin.)
 
-1. **`@JsFun` postMessage interop** in `composeApp/src/wasmJsMain/kotlin/schemgen/main.kt`.
-   The pattern (`@JsFun("(cb) => {...}")` importing a JS closure as a Kotlin
-   callback) is current as of research done while writing this, but the exact
-   signature Kotlin/Wasm expects has shifted across versions before and I have no
-   way to confirm it compiles as written.
-2. **Gradle/plugin versions** in `gradle/libs.versions.toml` — Kotlin 2.4.10,
-   Compose Multiplatform 1.11.1 were current when checked, but by the time you
-   read this they may not be the latest, and Compose Multiplatform pins to a
-   specific Kotlin baseline that's worth double-checking.
-3. **Compose Multiplatform Material3 + Canvas API surface** used in
-   `SchemeCanvas.kt` — `drawRoundRect`, `CornerRadius`, `Stroke` etc. are stable
-   APIs I'm confident about, but I can't rule out a signature drift.
-
-## What's deliberately out of scope for v1
-
-The renderer (`composeApp/src/commonMain/kotlin/schemgen/render/SchemeCanvas.kt`)
-draws seat/facility/table/half-table/separator blocks with the right color roles,
-but does **not** yet port:
-
-- the seat-back bracket (facing indicator)
-- the berth bar (upper/lower indicator)
-- real facility icons (currently every facility renders as a plain block)
-
-These are real visual features in `web/js/render.js` — porting them now, before
-the layout math itself is fixture-verified against the JS reference, would mean
-debugging two things at once. Phase 4 in the roadmap picks this back up.
+Seat-back bracket, berth bars and real facility icons are implemented. Not yet
+verified: pixel parity with `web/js/render.js`, which needs the golden fixture
+suite (roadmap phase 2).
 
 ## Module map
 

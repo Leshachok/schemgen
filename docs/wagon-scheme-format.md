@@ -503,12 +503,9 @@ non-engineer can look at — a running preview, a report, a comparison — not j
 Rewritten 2026-10-05 for D31–D37; the previous version assumed one Compose renderer
 growing platform by platform, an undecided iOS stack, and train-only schemes.
 
-1. **Compose Multiplatform Web compiles (current)** — shared Kotlin model, parser, layout
-   math and validator, ported line-for-line from `format.js`. Renderer is intentionally
-   reduced scope (no seat-back bracket, no berth bars, no real icons — see
-   `compose-renderer/composeApp/src/commonMain/kotlin/schemgen/render/SchemeCanvas.kt`).
-   Exit criteria: `./gradlew wasmJsBrowserRun` compiles and renders a scheme sent from the
-   web app's Preview tab. Not verified yet — see §11.
+1. **Compose Multiplatform Web compiles — done 2026-10-05.** Shared Kotlin model, parser,
+   layout math and validator, ported line-for-line from `format.js`. Builds, tests pass,
+   and a scheme sent by postMessage renders — see §11.
 
 2. **Golden fixture parity** — extend `/shared-fixtures` with expected output per seat
    (`{seat: row, col, span, hit-box}`), and a test in each renderer checking its own
@@ -533,9 +530,9 @@ growing platform by platform, an undecided iOS stack, and train-only schemes.
    rule from §4.6; publish to Maven. Consumers: Android sales app (via `ComposeView`),
    conductor app (Android + iOS), wagon admin (wasm).
 
-6. **Visual fidelity in Compose** — seat-back bracket, berth bars, real icons, ported from
-   `render.js` once layout is fixture-verified. Kept separate so early feedback is about
-   structure, not pixel-matching.
+6. **Visual fidelity in Compose** — seat-back bracket, berth bars and real icons are
+   already ported from `render.js` (§11); what's left is checking them against the web
+   reference once layout is fixture-verified, and fixing whatever differs.
 
 7. **SwiftUI renderer** — for the iOS sales app. Port of `format.js` logic, same fixtures,
    same tokens, same theme shape; published as a Swift package.
@@ -575,26 +572,42 @@ Known gap: two supplied icons (`Group_31`, `Group_34`) arrived unlabelled and ar
 
 ## 11. Compose renderer verification status
 
-`compose-renderer/` is real, complete-as-written Kotlin source — but it has never been
-compiled. The environment that wrote it had no network access to fetch Kotlin/Gradle/
-Compose dependencies, so nothing in that module has been built, run, or tested beyond
-static review. Specifically unverified:
+**Verified 2026-10-05** (Kotlin 2.4.10, Compose Multiplatform 1.11.1, Gradle 9.6.1,
+JDK 26, macOS):
 
-- Whether the Gradle configuration (Kotlin 2.4.10, Compose Multiplatform 1.11.1,
-  `wasmJs { browser { ... } }`) is complete and correct as written.
-- The `@JsFun` postMessage interop in `main.kt` — the general pattern is current as of
-  research done while writing it, but has not been exercised against a real build.
-- Whether `commonTest` actually runs and passes on any target.
+- `./gradlew wasmJsBrowserDevelopmentExecutableDistribution` builds cleanly.
+- `./gradlew composeApp:wasmJsBrowserTest` runs the `commonTest` suite in headless Chrome:
+  3/3 pass (kupe and platskart parse with no structural errors; the broken fixture still
+  reports its errors).
+- `./gradlew wasmJsBrowserDevelopmentRun` serves the preview on `localhost:8080`. Standalone
+  it draws the inlined kupe sample; a `schemgen:scheme` postMessage from a parent page
+  replaces it — checked by sending `shared-fixtures/platskart.json` from a host page, which
+  rendered all 54 seats, berth bars, separators and facility icons.
 
-Before relying on this module for anything: run `./gradlew wasmJsBrowserRun` inside
-`compose-renderer/` and fix whatever the compiler finds. Treat everything in that
-directory as a strong first draft, not working code.
+Gotchas found on the way:
+
+- **The documented `wasmJsBrowserRun` no longer exists.** Current Kotlin splits it into
+  `wasmJsBrowserDevelopmentRun` and `wasmJsBrowserProductionRun`; the bare name fails as
+  ambiguous.
+- **Headless Chrome needs software WebGL** (`--use-angle=swiftshader
+  --enable-unsafe-swiftshader`) or the Skia canvas draws nothing. And a host page opened
+  from `file://` gets a blank cross-origin iframe in headless mode — serve it over http.
+  Both are test-harness issues, not renderer bugs.
+- `gradle.properties` sets `kotlin.native.cacheKind`, which Kotlin now reports as removed.
+  Harmless today; drop it when iOS targets are added.
+
+Still unverified: pixel parity with `web/js/render.js` (no fixture comparison exists —
+phase 2), and anything on Android or iOS targets, which aren't configured yet.
+
+The seat-back bracket, berth bars and real facility icons, previously listed as deferred
+(§9 phase 6), are already implemented in `SchemeCanvas.kt` / `Icons.kt`. What remains of
+phase 6 is confirming they match the web reference.
 
 ## 12. Next steps
 
 Immediate actions, in order. The longer view is §9.
 
-1. Run `./gradlew wasmJsBrowserRun` in `compose-renderer/` and record the outcome in §11.
+1. ~~Run the Compose build and record the outcome in §11~~ — done 2026-10-05.
 2. Pull one wagon per class through the Figma REST API (`GET /v1/files/{key}/nodes`) to
    recover layer names, and collect two or three real bus layouts. Together they feed the
    fixture suite and the bus format questions (§7 Q5–6).
