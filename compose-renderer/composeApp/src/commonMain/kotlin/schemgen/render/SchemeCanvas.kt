@@ -66,7 +66,7 @@ private val OFF = Color(0xFFEDEEF0)
 private val OFF_TEXT = Color(0xFF9AA0A6)
 private val MUTED = Color(0xFF6B7078)
 private val SELECTED = Color(0xFFEA580C)
-private val CHAIR_BACK = Color(0xFFB7BABC)
+private val CHAIR_BACK = Color(0xFF7E8386)
 /** Text is measured unscaled: the deck's DrawScope is already scaled by density. */
 private val UNSCALED = Density(1f)
 
