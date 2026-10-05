@@ -18,7 +18,7 @@ the paths drops that inheritance, so every shape without its own explicit
 `fill=` gets one added — otherwise it renders solid black.
 
 ```
-python3 extract_icons.py wc=WC.svg luggage=Baggage.svg wc_accessible=Toilet.svg
+python3 extract_icons.py toilet=WC.svg baggage=Baggage.svg invalid_toilet=Toilet.svg
 ```
 
 Writes `icons.json` next to the script. You then need to fold that into

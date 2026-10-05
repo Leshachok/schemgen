@@ -92,6 +92,9 @@ fun validate(scheme: Scheme): List<Message> {
                         } else if (type !in Vocabulary.KNOWN_TYPES) {
                             msgs += Message(Level.WARN, "unknown type \"$type\" — drawn as placeholder.")
                         }
+                        if (type == "chair" && item.facing != null && item.facing !in Vocabulary.FACING) {
+                            msgs += Message(Level.WARN, "col $ci: chair has unknown facing \"${item.facing}\".")
+                        }
                         if (type in Vocabulary.ONE_CELL_TYPES && item.hasExplicitSpan) {
                             msgs += Message(Level.WARN, "col $ci: $type is always one cell — span ignored.")
                         }

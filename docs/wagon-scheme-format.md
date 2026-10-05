@@ -120,6 +120,7 @@ Builder (own domain, stores nothing) ──JSON file / admin API──▶ Wagon 
 | D44 | **Builder edits vehicle and decks: at most two decks, levels kept valid by construction** | Two decks is the most `level` can name. Adding a second deck fills in `lower` / `upper` on both, and picking the other deck's level swaps the two, so the builder never produces a duplicate or missing level (D39) — the validator still catches hand-edited JSON. Removing a deck that has items takes a second click, the same no-silent-data-loss rule as D27. The builder writes `vehicle` explicitly, including `"train"`, so an exported file always says what it is. |
 | D45 | **Two interaction modes, a renderer input: `view` and `select`** | Different consumers need different behaviour — an admin preview shows a scheme, a sales app sells seats from it. `view`: every known seat looks available, nothing is tappable, no availability needed. `select`: the app passes the available seat numbers; those are blue and tappable, every other seat grey and inert (the §4.6 rule). A mode is runtime input like availability (D4), never a scheme field. A highlight in `view` mode and separate `occupied` / `held` looks are deliberately left out until a consumer needs them — both are additive. |
 | D46 | **The app owns the selection; the renderer only reports taps** | The renderer calls back with the tapped seat number and never changes `selected` itself; the app updates its set and passes it back in. Selection rules — a maximum, one seat per passenger, deselect-on-tap — differ per product and belong to the app. It also keeps every renderer stateless and identical: same inputs, same picture. |
+| D47 | **Facility names and art come from the Android sales app** | The sales apps already ship every facility a real wagon has, drawn from one design system (iOS uses the same glyphs as PNGs). Their names are the Android drawable names with the `ic_` prefix, the class prefix (`ps_`, `ks_`) and the size suffix dropped: `wc`→`toilet`, `wc_accessible`→`invalid_toilet`, `luggage`→`baggage`, `bicycle`→`bike`, `inclusive`→`handicapped`, `electrical`→`shield` (`ic_is_shield`). Two are adjusted where the literal name would mislead: the standalone marker is `handicapped_wheelchair`, not `invalid` (reads as "not valid" next to validator messages), and stairs are `steps_up` / `steps_down` (Android's down drawable is plain `ic_ps_steps`). New from the apps: `wardrobe`, `cafe`, `coffee_machine`, and `chair` — a bar stool, one cell, with an optional `facing` that turns its back arc like a seat back (default `right`), drawn without a facility block. `baggage`, `steps_up` and `steps_down` replace mislabelled or stand-in art. `kid` and `driver` have no counterpart in either app and keep their names. A clean rename, no aliases: nothing is published yet, and old names now render as the unknown-type placeholder. |
 
 ### Rejected
 
@@ -246,20 +247,25 @@ separate flag added a second, potentially-inconsistent source of truth for the s
 
 ### 4.3 Facility (non-selectable)
 
-Confirmed list, with assets supplied. Not final — more may appear.
+Names and art from the Android sales app's drawables (D47), which is every facility the
+production sales apps draw today.
 
 | Type | Size behaviour |
 |---|---|
-| `wc` | 2 rows × 1 column |
-| `wc_accessible` | inclusive toilet |
+| `toilet` | 2 rows × 1 column |
+| `invalid_toilet` | accessible toilet |
 | `table` | 1, 2 or 3 rows |
-| `luggage` | variable height |
-| `bicycle` | same sizing as luggage |
-| `kid` | variable height |
-| `inclusive` | placed in a compartment containing inclusive seats |
-| `inclusive_marker` | standalone wheelchair marker |
-| `electrical` | electricity warning |
-| `stairs_up` / `stairs_down` | Škoda only |
+| `baggage` | variable height |
+| `bike` | same sizing as baggage |
+| `kid` | variable height; stand-in icon, no app has one |
+| `handicapped` | placed in a compartment containing inclusive seats |
+| `handicapped_wheelchair` | standalone wheelchair marker |
+| `shield` | electrical cabinet warning |
+| `steps_up` / `steps_down` | Škoda only |
+| `wardrobe` | coat hanger / wardrobe |
+| `cafe` | buffet, bar or café area |
+| `coffee_machine` | vending / coffee machine |
+| `chair` | bar stool, always one cell, optional `facing`, no block (D47) |
 | `driver` | Bus driver's place. Always one cell (D43); stand-in icon |
 
 | Field | Values |
@@ -353,8 +359,8 @@ the consuming app's job, not the renderer's (D37).
 ### 4.7 Buses
 
 What carries over unchanged: the grid, empty-row aisles, `decks` (double-deck coaches),
-`stairs_up` / `stairs_down`, `sit` and `sleep` seats (sleeper coaches), `wc`, `table`,
-`luggage`, availability and reconciliation. A typical 2+2 coach is two seat columns, an empty
+`steps_up` / `steps_down`, `sit` and `sleep` seats (sleeper coaches), `toilet`, `table`,
+`baggage`, availability and reconciliation. A typical 2+2 coach is two seat columns, an empty
 row, two more seat columns.
 
 The two train-only top-level fields, `class` and `hull`, were removed (D38). What a bus adds:
@@ -387,7 +393,7 @@ same way the grid model was validated against the wagon catalogue (§3).
         { "items": [ {"seat": "7",  "kind": "sleep", "berth": "upper", "row": 1},
                      {"seat": "8",  "kind": "sleep", "berth": "lower", "row": 2},
                      {"type": "separator", "row": 4, "span": {"rows": 2}} ] },
-        { "items": [ {"type": "wc", "row": 1, "span": {"rows": 5}} ] }
+        { "items": [ {"type": "toilet", "row": 1, "span": {"rows": 5}} ] }
       ]
     }
   ]
@@ -430,10 +436,14 @@ real authoring mistakes:
 
 ## 7. Open questions
 
-1. **Two supplied icons are unlabelled** in the export (`Group_31`, `Group_34`). Read as
-   `bicycle` and `inclusive` in the prototype — needs confirming, they may be swapped.
-2. **No assets yet** for `kid`, `stairs_up`, `stairs_down` — drawn as stand-ins.
-3. **Is the facility list final?** Marked "close to complete but not final".
+1. ~~Two supplied icons are unlabelled~~ — settled: checked against the sales apps' own
+   art, `Group_31` is the bike and `Group_34` the wheelchair (`handicapped`) (D47).
+2. **No assets yet** for `kid` and `driver` — neither sales app has them; still stand-ins.
+   The stairs now use the apps' art (D47).
+3. **Is the facility list final?** It now covers everything both sales apps draw (D47).
+   The Android app's empty "shelf" blocks are tables (`table` / `half_table`); iOS's
+   connection and spacer cells are empty space. iOS's train-head cell ("Голова потягу")
+   has no equivalent yet.
 4. **Web vs mobile layout behaviour.** Sizes differ (D33). Whether layout behaviour also
    differs — scroll direction, rotating the vehicle on narrow screens — is undecided.
 5. ~~Bus top level~~ — settled: `vehicle` field (D42).
@@ -477,7 +487,8 @@ real authoring mistakes:
 | Wide items (`span.cols`)? | Removed (D41). |
 | Bus vs train? | Top-level `vehicle`, default `train` (D42). |
 | Driver's place? | `driver` item, one cell, no `facing` (D43). |
-| `inclusive` vs `inclusive_marker`? | Both kept — two distinct facilities. |
+| `inclusive` vs `inclusive_marker`? | Both kept — now `handicapped` and `handicapped_wheelchair` (D47). |
+| Facility names? | The Android sales app's drawable names (D47). |
 
 ---
 
@@ -590,9 +601,9 @@ text — recovering the real numbers needs the Figma REST API, which keeps layer
 
 Known gaps:
 
-- Two supplied icons (`Group_31`, `Group_34`) arrived unlabelled and are read as `bicycle`
-  and `inclusive`; `kid`, `stairs_up` and `stairs_down` are stand-ins pending assets. The
-  `luggage` asset itself draws a face and a monitor — likely another mislabelled export (§7 Q1).
+- Facility art now comes from the Android sales app (D47). The old Figma `luggage` export,
+  which drew a face and a monitor, is replaced by the app's briefcase; `kid` and `driver`
+  are still stand-ins.
 - The live preview stacks a double-deck scheme's decks but doesn't caption them with their
   level yet — only the deck tabs above the canvas and the accessibility label say which is
   which.

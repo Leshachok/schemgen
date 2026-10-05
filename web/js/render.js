@@ -31,6 +31,7 @@ function render(scheme, state){
         else if (it.type==="separator") drawSeparator(svg, x, y, w, h);
         else if (it.type==="half_table") drawHalfTable(svg, x, y, w, h, it.facing);
         else if (it.type==="table") drawBlock(svg, x, y, w, h);
+        else if (it.type==="chair") drawChair(svg, x, y, w, h, it.facing);
         else if (it.type) drawFacility(svg, it.type, x, y, w, h);
         else drawBlock(svg, x, y, w, h, "?");
       });
@@ -71,6 +72,17 @@ function drawFacility(svg,type,x,y,w,h){
   var bw=ic.box?ic.box[2]:ic.w, bh=ic.box?ic.box[3]:ic.h;
   var pad=3, s=Math.min((w-pad*2)/bw, (h-pad*2)/bh);
   var g=el("g",{ transform:"translate("+(x+(w-bw*s)/2-bx*s)+","+(y+(h-bh*s)/2-by*s)+") scale("+s+")" });
+  g.innerHTML = ic.svg;
+  svg.appendChild(g);
+}
+
+/* A free-standing stool - no facility block. The icon's back arc is on the left
+   (facing right at angle 0), so it turns by BACK_ANGLE like a seat back (D47). */
+function drawChair(svg,x,y,w,h,facing){
+  var ic=ICONS.chair, f=FACING.indexOf(facing)!==-1 ? facing : CHAIR_DEFAULT_FACING;
+  var s=Math.min(w/ic.w, h/ic.h), cx=x+w/2, cy=y+h/2;
+  var g=el("g",{ transform:"rotate("+BACK_ANGLE[f]+" "+cx+" "+cy+") translate("
+    +(cx-ic.w*s/2)+","+(cy-ic.h*s/2)+") scale("+s+")" });
   g.innerHTML = ic.svg;
   svg.appendChild(g);
 }
@@ -128,6 +140,7 @@ function previewItem(it, size, stateOverride){
   else if (it.type==="separator") drawSeparator(svg, pad, pad, w, h);
   else if (it.type==="half_table") drawHalfTable(svg, pad, pad, w, h, it.facing);
   else if (it.type==="table") drawBlock(svg, pad, pad, w, h);
+  else if (it.type==="chair") drawChair(svg, pad, pad, w, h, it.facing);
   else if (it.type) drawFacility(svg, it.type, pad, pad, w, h);
   else drawBlock(svg, pad, pad, w, h, "?");
   return svg;
@@ -146,6 +159,7 @@ function describeItem(it){
   if (it.type==="separator") return "Separator";
   if (it.type==="table") return "Table";
   if (it.type==="half_table") return "Half-table · facing "+(it.facing||"?");
+  if (it.type==="chair") return "Chair · facing "+(it.facing||CHAIR_DEFAULT_FACING);
   if (it.type) return FAC_LABEL[it.type] || ("Unknown type \""+it.type+"\"");
   return "Item with no type";
 }

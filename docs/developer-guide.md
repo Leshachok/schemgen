@@ -18,7 +18,7 @@ the way it does — is folded up at the bottom under **Design rationale & roadma
     {
       "rows": 2,
       "columns": [
-        { "items": [ { "type": "wc", "row": 1, "span": { "rows": 2 } } ] },
+        { "items": [ { "type": "toilet", "row": 1, "span": { "rows": 2 } } ] },
         { "items": [
             { "seat": "1", "kind": "sleep", "berth": "lower", "row": 1 },
             { "seat": "2", "kind": "sleep", "berth": "upper", "row": 2 }
@@ -100,7 +100,7 @@ share a cell, and `row + span.rows − 1` may not exceed the deck's `rows`.
 | `kind` | `"sit"` \| `"sleep"` \| `"luxury"` | yes | — | How the seat is drawn — see the table below. Any other value: grey placeholder with "?", not selectable. |
 | `berth` | `"lower"` \| `"middle"` \| `"upper"` | for `sleep` only | — | Berth bar: above the seat for `upper`, below for `lower`, none for `middle`. Required on every `sleep` seat — even `middle`, which draws nothing — and an error on any other kind. |
 | `facing` | `"left"` \| `"right"` \| `"top"` \| `"bottom"` | no, `sit` only | none | Seat-back bracket: a half-open outline on the side the back is against, at 50% opacity. Omitted → no bracket. |
-| `inclusive` | boolean | no | `false` | Accessibility seat: drawn as an outline (white fill, navy border) instead of solid. Usually placed next to an `inclusive` facility. |
+| `inclusive` | boolean | no | `false` | Accessibility seat: drawn as an outline (white fill, navy border) instead of solid. Usually placed next to a `handicapped` facility. |
 
 | `kind` | Drawn as | Typical span |
 |---|---|---|
@@ -116,12 +116,14 @@ Removed, do not write: `class` (fare class — that belongs to availability), `b
 |---|---|---|---|---|
 | `type` | string | yes | — | What the item is: `table`, `half_table`, `separator`, `driver`, or a facility (see **Facilities**). Missing or unknown → grey placeholder block. |
 | `facing` | `"top"` \| `"bottom"` | `half_table` only | `"top"` | Which half of the row the half-table occupies. |
+| `facing` | `"left"` \| `"right"` \| `"top"` \| `"bottom"` | `chair` only | `"right"` | Which way the stool faces — its back arc is on the opposite side, as with a seat. |
 
 | `type` | Drawn as | Sizing |
 |---|---|---|
 | `table` | Plain light block, no icon | Resizable: `span.rows` 1–3 |
 | `half_table` | Light block of half a row's height, in the top or bottom half | Fixed: one row, no `span` |
 | `driver` | Light block with a steering-wheel icon (stand-in until the real asset exists) | Fixed: exactly one cell; a `span` is ignored with a warning. No `facing` |
+| `chair` | Free-standing bar stool — a round seat with a back arc, no block behind it | Fixed: exactly one cell, like `driver`; turned by `facing` |
 | `separator` | Thin vertical line, slightly taller than the rows it covers; its column is narrow | `span.rows` = the rows it divides — it can stop short of the aisle |
 | facility | Light block with the facility icon centred and scaled to fit | `span.rows` as needed |
 
@@ -159,16 +161,24 @@ block marked "?" — it just won't have artwork yet.
 
 | `type` | Meaning | Usual size |
 |---|---|---|
-| `wc` | Toilet | 2 rows |
-| `wc_accessible` | Accessible toilet | 2 rows |
-| `luggage` | Luggage space | variable |
-| `bicycle` | Bicycle space | variable |
+| `toilet` | Toilet | 2 rows |
+| `invalid_toilet` | Accessible toilet | 2 rows |
+| `baggage` | Luggage space | variable |
+| `bike` | Bicycle space | variable |
 | `kid` | Children's area | variable — icon is a stand-in |
-| `inclusive` | Wheelchair marker inside a compartment with inclusive seats | matches the compartment |
-| `inclusive_marker` | Standalone wheelchair marker | variable |
-| `electrical` | Electrical cabinet warning | variable |
-| `stairs_up` / `stairs_down` | Stairs to the other deck | variable — icons are stand-ins |
+| `handicapped` | Wheelchair marker inside a compartment with inclusive seats | matches the compartment |
+| `handicapped_wheelchair` | Standalone wheelchair marker | variable |
+| `shield` | Electrical cabinet warning | variable |
+| `steps_up` / `steps_down` | Stairs to the other deck | variable |
+| `wardrobe` | Wardrobe / coat hanger | variable |
+| `cafe` | Buffet, bar or café area | variable |
+| `coffee_machine` | Vending or coffee machine | variable |
+| `chair` | Bar stool, see **Typed item fields** | one cell, always |
 | `driver` | Bus driver's place | one cell, always — icon is a stand-in |
+
+Names follow the Android sales app's drawables (spec D47). Renamed, do not write: `wc`,
+`wc_accessible`, `luggage`, `bicycle`, `inclusive` (as a `type`), `inclusive_marker`,
+`electrical`, `stairs_up`, `stairs_down` — they now render as the unknown-type placeholder.
 
 ## Validation
 

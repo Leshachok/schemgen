@@ -50,8 +50,8 @@ def classify_block(b):
     """map a grey block's shape onto a facility type - approximate, for sample data"""
     ar = b['h']/max(b['w'],1)
     if b['w']<=6 or b['h']<=6: return None            # hairline -> separator
-    if ar>2.2: return 'wc'
-    if ar>1.4: return 'luggage'
+    if ar>2.2: return 'toilet'
+    if ar>1.4: return 'baggage'
     return 'table'
 
 out=[]

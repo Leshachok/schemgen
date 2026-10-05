@@ -8,15 +8,20 @@ var BERTHS = ["lower","middle","upper"];
 var FACING = ["left","right","top","bottom"];
 var LEVELS = ["lower","upper"];
 var VEHICLES = ["train","bus"];
-var FACILITIES = ["wc","wc_accessible","luggage","bicycle","inclusive","inclusive_marker",
-                  "electrical","kid","stairs_up","stairs_down","driver"];
+/* facility names follow the Android sales app's drawables (D47) */
+var FACILITIES = ["toilet","invalid_toilet","baggage","bike","handicapped","handicapped_wheelchair",
+                  "shield","steps_up","steps_down","wardrobe","cafe","coffee_machine","chair",
+                  "kid","driver"];
 var STRUCTURAL_TYPES = ["table","half_table","separator"];
 var KNOWN_TYPES = FACILITIES.concat(STRUCTURAL_TYPES);
-var FAC_LABEL = { wc:"WC", wc_accessible:"WC+", luggage:"Baggage", bicycle:"Bicycle",
-  inclusive:"Inclusive", inclusive_marker:"Marker", electrical:"Electric", kid:"Kid",
-  stairs_up:"Up", stairs_down:"Down", driver:"Driver" };
+var FAC_LABEL = { toilet:"Toilet", invalid_toilet:"Toilet+", baggage:"Baggage", bike:"Bike",
+  handicapped:"Handicapped", handicapped_wheelchair:"Wheelchair", shield:"Shield",
+  steps_up:"Steps up", steps_down:"Steps down", wardrobe:"Wardrobe", cafe:"Cafe",
+  coffee_machine:"Coffee machine", chair:"Chair", kid:"Kid", driver:"Driver" };
 /* items that always occupy exactly one cell, whatever span says */
-var ONE_CELL_TYPES = ["driver"];
+var ONE_CELL_TYPES = ["driver","chair"];
+/* chair's facing when omitted - it rotates like a seat back, see BACK_ANGLE (D47) */
+var CHAIR_DEFAULT_FACING = "right";
 
 function rowY(deck,row){ return T.padY + (row-1)*T.rowPitch; }
 function itemSpan(it){
@@ -89,6 +94,8 @@ function validate(scheme){
           if (it.type==null) msgs.push({level:"w", text:"col "+ci+": item has no type — drawn as placeholder."});
           else if (KNOWN_TYPES.indexOf(it.type)===-1)
             msgs.push({level:"w", text:"unknown type \""+it.type+"\" — drawn as placeholder."});
+          if (it.type==="chair" && it.facing!=null && FACING.indexOf(it.facing)===-1)
+            msgs.push({level:"w", text:"col "+ci+": chair has unknown facing \""+it.facing+"\"."});
           if (ONE_CELL_TYPES.indexOf(it.type)!==-1 && it.span!=null)
             msgs.push({level:"w", text:"col "+ci+": "+it.type+" is always one cell — span ignored."});
         }

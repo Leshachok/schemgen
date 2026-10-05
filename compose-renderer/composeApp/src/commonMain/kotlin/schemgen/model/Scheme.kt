@@ -64,12 +64,16 @@ object Vocabulary {
     val FACING = listOf("left", "right", "top", "bottom")
     val LEVELS = listOf("lower", "upper")
     val VEHICLES = listOf("train", "bus")
+    /** Names follow the Android sales app's drawables (D47). */
     val FACILITIES = listOf(
-        "wc", "wc_accessible", "luggage", "bicycle", "inclusive", "inclusive_marker",
-        "electrical", "kid", "stairs_up", "stairs_down", "driver"
+        "toilet", "invalid_toilet", "baggage", "bike", "handicapped", "handicapped_wheelchair",
+        "shield", "steps_up", "steps_down", "wardrobe", "cafe", "coffee_machine", "chair",
+        "kid", "driver"
     )
     /** Always exactly one cell, whatever `span` says. */
-    val ONE_CELL_TYPES = listOf("driver")
+    val ONE_CELL_TYPES = listOf("driver", "chair")
+    /** A chair's facing when omitted - it rotates like a seat back (D47). */
+    const val CHAIR_DEFAULT_FACING = "right"
     val STRUCTURAL_TYPES = listOf("table", "half_table", "separator")
     val KNOWN_TYPES = FACILITIES + STRUCTURAL_TYPES
 }

@@ -13,7 +13,7 @@ its own explicit fill= gets one added here - otherwise they render solid
 black.
 
 Usage:
-    python3 extract_icons.py wc=WC.svg luggage=Baggage.svg wc_accessible=Toilet.svg
+    python3 extract_icons.py toilet=WC.svg baggage=Baggage.svg invalid_toilet=Toilet.svg
     -> writes icons.json next to this script
 
 Then regenerate web/js/icons.js's ICONS block from icons.json (see

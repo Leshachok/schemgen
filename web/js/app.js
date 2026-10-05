@@ -631,8 +631,16 @@ function init(){
       var f2=document.createElement("select");
       FACILITIES.forEach(function(v){ var o=document.createElement("option");
         o.value=v; o.textContent=v; if (it.type===v) o.selected=true; f2.appendChild(o); });
-      f2.addEventListener("change", function(){ it.type=f2.value; drawBuilder(); });
+      f2.addEventListener("change", function(){
+        it.type=f2.value; if (it.type!=="chair") delete it.facing; drawBuilder(); });
       field("facility", f2);
+      if (it.type==="chair"){
+        var cf=document.createElement("select");
+        FACING.forEach(function(v){ var o=document.createElement("option");
+          o.value=v; o.textContent=v; if ((it.facing||CHAIR_DEFAULT_FACING)===v) o.selected=true; cf.appendChild(o); });
+        cf.addEventListener("change", function(){ it.facing=cf.value; drawBuilder(); });
+        field("facing", cf);
+      }
     } else if (it.type==="half_table"){
       var hf=document.createElement("select");
       ["top","bottom"].forEach(function(v){ var o=document.createElement("option");

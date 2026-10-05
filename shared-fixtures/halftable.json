@@ -8,7 +8,7 @@
         {
           "items": [
             {
-              "type": "wc",
+              "type": "toilet",
               "row": 1,
               "span": {
                 "rows": 2

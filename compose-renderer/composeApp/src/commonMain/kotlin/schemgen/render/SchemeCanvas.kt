@@ -66,6 +66,7 @@ private val OFF = Color(0xFFEDEEF0)
 private val OFF_TEXT = Color(0xFF9AA0A6)
 private val MUTED = Color(0xFF6B7078)
 private val SELECTED = Color(0xFFEA580C)
+private val CHAIR_BACK = Color(0xFFB7BABC)
 /** Text is measured unscaled: the deck's DrawScope is already scaled by density. */
 private val UNSCALED = Density(1f)
 
@@ -149,6 +150,7 @@ private fun DrawScope.drawItem(
             isSeparator(item) -> drawSeparator(x, y, w, h)
             item.type == "half_table" -> drawHalfTable(x, y, w, h, item.facing)
             item.type == "table" -> drawBlock(x, y, w, h)
+            item.type == "chair" -> drawChair(x, y, w, h, item.facing)
             item.type != null && item.type in Vocabulary.FACILITIES -> drawFacility(item.type, x, y, w, h, textMeasurer)
             else -> drawBlock(x, y, w, h) // unknown/null type - inert placeholder (D6)
         }
@@ -185,6 +187,27 @@ private fun DrawScope.drawHalfTable(x: Float, y: Float, w: Float, h: Float, faci
     val hh = h / 2f
     val hy = if (facing == "bottom") y + h - hh else y
     drawBlock(x, hy, w, hh)
+}
+
+/** render.js's drawChair: a free-standing stool, back arc turned by SeatBack.ANGLE (D47). */
+private fun DrawScope.drawChair(x: Float, y: Float, w: Float, h: Float, facing: String?) {
+    val f = if (facing in Vocabulary.FACING) facing!! else Vocabulary.CHAIR_DEFAULT_FACING
+    val s = min(w / ChairIcon.W, h / ChairIcon.H)
+    val cx = x + w / 2f
+    val cy = y + h / 2f
+    withTransform({
+        rotate(degrees = SeatBack.ANGLE.getValue(f), pivot = Offset(cx, cy))
+        translate(cx - ChairIcon.W * s / 2f, cy - ChairIcon.H * s / 2f)
+        scale(s, s, pivot = Offset.Zero)
+    }) {
+        val c = Offset(ChairIcon.CX, ChairIcon.CY)
+        drawCircle(color = OFF, radius = ChairIcon.R, center = c)
+        drawCircle(color = BORDER, radius = ChairIcon.R, center = c, style = Stroke(width = 1f))
+        drawPath(
+            PathParser().parsePathString(ChairIcon.BACK).toPath(), color = CHAIR_BACK, alpha = 0.5f,
+            style = Stroke(width = ChairIcon.BACK_WIDTH, cap = StrokeCap.Round)
+        )
+    }
 }
 
 /** render.js's drawFacility: the block, plus a fitted icon (or a text fallback if unknown). */

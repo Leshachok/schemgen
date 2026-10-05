@@ -54,9 +54,12 @@ spec with rationale, not just notes.
   Kotlin mirrors it in `layout/SeatState.kt`.
 - **`docs/developer-guide.md` is the field reference.** Any format change updates
   it alongside the spec, `format.js`, the Kotlin model and the fixtures.
-- **Every non-seat item uses one field, `type`** (`wc`, `table`, `half_table`,
+- **Every non-seat item uses one field, `type`** (`toilet`, `table`, `half_table`,
   `separator`, ...) — not per-kind boolean flags. This was a real inconsistency
   that got fixed once; don't reintroduce `table: true` style shapes.
+- **Facility names and art come from the Android sales app** (D47): its drawable names
+  minus `ic_`/class prefix/size suffix (`toilet`, `baggage`, `bike`, `shield`, …). The old
+  names (`wc`, `luggage`, `bicycle`, `electrical`, `inclusive_marker`, …) are gone — no aliases.
 - **Seat numbers are opaque strings.** No numbering convention exists — never
   derive logic (sorting, berth inference, validation) from a seat number.
 - **`compose-renderer/` builds and runs** (verified 2026-10-05, spec §11). The run

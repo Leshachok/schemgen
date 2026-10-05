@@ -8,7 +8,7 @@
         {
           "items": [
             {
-              "type": "wc",
+              "type": "toilet",
               "row": 1,
               "span": {
                 "rows": 2
@@ -402,7 +402,7 @@
         {
           "items": [
             {
-              "type": "inclusive",
+              "type": "handicapped",
               "row": 1,
               "span": {
                 "rows": 2
@@ -424,7 +424,7 @@
         {
           "items": [
             {
-              "type": "luggage",
+              "type": "baggage",
               "row": 1,
               "span": {
                 "rows": 2
