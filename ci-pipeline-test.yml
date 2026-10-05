@@ -1,0 +1,221 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - test
+
+name: 1.0.$(Rev:r)
+
+pool:
+  name: pass-dev-agent
+  demands:
+    - Agent.OS -equals Linux
+
+variables:
+  - group: "main"
+  - name: APPNAME
+    value: miv-kmp-web
+  - name: CONTAINERREGISTRYNAMESPACE
+    value: creg-dev.pas.uz.gov.ua/miv-kmp-web
+
+steps:
+  - checkout: self
+    persistCredentials: true
+    clean: true
+
+  - task: MavenAuthenticate@0
+    inputs:
+      artifactsFeeds: "UZMiv"
+
+  - task: DockerInstaller@0
+    inputs:
+      dockerVersion: 19.03.5
+      releaseType: stable
+
+  - task: Cache@2
+    inputs:
+      key: 'gradle | "$(Agent.OS)"'
+      restoreKeys: |
+        gradle | "$(Agent.OS)"
+      path: $(HOME)/.gradle
+
+  - task: NodeTool@0
+    inputs:
+      versionSpec: "20.x"
+    displayName: Install Node.js
+
+  - script: |
+      echo "Token length: ${#SYSTEM_ACCESSTOKEN}"
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+    displayName: Check token
+
+  - script: |
+      chmod +x ./gradlew
+
+      # Агент збірки: 4 ядра / 8 ГБ RAM, без запасу. Раніше тут було -Xmx8g (більше, ніж
+      # уся пам'ять) + окремий Kotlin daemon на 6 ГБ з gradle.properties + Binaryen ~5 ГБ
+      # одночасно — 30.09 агент збірки завис на 20 хв (OOM). Тепер як у ci-pipeline.yml:
+      # два окремі запуски Gradle — компіляція (компілятор in-process, 3 ГБ) завершується
+      # до старту Binaryen; для dev — швидка оптимізація (один прохід -O2, див.
+      # shared/build.gradle.kts): в рази швидше й легше, .wasm трохи більший.
+      GRADLE_ARGS="--no-daemon --build-cache --max-workers=4 \
+        -Pkotlin.compiler.execution.strategy=in-process \
+        -Pmiv.wasm.fastOptimize=true"
+      JVM_ARGS="-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m -XX:+UseParallelGC -Dfile.encoding=UTF-8"
+
+      ./gradlew :shared:compileProductionExecutableKotlinWasmJs $GRADLE_ARGS "$JVM_ARGS"
+      ./gradlew :shared:wasmJsBrowserDistribution $GRADLE_ARGS "$JVM_ARGS"
+    displayName: Build WASM (Gradle)
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      AZURE_ARTIFACTS_USER: VssSessionToken
+
+  - pwsh: |
+      echo "Current user: $(whoami)"      
+      docker login $env:CONTAINERREGISTRYSTAGE --username $env:CONTAINERREGISTRYLOGIN --password $env:CONTAINERREGISTRYPASSWORD
+    env:
+      CONTAINERREGISTRYPASSWORD: $(CONTAINERREGISTRYPASSWORD)
+    displayName: Docker login
+
+  - script: |
+      VERSION=$(tar -cf - \
+      --sort=name \
+      --mtime='UTC 1970-01-01' \
+      --owner=0 --group=0 --numeric-owner \
+      -C shared/build/dist/wasmJs/productionExecutable . \
+      | sha256sum | cut -c1-12)
+
+      echo "Computed version: $VERSION"
+      echo "##vso[task.setvariable variable=APP_VERSION]$VERSION"
+    displayName: Compute version hash
+
+  - script: |
+      mkdir -p ./old_html
+      
+      docker pull $(CONTAINERREGISTRYNAMESPACE)/$(APPNAME):latest || true
+      docker create --name old_app $(CONTAINERREGISTRYNAMESPACE)/$(APPNAME):latest || true
+      docker cp old_app:/usr/share/nginx/html/. ./old_html/ || true
+      docker rm old_app || true
+      
+      if [ -d "./old_html/v" ]; then
+        echo "Cleaning versions older than 30 days, keeping 3 versions at least..."
+      
+        CURRENT_TIME=$(date +%s)
+        MAX_AGE=$((30 * 24 * 60 * 60)) # 30 days
+      
+        VERSIONS=$(for dir in ./old_html/v/*; do
+          if [ -f "$dir/.timestamp" ]; then
+            ts=$(cat "$dir/.timestamp")
+          else
+            ts=0
+          fi
+          echo "$ts $dir"
+        done | sort -nr)
+      
+        TOTAL_COUNT=$(echo "$VERSIONS" | wc -l)
+        echo "Total versions: $TOTAL_COUNT"
+        
+        # If 3 or less → do nothing
+        if [ "$TOTAL_COUNT" -le 3 ]; then
+          echo "Skipping cleanup (<= 3 versions)"
+          exit 0
+        fi
+      
+        INDEX=0
+      
+        echo "$VERSIONS" | while read line; do
+          INDEX=$((INDEX + 1))
+      
+          TS=$(echo "$line" | cut -d' ' -f1)
+          DIR=$(echo "$line" | cut -d' ' -f2-)
+      
+          AGE=$((CURRENT_TIME - TS))
+      
+          # Always keep first 3 (newest)
+          if [ "$INDEX" -le 3 ]; then
+            echo "Keeping $DIR (protected: top 3)"
+            continue
+          fi
+      
+          # For the rest → apply time rule
+          if [ "$AGE" -gt "$MAX_AGE" ]; then
+            echo "Removing $DIR (age: $AGE sec)"
+            rm -rf "$DIR"
+          else
+            echo "Keeping $DIR (age: $AGE sec)"
+          fi
+        done
+      fi
+    displayName: Restore old assets
+
+  - script: |
+      docker build \
+        --build-arg VERSION=$(APP_VERSION) \
+        -t $(CONTAINERREGISTRYNAMESPACE)/$(APPNAME):$(APP_VERSION) \
+        -t $(CONTAINERREGISTRYNAMESPACE)/$(APPNAME):latest .
+    displayName: Docker build
+
+  - script: |
+      docker push $(CONTAINERREGISTRYNAMESPACE)/$(APPNAME):$(APP_VERSION)
+      docker push $(CONTAINERREGISTRYNAMESPACE)/$(APPNAME):latest
+    displayName: Docker push
+
+  # =========================
+  # Helm package
+  # =========================
+  - pwsh: |
+      import-module .\deploy\modules\DeployUtilsModule.psm1 -force
+
+      $chartDir = "./charts/$env:APPNAME"
+      $chartsDestDir = (Join-Path $env:BUILD_ARTIFACTSTAGINGDIRECTORY "charts")
+
+      $params = @{
+        'ChartDir' = $chartDir;
+        'ValuesFilename' = "values.yaml"; 
+        'ContainerRegistryNamespace' = $env:CONTAINERREGISTRYNAMESPACE;
+        'ContainerImageTag' = "$(APP_VERSION)";
+        'HelmChartVersion' = "$(Build.BuildNumber)";
+        'Destination' = $null;
+        'TempDir' = "./temp";
+      }
+
+      $prodChartDestDir = (Join-Path $chartsDestDir "prod")
+      $params.ValuesFilename = "values.yaml"
+      $params.Destination = $prodChartDestDir
+      $res = New-DUHelmPackage @params
+
+      Write-Host "##vso[task.setvariable variable=helmChartFilename]$($res.ChartFilename)"
+      $chartPath = (Join-Path $env:BUILD_ARTIFACTSTAGINGDIRECTORY "charts" "prod" $($res.ChartFilename))
+      Write-Host "##vso[task.setvariable variable=chartPath]$chartPath"
+    displayName: Helm package
+
+  # =========================
+  # Helm push
+  # =========================
+  - script: |
+      echo "Chart path: $(chartPath)"
+      echo "Deploying image:"
+      echo "$(CONTAINERREGISTRYNAMESPACE)/$(APPNAME):$(APP_VERSION)"
+      export NO_PROXY=localhost,127.0.0.1,10.*,*.uz.gov.ua,10.115.111.16,creg-dev.pas.uz.gov.ua
+      unset HTTP_PROXY
+      unset HTTPS_PROXY
+
+      echo "$(CONTAINERREGISTRYPASSWORD)" | helm registry login creg-dev.pas.uz.gov.ua \
+        --username $(CONTAINERREGISTRYLOGIN) \
+        --password-stdin --insecure
+
+      helm push $(chartPath) oci://$(STAGEHELMREPO)
+    displayName: Helm push to stage repo
+
+  - task: HelmDeploy@1
+    inputs:
+      connectionType: "Kubernetes Service Connection"
+      kubernetesServiceConnection: "dev-pass"
+      namespace: "miv-kmp-web"
+      command: "upgrade"
+      chartType: "Name"
+      chartName: "oci://$(STAGEHELMREPO)/miv-kmp-web"
+      chartVersion: "$(Build.BuildNumber)"
+      releaseName: "miv-kmp-web"
+      arguments: "--create-namespace"

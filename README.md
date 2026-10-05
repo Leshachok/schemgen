@@ -65,6 +65,11 @@ host page (verified 2026-10-05, see `docs/wagon-scheme-format.md` §11). Not yet
 checked: pixel parity with the web reference, and the Android/iOS targets, which
 aren't configured yet.
 
+## Building and CI
+
+`build.md` covers what CI builds (static web app + Compose wasm preview), the commands,
+and how the two are assembled into one deployable site.
+
 ## Regenerating generated files
 
 Three files under `web/js/` are generated, not hand-edited:
