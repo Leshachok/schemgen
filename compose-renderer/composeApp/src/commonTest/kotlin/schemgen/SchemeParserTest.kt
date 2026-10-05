@@ -73,4 +73,36 @@ class SchemeParserTest {
         assertTrue(msgs.any { it.level == Level.WARN && "driver" in it.text })
         assertEquals(1, schemgen.layout.clampedEndRow(scheme.decks[0].columns[0].items[0], 3))
     }
+
+    @Test
+    fun interactionModesFollowTheContract() {
+        val scheme = SchemeParser.parse(
+            """{"decks":[{"rows":1,"columns":[{"items":[
+                {"seat":"1","kind":"sit","row":1}]},{"items":[
+                {"seat":"2","kind":"sit","row":1}]},{"items":[
+                {"seat":"3","kind":"hammock","row":1}]}]}]}"""
+        )
+        val seats = scheme.decks[0].columns.map { it.items.single() as schemgen.model.SeatItem }
+        val view = schemgen.layout.Interaction()
+        assertEquals(listOf("AVAILABLE", "AVAILABLE", "UNKNOWN"), seats.map { schemgen.layout.seatState(it, view).name })
+        assertTrue(seats.none { schemgen.layout.seatTappable(it, view) }, "nothing is tappable in view mode")
+
+        val select = schemgen.layout.Interaction(
+            schemgen.layout.SchemeMode.SELECT, available = setOf("1", "3"), selected = setOf("1")
+        )
+        assertEquals(listOf("SELECTED", "UNAVAILABLE", "UNKNOWN"), seats.map { schemgen.layout.seatState(it, select).name })
+        assertEquals(listOf(true, false, false), seats.map { schemgen.layout.seatTappable(it, select) })
+    }
+
+    @Test
+    fun hitTestFindsTheSeatUnderAPoint() {
+        val scheme = SchemeParser.parse(Fixtures.BUS)
+        val deck = scheme.decks[0]
+        val boxes = schemgen.layout.itemBoxes(deck)
+        val seat1 = boxes.first { (it.item as? schemgen.model.SeatItem)?.seat == "1" }
+        assertEquals("1", schemgen.layout.seatAt(deck, seat1.x + seat1.w / 2, seat1.y + seat1.h / 2)?.seat)
+        val driver = boxes.first { (it.item as? schemgen.model.StructuralItem)?.type == "driver" }
+        assertEquals(null, schemgen.layout.seatAt(deck, driver.x + 1, driver.y + 1), "the driver is not a seat")
+        assertEquals(null, schemgen.layout.seatAt(deck, 1f, 1f), "padding hits nothing")
+    }
 }

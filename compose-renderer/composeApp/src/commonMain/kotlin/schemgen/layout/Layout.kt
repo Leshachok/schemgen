@@ -63,3 +63,25 @@ fun clampedEndRow(item: Item, maxRow: Int): Int =
 /** Rows an item covers - one-cell types (driver) ignore their span, like format.js's itemSpan. */
 fun spanRows(item: Item): Int =
     if (item is StructuralItem && item.type in Vocabulary.ONE_CELL_TYPES) 1 else item.span.rows
+
+/** Where one item lands on a deck - the single geometry both drawing and tap
+ *  hit-testing use, so what you see is exactly what you can tap. */
+data class ItemBox(val item: Item, val x: Float, val y: Float, val w: Float, val h: Float) {
+    fun contains(px: Float, py: Float): Boolean = px >= x && px <= x + w && py >= y && py <= y + h
+}
+
+fun itemBoxes(deck: Deck, deckLayout: DeckLayout = layout(deck)): List<ItemBox> =
+    deckLayout.columns.flatMap { pc ->
+        pc.column.items.map { item ->
+            val y = rowY(item.row)
+            val yEnd = rowY(clampedEndRow(item, deck.rows.coerceAtLeast(1)))
+            val w = itemWidth(item)
+            ItemBox(item, pc.x + (pc.w - w) / 2f, y, w, yEnd + T.SEAT - y)
+        }
+    }
+
+/** The seat under a point in deck coordinates, or null. */
+fun seatAt(deck: Deck, px: Float, py: Float): schemgen.model.SeatItem? =
+    itemBoxes(deck).firstOrNull { it.item is schemgen.model.SeatItem && it.contains(px, py) }?.item
+        as? schemgen.model.SeatItem
+

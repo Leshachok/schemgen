@@ -57,8 +57,26 @@ function init(){
   });
 
   /* ---------- catalogue ---------- */
-  var pstate={ scheme:SCHEMES[0].build(), selected:new Set(),
-    allAvail:false, showGrid:false, showBack:true, draw:drawPreview };
+  /* Prototype stand-in for the availability API: a stable pseudo-random ~70% of
+     seats. Real apps pass their own `available` set (D45). */
+  function demoAvailable(scheme){
+    var out=new Set(), key=scheme.key||"";
+    (scheme.decks||[]).forEach(function(d){ (d.columns||[]).forEach(function(c){
+      (c.items||[]).forEach(function(it){
+        if (it.seat==null) return;
+        var s=key+"/"+it.seat, h=0;
+        for (var i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0;
+        if (Math.abs(h)%10>2) out.add(String(it.seat));
+      }); }); });
+    return out;
+  }
+  /* the catalogue plays the app: it owns `selected` and re-renders on each tap (D46) */
+  var pstate={ scheme:SCHEMES[0].build(), mode:"select", available:null, selected:new Set(),
+    showGrid:false, showBack:true,
+    onSeatClick:function(id){
+      if (pstate.selected.has(id)) pstate.selected["delete"](id); else pstate.selected.add(id);
+      drawPreview();
+    } };
 
   var lastGroup=null;
   SCHEMES.forEach(function(s,i){
@@ -91,7 +109,9 @@ function init(){
   }
 
   function drawPreview(){
-    pstate.allAvail=$("allAvail").checked;
+    pstate.mode=$("viewOnly").checked ? "view" : "select";
+    pstate.available=demoAvailable(pstate.scheme);
+    if (pstate.mode==="view") pstate.selected.clear();
     pstate.showGrid=$("showGrid").checked;
     pstate.showBack=$("showBack").checked;
     var s=pstate.scheme, deck=(s.decks||[])[0]||{};
@@ -106,7 +126,7 @@ function init(){
     $("picked").textContent = pstate.selected.size
       ? "selected: "+Array.from(pstate.selected).join(", ") : "No seats selected.";
   }
-  ["allAvail","showGrid","showBack"].forEach(function(id){
+  ["viewOnly","showGrid","showBack"].forEach(function(id){
     $(id).addEventListener("change", drawPreview);
   });
   bindJson($("jsonP"), function(parsed){
@@ -518,7 +538,7 @@ function init(){
 
     $("bStage").innerHTML="";
     try { $("bStage").appendChild(render(bstate.scheme,
-      { selected:null, allAvail:true, showGrid:false, showBack:true })); }
+      { mode:"view", showGrid:false, showBack:true })); }
     catch(e){ $("bStage").textContent="Render failed: "+e.message; }
     if (bwstate.framework==="compose" && bwstate.loaded) sendToCompose();
     var bd=deck();

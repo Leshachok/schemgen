@@ -1,6 +1,7 @@
 package schemgen.render
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -8,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -27,10 +29,18 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.min
+import schemgen.layout.Interaction
+import schemgen.layout.SchemeMode
+import schemgen.layout.SeatState
 import schemgen.layout.T
+import schemgen.layout.itemBoxes
+import schemgen.layout.seatAt
+import schemgen.layout.seatState
+import schemgen.layout.seatTappable
 import schemgen.layout.clampedEndRow
 import schemgen.layout.isSeparator
 import schemgen.layout.itemWidth
@@ -55,13 +65,29 @@ private val BORDER = Color(0xFFD4D5D6)
 private val OFF = Color(0xFFEDEEF0)
 private val OFF_TEXT = Color(0xFF9AA0A6)
 private val MUTED = Color(0xFF6B7078)
+private val SELECTED = Color(0xFFEA580C)
+/** Text is measured unscaled: the deck's DrawScope is already scaled by density. */
+private val UNSCALED = Density(1f)
 
+/**
+ * Draws a scheme. [mode] VIEW: every seat looks available, nothing reacts.
+ * [mode] SELECT: seats in [available] are tappable and each tap calls
+ * [onSeatClick] with the seat number - the app owns [selected] and passes the
+ * updated set back in (D45, D46).
+ */
 @Composable
-fun SchemeView(scheme: Scheme) {
+fun SchemeView(
+    scheme: Scheme,
+    mode: SchemeMode = SchemeMode.VIEW,
+    available: Set<String> = emptySet(),
+    selected: Set<String> = emptySet(),
+    onSeatClick: (String) -> Unit = {}
+) {
+    val interaction = Interaction(mode, available, selected)
     Column(
         modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())
     ) {
-        scheme.decks.forEach { deck -> DeckCanvas(deck, deckLabel(scheme, deck)) }
+        scheme.decks.forEach { deck -> DeckCanvas(deck, deckLabel(scheme, deck), interaction, onSeatClick) }
     }
 }
 
@@ -71,7 +97,7 @@ private fun deckLabel(scheme: Scheme, deck: Deck): String =
         (deck.level?.let { ", $it deck" } ?: "")
 
 @Composable
-private fun DeckCanvas(deck: Deck, label: String) {
+private fun DeckCanvas(deck: Deck, label: String, interaction: Interaction, onSeatClick: (String) -> Unit) {
     val L = layout(deck)
     val textMeasurer = rememberTextMeasurer()
     Canvas(
@@ -79,9 +105,21 @@ private fun DeckCanvas(deck: Deck, label: String) {
             .padding(top = 8.dp)
             .size(width = L.width.dp, height = L.height.dp)
             .semantics { contentDescription = label }
+            .pointerInput(deck, interaction) {
+                if (interaction.mode == SchemeMode.SELECT) {
+                    detectTapGestures { p ->
+                        // layout units are dp; pointer positions are px
+                        val seat = seatAt(deck, p.x / density, p.y / density)
+                        if (seat != null && seatTappable(seat, interaction)) onSeatClick(seat.seat)
+                    }
+                }
+            }
     ) {
         // outline - filled background plus a border, matching render.js's single
         // rect with both fill and stroke (Compose needs two draw calls for that).
+      // layout math is in dp (the Canvas is sized in dp), DrawScope draws in px
+      val d = density
+      withTransform({ scale(d, d, pivot = Offset.Zero) }) {
         val outlineRadius = 12f
         drawRoundRect(
             color = Color.White,
@@ -97,23 +135,16 @@ private fun DeckCanvas(deck: Deck, label: String) {
             style = Stroke(width = 1f)
         )
 
-        L.columns.forEach { pc ->
-            pc.column.items.forEach { item ->
-                val row = item.row
-                val y = rowY(row)
-                val yEnd = rowY(clampedEndRow(item, deck.rows.coerceAtLeast(1)))
-                val h = yEnd + T.SEAT - y
-                val w = itemWidth(item)
-                val x = pc.x + (pc.w - w) / 2f
-                drawItem(item, x, y, w, h, textMeasurer)
-            }
-        }
+        itemBoxes(deck, L).forEach { b -> drawItem(b.item, b.x, b.y, b.w, b.h, textMeasurer, interaction) }
+      }
     }
 }
 
-private fun DrawScope.drawItem(item: Item, x: Float, y: Float, w: Float, h: Float, textMeasurer: TextMeasurer) {
+private fun DrawScope.drawItem(
+    item: Item, x: Float, y: Float, w: Float, h: Float, textMeasurer: TextMeasurer, interaction: Interaction
+) {
     when (item) {
-        is SeatItem -> drawSeat(item, x, y, w, h, textMeasurer)
+        is SeatItem -> drawSeat(item, x, y, w, h, textMeasurer, interaction)
         is StructuralItem -> when {
             isSeparator(item) -> drawSeparator(x, y, w, h)
             item.type == "half_table" -> drawHalfTable(x, y, w, h, item.facing)
@@ -163,7 +194,8 @@ private fun DrawScope.drawFacility(type: String, x: Float, y: Float, w: Float, h
     if (icon == null) {
         val layoutResult = textMeasurer.measure(
             text = FACILITY_LABEL[type] ?: "?",
-            style = TextStyle(color = MUTED, fontSize = 8.sp, textAlign = TextAlign.Center)
+            style = TextStyle(color = MUTED, fontSize = 8.sp, textAlign = TextAlign.Center),
+            density = UNSCALED
         )
         drawText(
             textLayoutResult = layoutResult,
@@ -193,16 +225,22 @@ private fun DrawScope.drawFacility(type: String, x: Float, y: Float, w: Float, h
     }
 }
 
-private fun DrawScope.drawSeat(item: SeatItem, x: Float, y: Float, w: Float, h: Float, textMeasurer: TextMeasurer) {
+private fun DrawScope.drawSeat(
+    item: SeatItem, x: Float, y: Float, w: Float, h: Float, textMeasurer: TextMeasurer, interaction: Interaction
+) {
     val known = item.kind in Vocabulary.KINDS
     val fill: Color
     val strokeColor: Color?
     val textColor: Color
     val backFill: Color
-    when {
-        !known -> { fill = Color(0xFFE3E4E7); strokeColor = Color(0xFFC7CAD1); textColor = OFF_TEXT; backFill = Color(0xFFC7CAD1) }
-        item.inclusive -> { fill = Color.White; strokeColor = NAVY; textColor = NAVY; backFill = NAVY }
-        else -> { fill = NAVY; strokeColor = null; textColor = Color.White; backFill = NAVY }
+    // same precedence as render.js: unknown > selected > unavailable > inclusive > available
+    when (seatState(item, interaction)) {
+        SeatState.UNKNOWN -> { fill = Color(0xFFE3E4E7); strokeColor = Color(0xFFC7CAD1); textColor = OFF_TEXT; backFill = Color(0xFFC7CAD1) }
+        SeatState.SELECTED -> { fill = SELECTED; strokeColor = null; textColor = Color.White; backFill = SELECTED }
+        SeatState.UNAVAILABLE -> { fill = OFF; strokeColor = BORDER; textColor = OFF_TEXT; backFill = BORDER }
+        SeatState.AVAILABLE ->
+            if (item.inclusive) { fill = Color.White; strokeColor = NAVY; textColor = NAVY; backFill = NAVY }
+            else { fill = NAVY; strokeColor = null; textColor = Color.White; backFill = NAVY }
     }
 
     // Seat-back bracket: rendered opposite the facing direction, behind the seat block.
@@ -236,7 +274,9 @@ private fun DrawScope.drawSeat(item: SeatItem, x: Float, y: Float, w: Float, h: 
     if (strokeColor != null) {
         drawRoundRect(
             color = strokeColor, topLeft = Offset(x, y), size = Size(w, h),
-            cornerRadius = CornerRadius(4f), style = Stroke(width = 2f)
+            cornerRadius = CornerRadius(4f),
+            // inclusive outline is 2px, the grey unavailable/unknown border 1px - as in render.js
+            style = Stroke(width = if (strokeColor == NAVY) 2f else 1f)
         )
     }
     // Seat label, always drawn (render.js's drawSeat: "?" for an unknown kind, the
@@ -244,7 +284,8 @@ private fun DrawScope.drawSeat(item: SeatItem, x: Float, y: Float, w: Float, h: 
     val label = if (known) item.seat else "?"
     val layoutResult = textMeasurer.measure(
         text = label,
-        style = TextStyle(color = textColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+        style = TextStyle(color = textColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center),
+        density = UNSCALED
     )
     drawText(
         textLayoutResult = layoutResult,

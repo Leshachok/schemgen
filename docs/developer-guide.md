@@ -131,14 +131,24 @@ Removed, do not write: facility `label`; the old `"table": true` / `"separator":
 ## Seat kinds & states
 
 Every seat kind, and every visual state a renderer draws. **States are not scheme fields** —
-they come from the availability payload and the user's selection:
+they come from what the app passes the renderer at runtime:
+
+| Input | Meaning |
+|---|---|
+| `mode: "view"` | Read-only: every known seat drawn available, nothing tappable. For previews and admin. |
+| `mode: "select"` | Interactive: only seats in `available` are available and tappable. |
+| `available` | Seat numbers that can be booked (`select` only). |
+| `selected` | Seat numbers the app has selected (`select` only). |
+| `onSeatClick(seat)` | Called on a tap; the app updates `selected` and re-renders — the renderer never changes it. |
+
+In `select` mode:
 
 | State | Source | Drawn as |
 |---|---|---|
-| available | availability payload | Solid navy, selectable |
-| unavailable | availability payload, or seat missing from it | Grey, not selectable |
-| selected | user's tap | Selection colour |
-| unknown kind | scheme | Grey placeholder with "?", never selectable |
+| available | in `available` | Solid navy (inclusive: outline), tappable |
+| unavailable | not in `available` | Grey, not tappable |
+| selected | in `available` and `selected` | Selection colour, tappable (the app decides what a second tap means) |
+| unknown kind | scheme | Grey placeholder with "?", never tappable — in either mode |
 
 A seat in the availability payload that the scheme doesn't contain is ignored.
 

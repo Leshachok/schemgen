@@ -122,6 +122,8 @@ Builder (own domain, stores nothing) ──JSON file / admin API──▶ Wagon 
 | D42 | **Top-level \`vehicle\`: \`train\` \\| \`bus\`, absent means \`train\`** | Chosen over a separate bus key space: one explicit field says what a scheme describes, so an exported file is self-describing and a key can never be read in the wrong namespace. **It changes nothing visual** — a bus is drawn by exactly the rules a wagon is, and the driver's place is its own item (D43). Its only rendered effect is the accessibility label ("Bus BUS-53" vs "Wagon …"). It also leaves a switch in place should a vehicle ever need different rendering. Kept deliberately (2026-10-05) although the admins already know the vehicle type: dropping it later would cost more than carrying it. Defaulting to \`train\` keeps every scheme written before buses valid without touching a published revision (D5). An unknown value warns and renders as a train. |
 | D43 | **\`driver\` is a typed item, always exactly one cell, no \`facing\`** | The one bus-only element (no doors, D40). A fixed size means no span to author and no resize handle in the builder, like \`half_table\` (D29); a \`span\` on it is ignored with a warning rather than an error, so a stray field cannot break a published scheme. No \`facing\`: the wheel reads the same whichever way the vehicle is drawn. No icon exists yet — the steering-wheel glyph is a stand-in, like \`kid\` and the stairs. |
 | D44 | **Builder edits vehicle and decks: at most two decks, levels kept valid by construction** | Two decks is the most \`level\` can name. Adding a second deck fills in \`lower\` / \`upper\` on both, and picking the other deck's level swaps the two, so the builder never produces a duplicate or missing level (D39) — the validator still catches hand-edited JSON. Removing a deck that has items takes a second click, the same no-silent-data-loss rule as D27. The builder writes \`vehicle\` explicitly, including \`"train"\`, so an exported file always says what it is. |
+| D45 | **Two interaction modes, a renderer input: \`view\` and \`select\`** | Different consumers need different behaviour — an admin preview shows a scheme, a sales app sells seats from it. \`view\`: every known seat looks available, nothing is tappable, no availability needed. \`select\`: the app passes the available seat numbers; those are blue and tappable, every other seat grey and inert (the §4.6 rule). A mode is runtime input like availability (D4), never a scheme field. A highlight in \`view\` mode and separate \`occupied\` / \`held\` looks are deliberately left out until a consumer needs them — both are additive. |
+| D46 | **The app owns the selection; the renderer only reports taps** | The renderer calls back with the tapped seat number and never changes \`selected\` itself; the app updates its set and passes it back in. Selection rules — a maximum, one seat per passenger, deselect-on-tap — differ per product and belong to the app. It also keeps every renderer stateless and identical: same inputs, same picture. |
 
 ### Rejected
 
@@ -323,6 +325,20 @@ seat. The grey \`#D4D5D6\` seats in the design files belong here.
 
 Today the API returns the list of bookable seats; those render blue and clickable, everything
 else renders grey and disabled. Layout never changes — only state.
+
+**Renderer contract (D45, D46).** Every renderer takes the same runtime input:
+
+| Input | Values | Notes |
+|---|---|---|
+| \`mode\` | \`view\` \\| \`select\` | \`view\`: every known seat looks available, nothing is tappable. |
+| \`available\` | set of seat numbers | \`select\` only. Seats not in it are unavailable. |
+| \`selected\` | set of seat numbers | \`select\` only. Owned by the app; drawn selected only if also available. |
+| \`onSeatClick\` | callback(seat number) | \`select\` only. Fired for available and selected seats; the renderer never changes \`selected\` itself. |
+
+Seat state, in order of precedence: unknown kind → **unknown** (grey "?", never tappable);
+\`view\` → **available**; not in \`available\` → **unavailable**; in \`selected\` → **selected**;
+otherwise **available**. Reference implementation: \`seatState()\` in \`web/js/format.js\`,
+mirrored by \`layout/SeatState.kt\`.
 
 **Reconciliation rule.** Schemes currently ship inside the app, so scheme and availability
 are always in lockstep. Once schemes are fetched and cached independently they can drift:
@@ -611,6 +627,16 @@ Gotchas found on the way:
 - \`gradle.properties\` sets \`kotlin.native.cacheKind\`, which Kotlin now reports as removed.
   Harmless today; drop it when iOS targets are added.
 
+**Density bug, fixed 2026-10-05.** The canvas was sized in dp but drawn in raw px, so on any
+screen with density above 1 (every phone, Retina browsers) the scheme filled only part of its
+box and taps would have missed. Drawing is now scaled by density, text measured unscaled, and
+tap positions divided by density before hit-testing. Checked at 2× in headless Chrome.
+
+Taps: hit-testing (\`seatAt\`) and the mode rule are unit-tested. Synthetic pointer events on
+the wasm canvas selected exactly the available seats tapped and ignored an unavailable one —
+but only in two of four headless runs; the failing runs registered no taps at all, which
+points at the test harness's timing rather than the renderer. Confirm on a real device.
+
 Still unverified: pixel parity with \`web/js/render.js\` (no fixture comparison exists —
 phase 2), and anything on Android or iOS targets, which aren't configured yet.
 
@@ -767,14 +793,24 @@ Removed, do not write: facility \`label\`; the old \`"table": true\` / \`"separa
 ## Seat kinds & states
 
 Every seat kind, and every visual state a renderer draws. **States are not scheme fields** —
-they come from the availability payload and the user's selection:
+they come from what the app passes the renderer at runtime:
+
+| Input | Meaning |
+|---|---|
+| \`mode: "view"\` | Read-only: every known seat drawn available, nothing tappable. For previews and admin. |
+| \`mode: "select"\` | Interactive: only seats in \`available\` are available and tappable. |
+| \`available\` | Seat numbers that can be booked (\`select\` only). |
+| \`selected\` | Seat numbers the app has selected (\`select\` only). |
+| \`onSeatClick(seat)\` | Called on a tap; the app updates \`selected\` and re-renders — the renderer never changes it. |
+
+In \`select\` mode:
 
 | State | Source | Drawn as |
 |---|---|---|
-| available | availability payload | Solid navy, selectable |
-| unavailable | availability payload, or seat missing from it | Grey, not selectable |
-| selected | user's tap | Selection colour |
-| unknown kind | scheme | Grey placeholder with "?", never selectable |
+| available | in \`available\` | Solid navy (inclusive: outline), tappable |
+| unavailable | not in \`available\` | Grey, not tappable |
+| selected | in \`available\` and \`selected\` | Selection colour, tappable (the app decides what a second tap means) |
+| unknown kind | scheme | Grey placeholder with "?", never tappable — in either mode |
 
 A seat in the availability payload that the scheme doesn't contain is ignored.
 

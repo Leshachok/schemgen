@@ -15,6 +15,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeViewport
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlinx.coroutines.delay
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import schemgen.layout.SchemeMode
 import schemgen.model.Scheme
 import schemgen.model.SchemeParser
 import schemgen.render.SchemeView
@@ -43,6 +49,20 @@ private const val SAMPLE_SCHEME = """{"key":"KUP-34","rev":1,"decks":[{"rows":3,
 private object PreviewState {
     var scheme: Scheme? by mutableStateOf(null)
     var status: String by mutableStateOf("Waiting for a scheme from the web app's Preview tab…")
+    // optional envelope fields "mode": "select" and "available": [...]; this harness
+    // then plays the app and owns the selection (D46)
+    var mode: SchemeMode by mutableStateOf(SchemeMode.VIEW)
+    var available: Set<String> by mutableStateOf(emptySet())
+    var selected: Set<String> by mutableStateOf(emptySet())
+}
+
+private fun readInteraction(raw: String) {
+    val root = runCatching { Json.parseToJsonElement(raw).jsonObject }.getOrNull() ?: return
+    PreviewState.mode =
+        if (root["mode"]?.jsonPrimitive?.contentOrNull == "select") SchemeMode.SELECT else SchemeMode.VIEW
+    PreviewState.available = (root["available"] as? JsonArray)
+        ?.mapNotNull { it.jsonPrimitive.contentOrNull }?.toSet() ?: emptySet()
+    PreviewState.selected = emptySet()
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -51,6 +71,7 @@ fun main() {
         val parsed = runCatching { SchemeParser.parseEnvelope(raw) }
         parsed.onSuccess { scheme ->
             if (scheme != null) {
+                readInteraction(raw)
                 PreviewState.scheme = scheme
                 PreviewState.status = "Showing ${scheme.key ?: "scheme"}"
             }
@@ -82,7 +103,26 @@ private fun App() {
                 Text(PreviewState.status, style = MaterialTheme.typography.bodySmall)
             }
         } else {
-            SchemeView(scheme)
+            Column {
+                SchemeView(
+                    scheme,
+                    mode = PreviewState.mode,
+                    available = PreviewState.available,
+                    selected = PreviewState.selected,
+                    onSeatClick = { seat ->
+                        PreviewState.selected =
+                            if (seat in PreviewState.selected) PreviewState.selected - seat
+                            else PreviewState.selected + seat
+                    }
+                )
+                if (PreviewState.mode == SchemeMode.SELECT) {
+                    Text(
+                        "selected: " + PreviewState.selected.sorted().joinToString(", ").ifEmpty { "none" },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
     }
 }

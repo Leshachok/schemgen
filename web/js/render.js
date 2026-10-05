@@ -78,15 +78,15 @@ function drawFacility(svg,type,x,y,w,h){
 function drawSeat(svg, scheme, it, x, y, w, h, state){
   var id=String(it.seat);
   var known=KINDS.indexOf(it.kind)!==-1;
-  var avail=isAvailable(scheme.key||"", id, state.allAvail);
-  var selected=state.selected && state.selected.has(id);
+  var st=seatState(it, state), tappable=seatTappable(it, state);
   var fill="var(--navy)", stroke="none", sw=0, tf="#fff", backFill="var(--navy)";
-  if (!known){ fill="#E3E4E7"; stroke="#C7CAD1"; sw=1; tf="var(--off-text)"; backFill="#C7CAD1"; }
-  else if (selected){ fill="var(--seat-selected)"; backFill="var(--seat-selected)"; }
-  else if (!avail){ fill="var(--off)"; stroke="var(--border-firm)"; sw=1; tf="var(--off-text)"; backFill="var(--border-firm)"; }
+  if (st==="unknown"){ fill="#E3E4E7"; stroke="#C7CAD1"; sw=1; tf="var(--off-text)"; backFill="#C7CAD1"; }
+  else if (st==="selected"){ fill="var(--seat-selected)"; backFill="var(--seat-selected)"; }
+  else if (st==="unavailable"){ fill="var(--off)"; stroke="var(--border-firm)"; sw=1; tf="var(--off-text)"; backFill="var(--border-firm)"; }
   else if (it.inclusive){ fill="#fff"; stroke="var(--navy)"; sw=2; tf="var(--navy)"; }
 
-  var g=el("g",{ "class":"seat"+(avail&&known?"":" dis") });
+  var refused = state.mode==="select" && !tappable;
+  var g=el("g",{ "class":"seat"+(tappable?" tap":"")+(refused?" dis":"") });
   if (state.showBack && it.kind==="sit" && FACING.indexOf(it.facing)!==-1){
     var k=w/BACK.seatSize, cx=x+w/2, cy=y+h/2;
     var tr="rotate("+BACK_ANGLE[it.facing]+" "+cx+" "+cy+") translate("
@@ -107,14 +107,12 @@ function drawSeat(svg, scheme, it, x, y, w, h, state){
   var bits=[id];
   if (it.kind==="sleep") bits.push(it.berth);
   if (it.inclusive) bits.push("inclusive");
-  bits.push(avail?"available":"unavailable");
+  if (st!=="unknown") bits.push(st);
   g.setAttribute("aria-label", bits.join(", "));
 
-  if (known && avail && state.selected){
-    g.addEventListener("click", function(){
-      if (state.selected.has(id)) state.selected["delete"](id); else state.selected.add(id);
-      state.draw();
-    });
+  if (tappable && state.onSeatClick){
+    g.setAttribute("role","button");
+    g.addEventListener("click", function(){ state.onSeatClick(id); });
   }
   svg.appendChild(g);
 }
@@ -124,7 +122,7 @@ function previewItem(it, size, stateOverride){
   var w = it.type==="separator" ? T.sepW*2 : size;
   var h = size*sp.rows + (sp.rows-1)*(T.rowPitch-T.seat)*(size/T.seat);
   var svg=el("svg",{ width:w+pad*2, height:h+pad*2, viewBox:"0 0 "+(w+pad*2)+" "+(h+pad*2) });
-  var scheme={ key:"preview" }, state={ selected:null, allAvail:true, showBack:true };
+  var scheme={ key:"preview" }, state={ mode:"view", showBack:true };
   if (stateOverride) for (var k in stateOverride) state[k]=stateOverride[k];
   if (it.seat!=null) drawSeat(svg, scheme, it, pad, pad, w, h, state);
   else if (it.type==="separator") drawSeparator(svg, pad, pad, w, h);

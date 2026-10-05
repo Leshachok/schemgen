@@ -4,10 +4,6 @@
    the actual renderer. Hand-written, not generated. */
 "use strict";
 
-/** previewItem()'s own preview scheme key is a fixed "preview" (see render.js) -
-    mirrored here so the hash search lines up with what it'll actually compute. */
-var DOCS_PREVIEW_KEY = "preview";
-
 function docsSwatch(caption, item, size, stateOverride){
   var wrap = document.createElement("div");
   wrap.className = "docs-swatch";
@@ -28,17 +24,6 @@ function docsGalleryRow(){
   return row;
 }
 
-/** A seat id guaranteed to hash to "unavailable" (allAvail:false) under
-    previewItem()'s fixed scheme key, found at render time rather than
-    hardcoded so it stays correct even if format.js's hash() ever changes. */
-function findUnavailableSeatId(){
-  for (var i=1;i<=40;i++){
-    var id=String(i);
-    if (!isAvailable(DOCS_PREVIEW_KEY, id, false)) return id;
-  }
-  return "1";
-}
-
 var SWATCH_SIZE = 40;
 
 function buildSeatGallery(){
@@ -57,10 +42,10 @@ function buildSeatGallery(){
   root.appendChild(statesH);
   var states = docsGalleryRow();
   states.appendChild(docsSwatch("available", {seat:"1",kind:"sit",facing:"top"}, SWATCH_SIZE));
-  states.appendChild(docsSwatch("unavailable", {seat:findUnavailableSeatId(),kind:"sit",facing:"top"}, SWATCH_SIZE,
-    {allAvail:false}));
-  states.appendChild(docsSwatch("selected", {seat:"sel",kind:"sit",facing:"top"}, SWATCH_SIZE,
-    {selected:new Set(["sel"]), draw:function(){}}));
+  states.appendChild(docsSwatch("unavailable", {seat:"1",kind:"sit",facing:"top"}, SWATCH_SIZE,
+    {mode:"select", available:new Set()}));
+  states.appendChild(docsSwatch("selected", {seat:"1",kind:"sit",facing:"top"}, SWATCH_SIZE,
+    {mode:"select", available:new Set(["1"]), selected:new Set(["1"])}));
   states.appendChild(docsSwatch("inclusive", {seat:"1",kind:"sleep",berth:"lower",inclusive:true}, SWATCH_SIZE));
   states.appendChild(docsSwatch("unknown kind", {seat:"1",kind:"???"}, SWATCH_SIZE));
   root.appendChild(states);

@@ -99,6 +99,26 @@ function validate(scheme){
   return msgs;
 }
 
-function hash(s){ var h=0; for (var i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0; return Math.abs(h); }
-function isAvailable(key,id,all){ return all ? true : hash(key+"/"+id)%10 > 2; }
+/* ---------- renderer contract: interaction modes ----------
+   Runtime input to every renderer, never part of the scheme (D4, D45):
+     mode        "view"   - every known seat looks available, nothing is tappable
+                 "select" - only seats in `available` are available and tappable
+     available   Set of seat numbers   (select only)
+     selected    Set of seat numbers   (select only; owned by the app, D46)
+     onSeatClick function(seatNumber)  (select only; the renderer never changes
+                 `selected` itself - the app does, then re-renders)            */
+var MODES = ["view","select"];
+
+/* "unknown" | "available" | "unavailable" | "selected" - one rule for every renderer */
+function seatState(it, opts){
+  if (KINDS.indexOf(it.kind)===-1) return "unknown";
+  if (!opts || opts.mode!=="select") return "available";
+  var id=String(it.seat);
+  if (!opts.available || !opts.available.has(id)) return "unavailable";
+  return opts.selected && opts.selected.has(id) ? "selected" : "available";
+}
+function seatTappable(it, opts){
+  var st=seatState(it, opts);
+  return !!(opts && opts.mode==="select" && (st==="available" || st==="selected"));
+}
 

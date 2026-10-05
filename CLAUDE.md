@@ -48,6 +48,10 @@ spec with rationale, not just notes.
   (`lower`/`upper`), required and unique when a scheme has several decks. No doors
   on any vehicle (D40). Buses: top-level `vehicle: "bus"` (absent = train, D42) and
   the one-cell `driver` item (D43).
+- **Renderers take `mode` (`view` | `select`), `available`, `selected` and an
+  `onSeatClick` callback** (D45). The app owns the selection — a renderer only reports
+  taps and never mutates `selected` (D46). `seatState()` in `format.js` is the rule;
+  Kotlin mirrors it in `layout/SeatState.kt`.
 - **`docs/developer-guide.md` is the field reference.** Any format change updates
   it alongside the spec, `format.js`, the Kotlin model and the fixtures.
 - **Every non-seat item uses one field, `type`** (`wc`, `table`, `half_table`,
