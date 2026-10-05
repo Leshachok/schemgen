@@ -40,7 +40,7 @@ function init(){
     var src=JSON.parse(JSON.stringify(pstate.scheme));
     src.key=(src.key||"SCHEME")+"-COPY";
     src.rev=1;
-    bstate.scheme=src; bstate.sel=null;
+    bstate.scheme=src; bstate.sel=null; bstate.deckIndex=0;
     setMode("builder");
     toast("Loaded as template — edit freely");
   });
@@ -150,11 +150,74 @@ function init(){
 
   /* no row-span control: half-table (D29) and one-cell items such as driver */
   function isFixedSize(it){ return it.type==="half_table" || ONE_CELL_TYPES.indexOf(it.type)!==-1; }
-  var bstate={ scheme:{ key:"NEW-1", rev:1,
+  var bstate={ scheme:{ key:"NEW-1", rev:1, vehicle:"train",
       decks:[{ rows:3, columns:[Col(),Col(),Col(),Col(),Col(),Col()] }] },
-    tool:TOOLS[0], toolIndex:0, sel:null };
+    tool:TOOLS[0], toolIndex:0, sel:null, deckIndex:0 };
 
-  function deck(){ return bstate.scheme.decks[0]; }
+  /* the deck being edited; a replaced scheme may have fewer decks than before */
+  function deck(){
+    var ds=bstate.scheme.decks;
+    if (!Array.isArray(ds) || !ds.length) ds=bstate.scheme.decks=[{ rows:3, columns:[Col()] }];
+    if (bstate.deckIndex>=ds.length) bstate.deckIndex=ds.length-1;
+    return ds[bstate.deckIndex];
+  }
+
+  /* ---------- scheme bar: vehicle, decks, level ---------- */
+  function emptyItems(d){
+    return (d.columns||[]).every(function(c){ return !(c.items||[]).length; });
+  }
+  var removeArmed=null;
+  function drawSchemeBar(){
+    var s=bstate.scheme, ds=s.decks, cur=deck();
+    $("bVehicle").value = VEHICLES.indexOf(s.vehicle)!==-1 ? s.vehicle : "train";
+    var tabs=$("bDecks"); tabs.innerHTML="";
+    ds.forEach(function(d,i){
+      var b=document.createElement("button");
+      b.textContent="Deck "+(i+1)+(d.level?" · "+d.level:"");
+      b.setAttribute("aria-pressed", i===bstate.deckIndex?"true":"false");
+      b.addEventListener("click", function(){
+        bstate.deckIndex=i; bstate.sel=null; removeArmed=null; drawBuilder(); });
+      tabs.appendChild(b);
+    });
+    $("bAddDeck").disabled = ds.length>=LEVELS.length;
+    $("bLevel").value = cur.level||"";
+    var rm=$("bRemoveDeck");
+    rm.disabled = ds.length<=1;
+    rm.textContent = removeArmed===cur ? "Click again to remove" : "Remove deck";
+  }
+  $("bVehicle").addEventListener("change", function(){
+    bstate.scheme.vehicle=$("bVehicle").value; drawBuilder();
+  });
+  $("bAddDeck").addEventListener("click", function(){
+    var ds=bstate.scheme.decks;
+    if (ds.length>=LEVELS.length) return;
+    // several decks need distinct levels (D39): fill in whatever is missing
+    var used=ds.map(function(d){ return d.level; });
+    ds.forEach(function(d){
+      if (!d.level){ d.level=LEVELS.filter(function(l){ return used.indexOf(l)===-1; })[0]; used.push(d.level); }
+    });
+    var free=LEVELS.filter(function(l){ return used.indexOf(l)===-1; })[0];
+    ds.push({ level:free, rows:deck().rows, columns:[Col(),Col(),Col(),Col(),Col(),Col()] });
+    bstate.deckIndex=ds.length-1; bstate.sel=null; removeArmed=null;
+    drawBuilder();
+  });
+  $("bLevel").addEventListener("change", function(){
+    var v=$("bLevel").value, cur=deck();
+    // picking the other deck's level swaps the two, so levels stay unique
+    bstate.scheme.decks.forEach(function(d){ if (d!==cur && v && d.level===v) d.level=cur.level; });
+    if (v) cur.level=v; else delete cur.level;
+    bstate.scheme.decks.forEach(function(d){ if (!d.level) delete d.level; });
+    drawBuilder();
+  });
+  $("bRemoveDeck").addEventListener("click", function(){
+    var ds=bstate.scheme.decks, cur=deck();
+    if (ds.length<=1) return;
+    // a deck with items takes a second click - no silent data loss
+    if (!emptyItems(cur) && removeArmed!==cur){ removeArmed=cur; drawSchemeBar(); return; }
+    ds.splice(bstate.deckIndex,1);
+    removeArmed=null; bstate.sel=null;
+    drawBuilder();
+  });
   function isSeat(it){ return it.seat!=null; }
 
   TOOLS.forEach(function(t,i){
@@ -460,7 +523,9 @@ function init(){
     if (bwstate.framework==="compose" && bwstate.loaded) sendToCompose();
     var bd=deck();
     $("bMeta").innerHTML="<b>"+countSeats(bstate.scheme)+"</b> seats · <b>"
-      +bd.columns.length+"</b> cols · <b>"+bd.rows+"</b> rows";
+      +bd.columns.length+"</b> cols · <b>"+bd.rows+"</b> rows"
+      +(bstate.scheme.decks.length>1 ? " · deck <b>"+(bstate.deckIndex+1)+"</b>/"+bstate.scheme.decks.length : "");
+    drawSchemeBar();
     $("jsonB").value=JSON.stringify(bstate.scheme,null,2);
     showMsgs($("msgsB"), bstate.scheme);
     drawProp();

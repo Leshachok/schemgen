@@ -115,8 +115,9 @@ Builder (own domain, stores nothing) ──JSON file / admin API──▶ Wagon 
 | D39 | **`deck.id` replaced by optional `deck.level`: `lower` \| `upper`** | `id` was `"main"` everywhere and nothing read it, yet a double-deck vehicle needs to tell the passenger which deck they are looking at, and `"main"` cannot. `level` is optional for a one-deck scheme and required — and unique — when a scheme has several decks. Škoda stays two schemes (D20); each now carries the level it shows (`SKD-D1` lower, `SKD-D2` upper, which its stairs confirm). |
 | D40 | **No doors on any vehicle** | D9 extends to buses. Wagon schemes show only the aisle, and buses follow the same convention. The driver's place is the one bus-only item (§4.7). |
 | D41 | **`span.cols` removed — every item is one column wide** | Implemented in layout but never set by any scheme, sample, import or builder action. Horizontal size is already expressed by columns; a second way to make an item wide would be a second source of truth for the same thing. If a wide item is ever needed, adding an optional field back is additive. |
-| D42 | **Top-level `vehicle`: `train` \| `bus`, absent means `train`** | Chosen over a separate bus key space: one explicit field says what a scheme describes, so a key can never be read in the wrong namespace, and renderers can name the vehicle ("Bus BUS-53") in accessibility labels. Defaulting to `train` keeps every scheme written before buses valid without touching a published revision (D5). An unknown value warns and renders as a train. |
+| D42 | **Top-level `vehicle`: `train` \| `bus`, absent means `train`** | Chosen over a separate bus key space: one explicit field says what a scheme describes, so an exported file is self-describing and a key can never be read in the wrong namespace. **It changes nothing visual** — a bus is drawn by exactly the rules a wagon is, and the driver's place is its own item (D43). Its only rendered effect is the accessibility label ("Bus BUS-53" vs "Wagon …"). It also leaves a switch in place should a vehicle ever need different rendering. Kept deliberately (2026-10-05) although the admins already know the vehicle type: dropping it later would cost more than carrying it. Defaulting to `train` keeps every scheme written before buses valid without touching a published revision (D5). An unknown value warns and renders as a train. |
 | D43 | **`driver` is a typed item, always exactly one cell, no `facing`** | The one bus-only element (no doors, D40). A fixed size means no span to author and no resize handle in the builder, like `half_table` (D29); a `span` on it is ignored with a warning rather than an error, so a stray field cannot break a published scheme. No `facing`: the wheel reads the same whichever way the vehicle is drawn. No icon exists yet — the steering-wheel glyph is a stand-in, like `kid` and the stairs. |
+| D44 | **Builder edits vehicle and decks: at most two decks, levels kept valid by construction** | Two decks is the most `level` can name. Adding a second deck fills in `lower` / `upper` on both, and picking the other deck's level swaps the two, so the builder never produces a duplicate or missing level (D39) — the validator still catches hand-edited JSON. Removing a deck that has items takes a second click, the same no-silent-data-loss rule as D27. The builder writes `vehicle` explicitly, including `"train"`, so an exported file always says what it is. |
 
 ### Rejected
 
@@ -576,11 +577,9 @@ Known gaps:
 - Two supplied icons (`Group_31`, `Group_34`) arrived unlabelled and are read as `bicycle`
   and `inclusive`; `kid`, `stairs_up` and `stairs_down` are stand-ins pending assets. The
   `luggage` asset itself draws a face and a monitor — likely another mislabelled export (§7 Q1).
-- **The builder has no `vehicle` control** — a bus scheme gets `"vehicle": "bus"` by editing
-  the JSON. The `driver` item is in the palette and correctly has no resize handle.
-- **The builder edits exactly one deck.** It cannot add a second deck or set `level`, so a
-  double-deck train or bus can only be written by hand in JSON today. The format, the
-  validator and both renderers already handle several decks.
+- The live preview stacks a double-deck scheme's decks but doesn't caption them with their
+  level yet — only the deck tabs above the canvas and the accessibility label say which is
+  which.
 
 ## 11. Compose renderer verification status
 

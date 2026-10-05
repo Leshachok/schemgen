@@ -10,7 +10,7 @@
 
 
 <div class="topbar">
-  <div class="brand">Wagon scheme format<span>prototype</span></div>
+  <div class="brand">Seat scheme format<span>prototype</span></div>
   <div class="seg">
     <button id="mPreview" aria-pressed="false">Catalogue</button>
     <button id="mBuilder" aria-pressed="true">Builder</button>
@@ -84,6 +84,16 @@
         <button class="btn danger" id="bClear">Clear</button>
       </div>
       <div class="card-b">
+        <div class="scheme-bar">
+          <label class="meta">Vehicle
+            <select id="bVehicle"><option value="train">train</option><option value="bus">bus</option></select></label>
+          <span class="meta">Decks</span>
+          <div class="seg" id="bDecks"></div>
+          <button class="btn" id="bAddDeck">+ Deck</button>
+          <label class="meta">Level
+            <select id="bLevel"><option value="">—</option><option value="lower">lower</option><option value="upper">upper</option></select></label>
+          <button class="btn danger" id="bRemoveDeck">Remove deck</button>
+        </div>
         <div class="meta" style="margin-bottom:12px">
           Drag right/bottom edge to resize · <b>+</b> inserts · <b>✕</b> deletes · drag an item to move it
         </div>

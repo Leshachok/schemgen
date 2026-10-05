@@ -177,3 +177,6 @@
   svg text { user-select:none; }
   #bCanvas, #stage, #bStage { overflow:auto; user-select:none; }
   .empty-state { color:var(--faint); font-size:13px; text-align:center; padding:40px 20px; }
+  .scheme-bar { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin-bottom:12px; }
+  .scheme-bar label { display:flex; gap:6px; align-items:center; }
+  .scheme-bar .seg button { padding:4px 11px; }
