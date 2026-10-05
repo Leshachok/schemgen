@@ -19,6 +19,10 @@ fun validate(scheme: Scheme): List<Message> {
     val msgs = mutableListOf<Message>()
     if (scheme.decks.isEmpty()) return listOf(Message(Level.ERROR, "No decks in scheme."))
 
+    val vehicle = scheme.vehicle
+    if (vehicle != null && vehicle !in Vocabulary.VEHICLES) {
+        msgs += Message(Level.WARN, "unknown vehicle \"$vehicle\" — treated as train.")
+    }
     var seatCount = 0
     val multi = scheme.decks.size > 1
     val levelsSeen = mutableSetOf<String>()
@@ -41,7 +45,7 @@ fun validate(scheme: Scheme): List<Message> {
         deck.columns.forEachIndexed { ci, col ->
             col.items.forEach { item: Item ->
                 val row = item.row
-                val spanRows = item.span.rows
+                val spanRows = spanRows(item)
                 if (row + spanRows - 1 > maxRow) {
                     msgs += Message(
                         Level.ERROR,
@@ -87,6 +91,9 @@ fun validate(scheme: Scheme): List<Message> {
                             msgs += Message(Level.WARN, "col $ci: item has no type — drawn as placeholder.")
                         } else if (type !in Vocabulary.KNOWN_TYPES) {
                             msgs += Message(Level.WARN, "unknown type \"$type\" — drawn as placeholder.")
+                        }
+                        if (type in Vocabulary.ONE_CELL_TYPES && item.hasExplicitSpan) {
+                            msgs += Message(Level.WARN, "col $ci: $type is always one cell — span ignored.")
                         }
                     }
                 }

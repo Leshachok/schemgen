@@ -46,7 +46,8 @@ spec with rationale, not just notes.
 - **Removed fields stay removed** (D38, D39, D41): `class`, `hull`, `artwork`, seat
   `class`, facility `label`, `deck.id`, `span.cols`. Decks are named by optional `level`
   (`lower`/`upper`), required and unique when a scheme has several decks. No doors
-  on any vehicle (D40).
+  on any vehicle (D40). Buses: top-level `vehicle: "bus"` (absent = train, D42) and
+  the one-cell `driver` item (D43).
 - **`docs/developer-guide.md` is the field reference.** Any format change updates
   it alongside the spec, `format.js`, the Kotlin model and the fixtures.
 - **Every non-seat item uses one field, `type`** (`wc`, `table`, `half_table`,

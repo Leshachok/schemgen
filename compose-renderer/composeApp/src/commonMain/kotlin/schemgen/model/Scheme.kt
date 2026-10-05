@@ -36,7 +36,8 @@ data class StructuralItem(
     val type: String?,
     val facing: String? = null,
     override val row: Int = 1,
-    override val span: Span = Span()
+    override val span: Span = Span(),
+    val hasExplicitSpan: Boolean = false   // lets the validator flag a span on a one-cell type
 ) : Item
 
 data class Column(val items: List<Item> = emptyList())
@@ -52,6 +53,7 @@ data class Deck(
 data class Scheme(
     val key: String?,
     val rev: Int?,
+    val vehicle: String? = null,   // train | bus; absent means train
     val decks: List<Deck> = emptyList()
 )
 
@@ -61,10 +63,13 @@ object Vocabulary {
     val BERTHS = listOf("lower", "middle", "upper")
     val FACING = listOf("left", "right", "top", "bottom")
     val LEVELS = listOf("lower", "upper")
+    val VEHICLES = listOf("train", "bus")
     val FACILITIES = listOf(
         "wc", "wc_accessible", "luggage", "bicycle", "inclusive", "inclusive_marker",
-        "electrical", "kid", "stairs_up", "stairs_down"
+        "electrical", "kid", "stairs_up", "stairs_down", "driver"
     )
+    /** Always exactly one cell, whatever `span` says. */
+    val ONE_CELL_TYPES = listOf("driver")
     val STRUCTURAL_TYPES = listOf("table", "half_table", "separator")
     val KNOWN_TYPES = FACILITIES + STRUCTURAL_TYPES
 }

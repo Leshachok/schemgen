@@ -31,6 +31,7 @@ object SchemeParser {
         return Scheme(
             key = root["key"]?.jsonPrimitive?.contentOrNull,
             rev = root["rev"]?.jsonPrimitive?.intOrNull,
+            vehicle = root["vehicle"]?.jsonPrimitive?.contentOrNull,
             decks = (root["decks"] as? JsonArray)?.map(::parseDeck) ?: emptyList()
         )
     }
@@ -70,7 +71,8 @@ object SchemeParser {
                 type = o["type"]?.jsonPrimitive?.contentOrNull,
                 facing = o["facing"]?.jsonPrimitive?.contentOrNull,
                 row = row,
-                span = span
+                span = span,
+                hasExplicitSpan = o["span"] != null
             )
         }
     }

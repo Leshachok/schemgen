@@ -11,7 +11,7 @@ function render(scheme, state){
     var L=layout(deck);
     var svg=el("svg",{ width:L.width, height:L.height,
       viewBox:"0 0 "+L.width+" "+L.height, role:"group",
-      "aria-label":"Scheme "+(scheme.key||"")+(deck.level?", "+deck.level+" deck":"") });
+      "aria-label":(scheme.vehicle==="bus"?"Bus ":"Wagon ")+(scheme.key||"")+(deck.level?", "+deck.level+" deck":"") });
     svg.appendChild(el("rect",{ x:2,y:2,width:L.width-4,height:L.height-4,
       rx:12, fill:"#fff", stroke:"var(--border-firm)" }));
     if (state.showGrid){

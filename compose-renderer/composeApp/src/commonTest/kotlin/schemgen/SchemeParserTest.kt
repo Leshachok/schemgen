@@ -52,4 +52,25 @@ class SchemeParserTest {
         assertTrue(errors("$lower,$lower").isNotEmpty(), "duplicate levels must fail")
         assertEquals("lower", SchemeParser.parse("""{"decks":[$lower]}""").decks[0].level)
     }
+
+    @Test
+    fun busParsesWithDriverAndNoErrors() {
+        val scheme = SchemeParser.parse(Fixtures.BUS)
+        val msgs = validate(scheme)
+        assertTrue(msgs.none { it.level != Level.OK }, "unexpected messages: $msgs")
+        assertEquals("bus", scheme.vehicle)
+        val driver = scheme.decks[0].columns[0].items.single()
+        assertEquals("driver", (driver as schemgen.model.StructuralItem).type)
+    }
+
+    @Test
+    fun driverIsAlwaysOneCell() {
+        val scheme = SchemeParser.parse(
+            """{"decks":[{"rows":3,"columns":[{"items":[{"type":"driver","row":1,"span":{"rows":3}}]}]}]}"""
+        )
+        val msgs = validate(scheme)
+        assertTrue(msgs.none { it.level == Level.ERROR }, "span on driver must not error: $msgs")
+        assertTrue(msgs.any { it.level == Level.WARN && "driver" in it.text })
+        assertEquals(1, schemgen.layout.clampedEndRow(scheme.decks[0].columns[0].items[0], 3))
+    }
 }

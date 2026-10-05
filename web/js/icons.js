@@ -23,5 +23,7 @@ ICONS.stairs_up = { w:56, h:104, box:[10,34,38,38],
   svg:'<path d="M14 68h10V58h10V48h10V38h8" stroke="#7E8386" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>' };
 ICONS.stairs_down = { w:56, h:104, box:[10,34,38,38],
   svg:'<path d="M14 38h10v10h10v10h10v10h8" stroke="#7E8386" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>' };
+ICONS.driver = { w:56, h:104, box:[15,39,26,26],
+  svg:'<circle cx="28" cy="52" r="11" stroke="#7E8386" stroke-width="2.4" fill="none"/><circle cx="28" cy="52" r="3" stroke="#7E8386" stroke-width="2.4" fill="none"/><path d="M17 52h8M31 52h8M28 55v8" stroke="#7E8386" stroke-width="2.4" fill="none" stroke-linecap="round"/>' };
 ICONS.kid = { w:56, h:104, box:[14,38,30,34],
   svg:'<circle cx="23" cy="44" r="4" stroke="#7E8386" stroke-width="2.4" fill="none"/><path d="M23 48v10M18 52h10M20 68l3-10M26 68l-3-10" stroke="#7E8386" stroke-width="2.4" fill="none" stroke-linecap="round"/><circle cx="37" cy="52" r="3" stroke="#7E8386" stroke-width="2.4" fill="none"/><path d="M37 55v7M34 58h6M35 68l2-6M39 68l-2-6" stroke="#7E8386" stroke-width="2.4" fill="none" stroke-linecap="round"/>' };

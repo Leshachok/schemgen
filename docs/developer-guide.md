@@ -1,7 +1,7 @@
 # Seat Scheme Format — Field Reference
 
 A seat scheme is one JSON document describing the seat layout of one vehicle — a train
-wagon or a bus: which decks it has, how many rows each deck has, and what sits in each
+wagon or a bus (`"vehicle": "bus"`, see `shared-fixtures/bus.json`): which decks it has, how many rows each deck has, and what sits in each
 column at each row — a seat, a table, a facility, or nothing at all.
 
 This page is the field-by-field reference: every field, the values it takes, its default,
@@ -51,6 +51,7 @@ field anywhere in the format.
 
 | Field | Type | Required | Default | What it changes |
 |---|---|---|---|---|
+| `vehicle` | `"train"` \| `"bus"` | no | `"train"` | Names the vehicle in the accessibility label ("Bus BUS-53"). Nothing else is drawn differently — a bus is the same grid of seats and items. An unknown value warns and is treated as `train`. |
 | `key` | string | yes | — | Nothing visible. Identifies the vehicle type, e.g. `"KUP-34"`. Renderers may use it in an accessibility label but must not depend on it. |
 | `rev` | integer | yes | — | Nothing visible. Revision of this scheme; a published revision is never edited, a change publishes a new `rev`. |
 | `decks` | array of Deck | yes | — | One drawing per deck, stacked in array order. An empty or missing array is an error. |
@@ -113,13 +114,14 @@ Removed, do not write: `class` (fare class — that belongs to availability), `b
 
 | Field | Type | Required | Default | What it changes |
 |---|---|---|---|---|
-| `type` | string | yes | — | What the item is: `table`, `half_table`, `separator`, or a facility (see **Facilities**). Missing or unknown → grey placeholder block. |
+| `type` | string | yes | — | What the item is: `table`, `half_table`, `separator`, `driver`, or a facility (see **Facilities**). Missing or unknown → grey placeholder block. |
 | `facing` | `"top"` \| `"bottom"` | `half_table` only | `"top"` | Which half of the row the half-table occupies. |
 
 | `type` | Drawn as | Sizing |
 |---|---|---|
 | `table` | Plain light block, no icon | Resizable: `span.rows` 1–3 |
 | `half_table` | Light block of half a row's height, in the top or bottom half | Fixed: one row, no `span` |
+| `driver` | Light block with a steering-wheel icon (stand-in until the real asset exists) | Fixed: exactly one cell; a `span` is ignored with a warning. No `facing` |
 | `separator` | Thin vertical line, slightly taller than the rows it covers; its column is narrow | `span.rows` = the rows it divides — it can stop short of the aisle |
 | facility | Light block with the facility icon centred and scaled to fit | `span.rows` as needed |
 
@@ -156,6 +158,7 @@ block marked "?" — it just won't have artwork yet.
 | `inclusive_marker` | Standalone wheelchair marker | variable |
 | `electrical` | Electrical cabinet warning | variable |
 | `stairs_up` / `stairs_down` | Stairs to the other deck | variable — icons are stand-ins |
+| `driver` | Bus driver's place | one cell, always — icon is a stand-in |
 
 ## Validation
 
@@ -167,6 +170,8 @@ warnings still render.
 | No decks | error |
 | Several decks and one has no `level`, or two share one | error |
 | Unknown `level` value | warning |
+| Unknown `vehicle` value | warning |
+| `span` on a `driver` | warning (ignored) |
 | Item runs past the deck's `rows` | error |
 | Two items in one cell | error |
 | Duplicate seat number within a deck | error |

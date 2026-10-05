@@ -115,6 +115,8 @@ Builder (own domain, stores nothing) ──JSON file / admin API──▶ Wagon 
 | D39 | **`deck.id` replaced by optional `deck.level`: `lower` \| `upper`** | `id` was `"main"` everywhere and nothing read it, yet a double-deck vehicle needs to tell the passenger which deck they are looking at, and `"main"` cannot. `level` is optional for a one-deck scheme and required — and unique — when a scheme has several decks. Škoda stays two schemes (D20); each now carries the level it shows (`SKD-D1` lower, `SKD-D2` upper, which its stairs confirm). |
 | D40 | **No doors on any vehicle** | D9 extends to buses. Wagon schemes show only the aisle, and buses follow the same convention. The driver's place is the one bus-only item (§4.7). |
 | D41 | **`span.cols` removed — every item is one column wide** | Implemented in layout but never set by any scheme, sample, import or builder action. Horizontal size is already expressed by columns; a second way to make an item wide would be a second source of truth for the same thing. If a wide item is ever needed, adding an optional field back is additive. |
+| D42 | **Top-level `vehicle`: `train` \| `bus`, absent means `train`** | Chosen over a separate bus key space: one explicit field says what a scheme describes, so a key can never be read in the wrong namespace, and renderers can name the vehicle ("Bus BUS-53") in accessibility labels. Defaulting to `train` keeps every scheme written before buses valid without touching a published revision (D5). An unknown value warns and renders as a train. |
+| D43 | **`driver` is a typed item, always exactly one cell, no `facing`** | The one bus-only element (no doors, D40). A fixed size means no span to author and no resize handle in the builder, like `half_table` (D29); a `span` on it is ignored with a warning rather than an error, so a stray field cannot break a published scheme. No `facing`: the wheel reads the same whichever way the vehicle is drawn. No icon exists yet — the steering-wheel glyph is a stand-in, like `kid` and the stairs. |
 
 ### Rejected
 
@@ -255,6 +257,7 @@ Confirmed list, with assets supplied. Not final — more may appear.
 | `inclusive_marker` | standalone wheelchair marker |
 | `electrical` | electricity warning |
 | `stairs_up` / `stairs_down` | Škoda only |
+| `driver` | Bus driver's place. Always one cell (D43); stand-in icon |
 
 | Field | Values |
 |---|---|
@@ -294,7 +297,8 @@ column types.
 
 | Field | On | Values | Notes |
 |---|---|---|---|
-| `key` | scheme | e.g. `П19` | Vehicle-type key. Bus key space is open, §7. Renderers must not depend on it. |
+| `vehicle` | scheme | `train` \| `bus` | Optional, absent means `train` (D42). |
+| `key` | scheme | e.g. `П19`, `BUS-53` | Vehicle-type key. Renderers must not depend on it. |
 | `rev` | scheme | int | Immutable once published. Renderers must not depend on it. |
 | `decks` | scheme | array | Double-deckers have 2. |
 | `level` | deck | `lower` \| `upper` | Optional with one deck; required and unique with several (D39). |
@@ -336,17 +340,17 @@ What carries over unchanged: the grid, empty-row aisles, `decks` (double-deck co
 `luggage`, availability and reconciliation. A typical 2+2 coach is two seat columns, an empty
 row, two more seat columns.
 
-The two train-only top-level fields, `class` and `hull`, were removed (D38). What remains:
+The two train-only top-level fields, `class` and `hull`, were removed (D38). What a bus adds:
 
-- `key` — wagon-type keys. Buses need their own key space, or a top-level discriminator
-  (e.g. `vehicle: "train" | "bus"`) so a key cannot be read in the wrong namespace.
-- **Driver's place** — the one bus-only item, a new `type` value (D30). No icon exists yet;
-  it gets a stand-in, like `kid` and the stairs. Thanks to D6, older renderers draw an inert
-  placeholder for it.
+- **`"vehicle": "bus"`** at the top level (D42).
+- **`driver`** — the one bus-only item: a typed item, always one cell, no `facing` (D43).
+  Older renderers draw it as an inert placeholder (D6).
 - **No doors** (D40).
 
-Still worth checking against two or three real bus layouts, the same way the grid model was
-validated against the wagon catalogue (§3).
+Reference: `shared-fixtures/bus.json` (sample "Автобус 2+2"), a 53-seat 2+2 coach drawn
+front-left — the driver at row 5, the bus's left side when facing left; row 3 the aisle,
+closed by the rear bench. Still worth checking against two or three real bus layouts, the
+same way the grid model was validated against the wagon catalogue (§3).
 
 ---
 
@@ -415,8 +419,8 @@ real authoring mistakes:
 3. **Is the facility list final?** Marked "close to complete but not final".
 4. **Web vs mobile layout behaviour.** Sizes differ (D33). Whether layout behaviour also
    differs — scroll direction, rotating the vehicle on narrow screens — is undecided.
-5. **Bus top level.** Separate key space vs a `vehicle` discriminator (§4.7).
-6. **Driver's place.** Its size on the grid and whether it needs a `facing`. No icon yet.
+5. ~~Bus top level~~ — settled: `vehicle` field (D42).
+6. ~~Driver's place~~ — settled: one cell, no `facing` (D43). Real icon still pending.
 7. **Two admins, one builder.** The builder pushes to the wagon admin (Compose) and the bus
    admin (Vue/Nuxt). One shared import API, or one per admin? Owned by the admin teams.
 8. **Naming.** "Wagon scheme" is baked into the spec title, file names and code. Rename to
@@ -454,6 +458,8 @@ real authoring mistakes:
 | Wagon class, hull shape? | Removed from the format (D38). |
 | How is a double-deck vehicle's deck named? | `deck.level`, `lower` / `upper` (D39). |
 | Wide items (`span.cols`)? | Removed (D41). |
+| Bus vs train? | Top-level `vehicle`, default `train` (D42). |
+| Driver's place? | `driver` item, one cell, no `facing` (D43). |
 | `inclusive` vs `inclusive_marker`? | Both kept — two distinct facilities. |
 
 ---
@@ -570,6 +576,8 @@ Known gaps:
 - Two supplied icons (`Group_31`, `Group_34`) arrived unlabelled and are read as `bicycle`
   and `inclusive`; `kid`, `stairs_up` and `stairs_down` are stand-ins pending assets. The
   `luggage` asset itself draws a face and a monitor — likely another mislabelled export (§7 Q1).
+- **The builder has no `vehicle` control** — a bus scheme gets `"vehicle": "bus"` by editing
+  the JSON. The `driver` item is in the palette and correctly has no resize handle.
 - **The builder edits exactly one deck.** It cannot add a second deck or set `level`, so a
   double-deck train or bus can only be written by hand in JSON today. The format, the
   validator and both renderers already handle several decks.

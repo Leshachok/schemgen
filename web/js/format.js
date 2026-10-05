@@ -7,16 +7,22 @@ var KINDS = ["sit","sleep","luxury"];
 var BERTHS = ["lower","middle","upper"];
 var FACING = ["left","right","top","bottom"];
 var LEVELS = ["lower","upper"];
+var VEHICLES = ["train","bus"];
 var FACILITIES = ["wc","wc_accessible","luggage","bicycle","inclusive","inclusive_marker",
-                  "electrical","kid","stairs_up","stairs_down"];
+                  "electrical","kid","stairs_up","stairs_down","driver"];
 var STRUCTURAL_TYPES = ["table","half_table","separator"];
 var KNOWN_TYPES = FACILITIES.concat(STRUCTURAL_TYPES);
 var FAC_LABEL = { wc:"WC", wc_accessible:"WC+", luggage:"Baggage", bicycle:"Bicycle",
   inclusive:"Inclusive", inclusive_marker:"Marker", electrical:"Electric", kid:"Kid",
-  stairs_up:"Up", stairs_down:"Down" };
+  stairs_up:"Up", stairs_down:"Down", driver:"Driver" };
+/* items that always occupy exactly one cell, whatever span says */
+var ONE_CELL_TYPES = ["driver"];
 
 function rowY(deck,row){ return T.padY + (row-1)*T.rowPitch; }
-function itemSpan(it){ var s=it.span||{}; return { rows:s.rows||1 }; }
+function itemSpan(it){
+  if (ONE_CELL_TYPES.indexOf(it.type)!==-1) return { rows:1 };
+  var s=it.span||{}; return { rows:s.rows||1 };
+}
 function itemWidth(it){
   return it.type==="separator" ? T.sepW : T.seat;
 }
@@ -44,6 +50,8 @@ function validate(scheme){
   var msgs=[];
   if (!scheme || !Array.isArray(scheme.decks) || !scheme.decks.length)
     return [{level:"e", text:"No decks in scheme."}];
+  if (scheme.vehicle!=null && VEHICLES.indexOf(scheme.vehicle)===-1)
+    msgs.push({level:"w", text:"unknown vehicle \""+scheme.vehicle+"\" — treated as train."});
   var multi=scheme.decks.length>1, levelsSeen={};
   scheme.decks.forEach(function(deck, di){
     if (deck.level!=null && LEVELS.indexOf(deck.level)===-1)
@@ -81,6 +89,8 @@ function validate(scheme){
           if (it.type==null) msgs.push({level:"w", text:"col "+ci+": item has no type — drawn as placeholder."});
           else if (KNOWN_TYPES.indexOf(it.type)===-1)
             msgs.push({level:"w", text:"unknown type \""+it.type+"\" — drawn as placeholder."});
+          if (ONE_CELL_TYPES.indexOf(it.type)!==-1 && it.span!=null)
+            msgs.push({level:"w", text:"col "+ci+": "+it.type+" is always one cell — span ignored."});
         }
       });
     });

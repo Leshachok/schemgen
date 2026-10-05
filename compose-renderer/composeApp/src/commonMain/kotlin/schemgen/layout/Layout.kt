@@ -4,6 +4,7 @@ import schemgen.model.Column
 import schemgen.model.Deck
 import schemgen.model.Item
 import schemgen.model.StructuralItem
+import schemgen.model.Vocabulary
 
 /**
  * Platform layout constants - never part of the format itself, each renderer owns
@@ -57,4 +58,8 @@ fun layout(deck: Deck): DeckLayout {
 /** Row span clamped to the item's own rows..rows+span-1 within [maxRow], matching
  *  the JS renderer's `Math.min(row+sp.rows-1, deck.rows)` clamp in the item loop. */
 fun clampedEndRow(item: Item, maxRow: Int): Int =
-    (item.row + item.span.rows - 1).coerceAtMost(maxRow)
+    (item.row + spanRows(item) - 1).coerceAtMost(maxRow)
+
+/** Rows an item covers - one-cell types (driver) ignore their span, like format.js's itemSpan. */
+fun spanRows(item: Item): Int =
+    if (item is StructuralItem && item.type in Vocabulary.ONE_CELL_TYPES) 1 else item.span.rows

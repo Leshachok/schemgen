@@ -136,6 +136,19 @@ function halfTableDemo(){
   return { key:"HALFTBL-20", rev:1,
     decks:[{ rows:3, columns:cols }] };
 }
+/* 2+2 coach, front on the left. Facing left the bus's left side is the bottom
+   of the drawing, so the driver sits at row 5; row 3 is the aisle, filled only
+   by the rear bench. */
+function bus53(){
+  var cols=[Col([{ type:"driver", row:5 }])], n=1;
+  for (var c=0;c<12;c++){
+    cols.push(Col([ sit(n,"left",1), sit(n+1,"left",2), sit(n+2,"left",4), sit(n+3,"left",5) ]));
+    n+=4;
+  }
+  cols.push(Col([1,2,3,4,5].map(function(r){ return sit(n++,"left",r); })));
+  return { key:"BUS-53", rev:1, vehicle:"bus",
+    decks:[{ rows:5, columns:cols }] };
+}
 function broken(){
   var cols=[
     Col([ { seat:"1", kind:"sleep", row:1 }, berth(2,"lower",2) ]),
@@ -162,6 +175,7 @@ var SCHEMES = [
   { group:"Hand-written", id:"skoda1",     label:"Škoda deck 1",  build:skoda1 },
   { group:"Hand-written", id:"skoda2",     label:"Škoda deck 2",  build:skoda2 },
   { group:"Hand-written", id:"halftable",  label:"Half-tables",   build:halfTableDemo },
+  { group:"Hand-written", id:"bus53",      label:"Автобус 2+2",   build:bus53 },
   { group:"Hand-written", id:"broken",     label:"Broken (test)", build:broken }
 ];
 AUTO.forEach(function(s,i){

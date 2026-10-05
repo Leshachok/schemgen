@@ -80,6 +80,11 @@ val FACILITY_ICONS: Map<String, FacilityIcon> = mapOf(
     "stairs_down" to FacilityIcon(10f, 34f, 38f, 38f, listOf(
         IconPath("M14 38h10v10h10v10h10v10h8", stroke = GREY_DARK, strokeWidth = 3f)
     )),
+    "driver" to FacilityIcon(15f, 39f, 26f, 26f, listOf(
+        IconPath("M28 52 m -11,0 a 11,11 0 1,0 22,0 a 11,11 0 1,0 -22,0", stroke = GREY_DARK, strokeWidth = 2.4f),
+        IconPath("M28 52 m -3,0 a 3,3 0 1,0 6,0 a 3,3 0 1,0 -6,0", stroke = GREY_DARK, strokeWidth = 2.4f),
+        IconPath("M17 52h8M31 52h8M28 55v8", stroke = GREY_DARK, strokeWidth = 2.4f)
+    )),
     "kid" to FacilityIcon(14f, 38f, 30f, 34f, listOf(
         IconPath("M23 44 m -4,0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0", stroke = GREY_DARK, strokeWidth = 2.4f),
         IconPath("M23 48v10M18 52h10M20 68l3-10M26 68l-3-10", stroke = GREY_DARK, strokeWidth = 2.4f),
@@ -92,5 +97,5 @@ val FACILITY_ICONS: Map<String, FacilityIcon> = mapOf(
 val FACILITY_LABEL: Map<String, String> = mapOf(
     "wc" to "WC", "wc_accessible" to "WC+", "luggage" to "Baggage", "bicycle" to "Bicycle",
     "inclusive" to "Inclusive", "inclusive_marker" to "Marker", "electrical" to "Electric",
-    "kid" to "Kid", "stairs_up" to "Up", "stairs_down" to "Down"
+    "kid" to "Kid", "stairs_up" to "Up", "stairs_down" to "Down", "driver" to "Driver"
 )

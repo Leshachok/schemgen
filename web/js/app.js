@@ -148,6 +148,8 @@ function init(){
     return { label:FAC_LABEL[f], make:function(n,r){ return { type:f, row:r }; } };
   }));
 
+  /* no row-span control: half-table (D29) and one-cell items such as driver */
+  function isFixedSize(it){ return it.type==="half_table" || ONE_CELL_TYPES.indexOf(it.type)!==-1; }
   var bstate={ scheme:{ key:"NEW-1", rev:1,
       decks:[{ rows:3, columns:[Col(),Col(),Col(),Col(),Col(),Col()] }] },
     tool:TOOLS[0], toolIndex:0, sel:null };
@@ -324,7 +326,7 @@ function init(){
             cellG.addEventListener("mouseleave", function(){ cross.setAttribute("opacity","0"); });
             cellG.appendChild(cross);
             attachMove(rect, ci, rr, it);
-            if (isSel && !isSeat(it) && it.type!=="half_table"){
+            if (isSel && !isSeat(it) && !isFixedSize(it)){
               var handle=el("rect",{ x:x+CELL-6, y:y+cellH-6, width:12, height:12, rx:3,
                 fill:"var(--sel)", stroke:"#fff","stroke-width":1.5, style:"cursor:ns-resize" });
               handle.addEventListener("click", function(e){ e.stopPropagation(); });
@@ -553,7 +555,7 @@ function init(){
       hf.addEventListener("change", function(){ it.facing=hf.value; drawBuilder(); });
       field("facing", hf);
     }
-    if (!isSeat(it) && it.type!=="half_table"){
+    if (!isSeat(it) && !isFixedSize(it)){
       var sp=document.createElement("input");
       sp.type="number"; sp.min="1"; sp.max="10"; sp.value=itemSpan(it).rows;
       sp.addEventListener("change", function(){
@@ -563,7 +565,7 @@ function init(){
       });
       field("row span", sp);
     }
-    if (!isSeat(it) && it.type!=="half_table"){
+    if (!isSeat(it) && !isFixedSize(it)){
       var h=document.createElement("div"); h.className="hint";
       h.style.marginBottom="10px"; h.textContent="Or drag the green handle on the canvas.";
       box.appendChild(h);
