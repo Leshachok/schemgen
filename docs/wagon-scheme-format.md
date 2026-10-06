@@ -514,7 +514,7 @@ schemgen/
       app.js                    UI wiring: catalogue, builder, export, framework preview
     tools/                  regeneration scripts (see web/tools/README.md)
   compose-renderer/         Compose Multiplatform renderer (see compose-renderer/README.md)
-    schemgen-compose/       the published library, ua.gov.uz:schemgen-compose
+    schemgen-renderer-compose/       the published library, ua.gov.uz:schemgen-renderer-compose
     composeApp/             wasm preview harness for the web Preview tab
   shared-fixtures/          scheme JSON used to check every renderer agrees with format.js
 ```
@@ -523,7 +523,7 @@ Not yet created: the SwiftUI renderer, the production web renderer, and the shar
 tokens (§9). Each renderer subfolder is a sibling of `web/`, not nested inside it — `web/`
 is the reference implementation and UI shell, not the parent project.
 
-`compose-renderer/` is split along D32's lines: `schemgen-compose` is the library other
+`compose-renderer/` is split along D32's lines: `schemgen-renderer-compose` is the library other
 teams depend on (Android, iOS, wasm targets, published to the UZmiv Azure Artifacts feed
 next to `uz-compose-ui-kit`), and `composeApp` is the thin wasm harness the web Preview tab
 drives by `postMessage`. Consumers are documented in `compose-renderer/INTEGRATION.md`.
@@ -669,16 +669,21 @@ The seat-back bracket, berth bars and real facility icons, previously listed as 
 (§9 phase 6), are already implemented in `SchemeCanvas.kt` / `Icons.kt`. What remains of
 phase 6 is confirming they match the web reference.
 
-**Library split, 2026-10-06.** `compose-renderer/` is now `schemgen-compose` (library)
+**Library split, 2026-10-06.** `compose-renderer/` is now `schemgen-renderer-compose` (library)
 plus `composeApp` (harness), see §8. Checked:
 
-- `:schemgen-compose:assemble` builds Android, iosArm64, iosSimulatorArm64 and wasmJs.
+- `:schemgen-renderer-compose:assemble` builds Android, iosArm64, iosSimulatorArm64 and wasmJs.
 - The same 10 `commonTest` tests pass on `wasmJsBrowserTest` and `iosSimulatorArm64Test`.
 - `publishToMavenLocal` produces the root and all four platform publications.
 - miv-multiplatform (Kotlin 2.4.20, Compose 1.12.0) compiled for wasm and Android against
   `0.1.0` from mavenLocal, with the preview from `INTEGRATION.md` wired in. That was a
   throwaway worktree, not committed. Not yet clicked through in the running panel.
 - The harness standalone still draws the kupe sample correctly (headless screenshot).
+
+The library was first published as `schemgen-compose` 0.1.0 and renamed the same day to
+`schemgen-renderer-compose`, which names it as one of the three renderers (D31). The old
+artifact stays on the feed (Azure Artifacts versions can't be reused) but gets no further
+versions.
 
 Two behaviour changes came with the split. `SchemeView` no longer scrolls or pads
 itself: a vertical scroll inside a consumer's scrolling screen crashes Compose, so the
@@ -701,6 +706,6 @@ Immediate actions, in order. The longer view is §9.
 5. Sketch each renderer's public API and get sign-off from its consumer teams — once
    published (D32), changing it costs every consumer a migration. Compose has a first
    cut (§9 phase 5); review it with the Android sales and conductor app teams before 1.0.
-6. Publish `schemgen-compose` 0.1.0 to the Azure feed, and wire the read-only preview into
+6. Publish `schemgen-renderer-compose` 0.1.0 to the Azure feed, and wire the read-only preview into
    the miv admin panel's Mockups screens (`compose-renderer/INTEGRATION.md`). Try it on a
    few real schemes there.

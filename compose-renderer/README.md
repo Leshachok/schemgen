@@ -2,8 +2,8 @@
 
 The Compose Multiplatform renderer for schemgen (D31, D32), as two Gradle modules:
 
-- **`schemgen-compose`** is the library: Android, iOS (arm64, simulator arm64) and
-  wasmJs. It's published as `ua.gov.uz:schemgen-compose` to the UZmiv Azure Artifacts
+- **`schemgen-renderer-compose`** is the library: Android, iOS (arm64, simulator arm64) and
+  wasmJs. It's published as `ua.gov.uz:schemgen-renderer-compose` to the UZmiv Azure Artifacts
   feed, set up the same way as `uz-compose-ui-kit`. Consumers and the
   miv-multiplatform hand-off are in [INTEGRATION.md](INTEGRATION.md). How to release is
   in `/build.md`.
@@ -18,9 +18,9 @@ again after the library split on 2026-10-06. Details are in
 
 ```
 ./gradlew :composeApp:wasmJsBrowserDevelopmentRun       # harness on http://localhost:8080
-./gradlew :schemgen-compose:wasmJsBrowserTest           # commonTest in headless Chrome
-./gradlew :schemgen-compose:iosSimulatorArm64Test       # same tests, iOS simulator
-./gradlew :schemgen-compose:publishToMavenLocal         # try it in a consumer
+./gradlew :schemgen-renderer-compose:wasmJsBrowserTest           # commonTest in headless Chrome
+./gradlew :schemgen-renderer-compose:iosSimulatorArm64Test       # same tests, iOS simulator
+./gradlew :schemgen-renderer-compose:publishToMavenLocal         # try it in a consumer
 ```
 
 (`wasmJsBrowserRun`, the name used in older notes, no longer exists in current
@@ -34,7 +34,7 @@ suite (roadmap phase 2).
 ## Module map
 
 ```
-schemgen-compose/src/
+schemgen-renderer-compose/src/
   commonMain/kotlin/ua/gov/uz/schemgen/
     model/Scheme.kt          public: data classes mirroring the JSON format 1:1
     model/SchemeParser.kt    public: hand-written parser (the format isn't a clean

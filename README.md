@@ -32,7 +32,7 @@ See spec §1.3 and §9.
 web/                the reference implementation - open web/index.html directly,
                      no server or build step needed
 compose-renderer/    Compose Multiplatform renderer: the published library
-                     (ua.gov.uz:schemgen-compose - Android, iOS, wasm) plus a
+                     (ua.gov.uz:schemgen-renderer-compose - Android, iOS, wasm) plus a
                      wasm preview harness, see compose-renderer/README.md
 docs/                the format spec + decision log + roadmap
 shared-fixtures/     real scheme JSON, used to check every renderer agrees

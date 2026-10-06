@@ -4,10 +4,10 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 /*
  * The published Compose renderer (D32). Same shape as uz-compose-ui-kit: one KMP
  * library, published with vanniktech to the UZmiv Azure Artifacts feed as
- * ua.gov.uz:schemgen-compose (artifactId = this module's name).
+ * ua.gov.uz:schemgen-renderer-compose (artifactId = this module's name).
  *
- *   ./gradlew :schemgen-compose:publishToMavenLocal                       # try it locally
- *   ./gradlew :schemgen-compose:publishAllPublicationsToUZmivRepository   # release
+ *   ./gradlew :schemgen-renderer-compose:publishToMavenLocal                       # try it locally
+ *   ./gradlew :schemgen-renderer-compose:publishAllPublicationsToUZmivRepository   # release
  *
  * Bump `version` on every release - the feed rejects re-publishing a version.
  */

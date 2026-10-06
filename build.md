@@ -61,7 +61,7 @@ Verified 2026-10-05: ~40 s on a warm cache with these flags.
 Tests (`commonTest`, run in headless Chrome, so the agent needs Chrome/Chromium):
 
 ```
-./gradlew :schemgen-compose:wasmJsBrowserTest --no-daemon
+./gradlew :schemgen-renderer-compose:wasmJsBrowserTest --no-daemon
 ```
 
 Caching: `~/.gradle` is worth caching between runs (dependencies, wrapper, Node/Yarn,
@@ -69,15 +69,15 @@ Binaryen); `gradle.properties` already turns on the build cache.
 
 ## Publishing the Compose library
 
-`compose-renderer/schemgen-compose` is the published renderer (D32),
-`ua.gov.uz:schemgen-compose` on the UZmiv Azure Artifacts feed. It's set up the same way
+`compose-renderer/schemgen-renderer-compose` is the published renderer (D32),
+`ua.gov.uz:schemgen-renderer-compose` on the UZmiv Azure Artifacts feed. It's set up the same way
 as `uz-compose-ui-kit` and released the same way, by hand from a developer machine for now:
 
 ```
 cd compose-renderer
-# bump `version` in schemgen-compose/build.gradle.kts first - the feed refuses a version twice
-./gradlew :schemgen-compose:wasmJsBrowserTest :schemgen-compose:iosSimulatorArm64Test
-./gradlew :schemgen-compose:publishAllPublicationsToUZmivRepository
+# bump `version` in schemgen-renderer-compose/build.gradle.kts first - the feed refuses a version twice
+./gradlew :schemgen-renderer-compose:wasmJsBrowserTest :schemgen-renderer-compose:iosSimulatorArm64Test
+./gradlew :schemgen-renderer-compose:publishAllPublicationsToUZmivRepository
 ```
 
 Credentials: `azureUser`/`azureToken` in `~/.gradle/gradle.properties`, or

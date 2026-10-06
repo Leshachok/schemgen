@@ -9,7 +9,7 @@ plugins {
 
 kotlin {
     // The wasm preview harness the "Preview" tab in web/index.html talks to. All
-    // renderer code is in :schemgen-compose; this module is only the page around it.
+    // renderer code is in :schemgen-renderer-compose; this module is only the page around it.
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         outputModuleName = "schemgenPreview"
@@ -27,7 +27,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.schemgenCompose)
+            implementation(projects.schemgenRendererCompose)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)

@@ -17,5 +17,5 @@ dependencyResolutionManagement {
     }
 }
 
-include(":schemgen-compose")   // the published library
+include(":schemgen-renderer-compose")   // the published library
 include(":composeApp")         // wasm preview harness for web/index.html

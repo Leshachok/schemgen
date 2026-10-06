@@ -1,4 +1,4 @@
-# Consuming `schemgen-compose`
+# Consuming `schemgen-renderer-compose`
 
 How another project depends on the Compose renderer, and a step-by-step hand-off for
 wiring it into the web admin panel (`miv-multiplatform`). The second half is written so
@@ -8,11 +8,14 @@ an agent working in that repo can follow it without reading this one.
 
 | | |
 |---|---|
-| Coordinates | `ua.gov.uz:schemgen-compose` |
+| Coordinates | `ua.gov.uz:schemgen-renderer-compose` |
 | Feed | Azure Artifacts `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv/maven/v1`, the same one `ua.gov.uz:compose-ui-kit` comes from |
 | Targets | Android, iosArm64, iosSimulatorArm64, wasmJs |
 | Built with | Kotlin 2.4.10, Compose Multiplatform 1.11.1. Consumers on these or newer are fine |
 | Transitive API | `kotlinx-serialization-json`, because `SchemeParser.parse(JsonObject)` is public |
+
+`ua.gov.uz:schemgen-compose` 0.1.0, also on the feed, is the same code published under the
+earlier name. Don't depend on it; it gets no further versions.
 
 It's published the same way as `uz-compose-ui-kit`: the vanniktech plugin, the same feed,
 the same credential lookup (`azureUser`/`azureToken` Gradle properties or
@@ -61,12 +64,12 @@ Rules a consumer needs to know:
 
 ```
 cd compose-renderer
-./gradlew :schemgen-compose:publishToMavenLocal
+./gradlew :schemgen-renderer-compose:publishToMavenLocal
 ```
 
 Any consumer that lists `mavenLocal()` in its repositories (miv-multiplatform does) then
 resolves the version from `~/.m2`. **Remove the local copy afterwards**
-(`rm -rf ~/.m2/repository/ua/gov/uz/schemgen-compose*`). Otherwise the consumer keeps using
+(`rm -rf ~/.m2/repository/ua/gov/uz/schemgen-renderer-compose*`). Otherwise the consumer keeps using
 it and never notices whether the feed has the version.
 
 ---
@@ -75,7 +78,7 @@ it and never notices whether the feed has the version.
 
 **Goal.** The admin panel's Mockups (Схеми) create and edit screens already store a scheme
 as JSON (`Mockup.scheme: JsonObject?`, edited as text in `MockupSchemeField`). Under the
-JSON field, add a read-only preview drawn by `schemgen-compose`. It's for trying the
+JSON field, add a read-only preview drawn by `schemgen-renderer-compose`. It's for trying the
 renderer on a handful of real schemes in the web panel. Nothing else changes: no
 selection, no new API calls, no saving.
 
@@ -88,7 +91,7 @@ clicked through in a running panel yet. That's step 6.
 - Read `miv-multiplatform/CLAUDE.md`. Its conventions apply: strings in `strings.xml`,
   shared components from the UI kit, no tests in that repo (verify by compiling and
   running the web target).
-- Check that `ua.gov.uz:schemgen-compose:0.1.0` is on the feed (or in `~/.m2`, see above).
+- Check that `ua.gov.uz:schemgen-renderer-compose:0.1.0` is on the feed (or in `~/.m2`, see above).
   No repository changes are needed: `settings.gradle.kts` already points at the UZmiv
   feed with the right credentials. If resolution fails with 401, the credentials are
   missing, not the repo.
@@ -101,10 +104,10 @@ Next to the existing UI kit entries:
 
 ```toml
 [versions]
-uz-schemgen-compose = "0.1.0"
+uz-schemgen-renderer-compose = "0.1.0"
 
 [libraries]
-uz-schemgen-compose = { module = "ua.gov.uz:schemgen-compose", version.ref = "uz-schemgen-compose" }
+uz-schemgen-renderer-compose = { module = "ua.gov.uz:schemgen-renderer-compose", version.ref = "uz-schemgen-renderer-compose" }
 ```
 
 ### 2. Dependency: `shared/build.gradle.kts`
@@ -115,7 +118,7 @@ In `commonMain.dependencies`, under the UI kit:
 // ui kit
 implementation(libs.uz.compose.ui.kit)
 // seat scheme renderer (uz-schemgen)
-implementation(libs.uz.schemgen.compose)
+implementation(libs.uz.schemgen.renderer.compose)
 ```
 
 ### 3. Strings: `shared/src/commonMain/composeResources/values/strings.xml`
@@ -250,7 +253,7 @@ and a bus. Check:
 ### Don't
 
 - Don't copy the renderer's code into miv, or fork it. Fixes go into `uz-schemgen`, get a
-  new version, and miv bumps `uz-schemgen-compose`.
+  new version, and miv bumps `uz-schemgen-renderer-compose`.
 - Don't add colours or sizes to the scheme JSON to change the look. Pass `colors =
   SchemeColors(...)` if the panel needs different colours.
 - Don't put `Scheme` (a library type) into domain models or DTOs. The domain keeps
