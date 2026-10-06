@@ -31,8 +31,9 @@ See spec §1.3 and §9.
 ```
 web/                the reference implementation - open web/index.html directly,
                      no server or build step needed
-compose-renderer/    Compose Multiplatform module, wasmJs target - builds and
-                     runs, see compose-renderer/README.md
+compose-renderer/    Compose Multiplatform renderer: the published library
+                     (ua.gov.uz:schemgen-compose - Android, iOS, wasm) plus a
+                     wasm preview harness, see compose-renderer/README.md
 docs/                the format spec + decision log + roadmap
 shared-fixtures/     real scheme JSON, used to check every renderer agrees
 ```
@@ -47,7 +48,7 @@ For the Compose Multiplatform preview specifically:
 
 ```
 cd compose-renderer
-./gradlew wasmJsBrowserDevelopmentRun    # dev server on http://localhost:8080
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun    # dev server on http://localhost:8080
 ```
 
 Then in the web app's **Preview** tab, select "Compose Multiplatform (Web)", Load

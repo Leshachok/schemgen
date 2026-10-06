@@ -1,7 +1,10 @@
-package schemgen
+package ua.gov.uz.schemgen
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,13 +20,14 @@ import kotlin.js.ExperimentalWasmJsInterop
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import schemgen.layout.SchemeMode
-import schemgen.model.Scheme
-import schemgen.model.SchemeParser
-import schemgen.render.SchemeView
+import ua.gov.uz.schemgen.layout.SchemeMode
+import ua.gov.uz.schemgen.model.Scheme
+import ua.gov.uz.schemgen.model.SchemeParser
+import ua.gov.uz.schemgen.render.SchemeView
 
 /**
  * Web entry point for the "Preview" tab in web/index.html. Listens for the
@@ -56,6 +60,18 @@ private object PreviewState {
     var selected: Set<String> by mutableStateOf(emptySet())
 }
 
+/**
+ * The postMessage contract from web/js/app.js's "Send current scheme" button:
+ * `{ "type": "schemgen:scheme", "payload": <scheme JSON> }`. Returns null if
+ * [raw] isn't that envelope (e.g. some other message reached the frame).
+ */
+private fun parseEnvelope(raw: String): Scheme? {
+    val root = runCatching { Json.parseToJsonElement(raw).jsonObject }.getOrNull() ?: return null
+    if (root["type"]?.jsonPrimitive?.contentOrNull != "schemgen:scheme") return null
+    val payload = root["payload"] as? JsonObject ?: return null
+    return SchemeParser.parse(payload)
+}
+
 private fun readInteraction(raw: String) {
     val root = runCatching { Json.parseToJsonElement(raw).jsonObject }.getOrNull() ?: return
     PreviewState.mode =
@@ -68,7 +84,7 @@ private fun readInteraction(raw: String) {
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     registerMessageListener { raw ->
-        val parsed = runCatching { SchemeParser.parseEnvelope(raw) }
+        val parsed = runCatching { parseEnvelope(raw) }
         parsed.onSuccess { scheme ->
             if (scheme != null) {
                 readInteraction(raw)
@@ -103,9 +119,10 @@ private fun App() {
                 Text(PreviewState.status, style = MaterialTheme.typography.bodySmall)
             }
         } else {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 SchemeView(
                     scheme,
+                    modifier = Modifier.horizontalScroll(rememberScrollState()).padding(16.dp),
                     mode = PreviewState.mode,
                     available = PreviewState.available,
                     selected = PreviewState.selected,

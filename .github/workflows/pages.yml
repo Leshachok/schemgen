@@ -27,7 +27,7 @@ jobs:
 
       - name: Build Compose Multiplatform (wasmJs) preview
         working-directory: compose-renderer
-        run: ./gradlew wasmJsBrowserDistribution --no-daemon
+        run: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
 
       - name: Assemble site
         run: |

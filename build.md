@@ -29,6 +29,10 @@ Neither part needs a backend. Any static file server (nginx, a storage bucket) w
   can't reach these directly, they need a proxying feed, and `settings.gradle.kts`
   repositories pointed at it. The Kotlin/Wasm build also downloads Node.js, Yarn and
   Binaryen on first run, which matters behind the same proxy.
+- An Android SDK (`ANDROID_HOME`, or `sdk.dir` in an untracked
+  `compose-renderer/local.properties`) with platform 37. The library module has an
+  Android target, and Gradle won't configure the build without the SDK, even for a
+  wasm-only task. GitHub's Ubuntu runners have one; an Azure agent may not.
 - No Node.js setup on the agent: Gradle fetches its own.
 - Python 3 only if CI checks generated files (see below).
 
@@ -36,7 +40,7 @@ Neither part needs a backend. Any static file server (nginx, a storage bucket) w
 
 ```
 cd compose-renderer
-./gradlew composeApp:wasmJsBrowserDistribution --no-daemon
+./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
 ```
 
 Output: `compose-renderer/composeApp/build/dist/wasmJs/productionExecutable/` —
@@ -47,7 +51,7 @@ On a small agent (4 cores / 8 GB), keep the Kotlin compiler in-process and cap t
 so Gradle, a separate Kotlin daemon and Binaryen don't all hold memory at once:
 
 ```
-./gradlew composeApp:wasmJsBrowserDistribution --no-daemon --max-workers=4 \
+./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon --max-workers=4 \
   -Pkotlin.compiler.execution.strategy=in-process \
   "-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8"
 ```
@@ -57,11 +61,33 @@ Verified 2026-10-05: ~40 s on a warm cache with these flags.
 Tests (`commonTest`, run in headless Chrome, so the agent needs Chrome/Chromium):
 
 ```
-./gradlew composeApp:wasmJsBrowserTest --no-daemon
+./gradlew :schemgen-compose:wasmJsBrowserTest --no-daemon
 ```
 
 Caching: `~/.gradle` is worth caching between runs (dependencies, wrapper, Node/Yarn,
 Binaryen); `gradle.properties` already turns on the build cache.
+
+## Publishing the Compose library
+
+`compose-renderer/schemgen-compose` is the published renderer (D32),
+`ua.gov.uz:schemgen-compose` on the UZmiv Azure Artifacts feed. It's set up the same way
+as `uz-compose-ui-kit` and released the same way, by hand from a developer machine for now:
+
+```
+cd compose-renderer
+# bump `version` in schemgen-compose/build.gradle.kts first - the feed refuses a version twice
+./gradlew :schemgen-compose:wasmJsBrowserTest :schemgen-compose:iosSimulatorArm64Test
+./gradlew :schemgen-compose:publishAllPublicationsToUZmivRepository
+```
+
+Credentials: `azureUser`/`azureToken` in `~/.gradle/gradle.properties`, or
+`AZURE_ARTIFACTS_USER`/`SYSTEM_ACCESSTOKEN` in the environment (what an Azure pipeline
+provides). The iOS publications need a Mac with Xcode, so a pipeline that publishes
+needs a macOS agent. The site build above doesn't publish and doesn't need one.
+
+To try a build in a consumer before releasing, use `publishToMavenLocal`. How consumers
+depend on it, and the miv-multiplatform integration, are in
+`compose-renderer/INTEGRATION.md`.
 
 ## Web app
 
@@ -103,7 +129,7 @@ Serving notes:
 `ci-pipeline-test.yml` at the repo root is a sample Azure pipeline from another project
 (`miv-kmp-web`), kept only as a template for agent pool, variable groups, Docker push and
 Helm deploy. **Delete it once this repo has its own pipeline.** It does not build this
-repo as-is: it calls a `:shared` module (here it's `:composeApp`, under
+repo as-is: it calls a `:shared` module (here the site build is `:composeApp`, under
 `compose-renderer/`), a `miv.wasm.fastOptimize` property that doesn't exist here, reads
 output from `shared/build/dist/...`, and expects a `Dockerfile`, `charts/` and
 `deploy/modules/` that this repo doesn't have. Its `MavenAuthenticate` step is only

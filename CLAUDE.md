@@ -26,8 +26,11 @@ spec with rationale, not just notes.
   (iOS sales app), Web (Vue/Nuxt — web sales, bus admin). Don't suggest the
   SwiftUI app embed the Compose renderer or vice versa.
 - **Each renderer is a separately published library** (D32) consumed by other
-  teams. Public API, versioning and packaging matter; `compose-renderer/` is
-  currently a preview app, not yet that library.
+  teams. Public API, versioning and packaging matter. The Compose one is
+  `compose-renderer/schemgen-compose` (`ua.gov.uz:schemgen-compose` on the UZmiv
+  Azure feed, set up like `../uz-compose-ui-kit`). `composeApp` next to it is only
+  the wasm preview harness. Consumers and the miv-multiplatform hand-off:
+  `compose-renderer/INTEGRATION.md`.
 - **Style lives in the renderer, identical across all three** (D33), from shared
   tokens with `mobile` and `web` presets. **Theme is colors only**, passed in by
   the consumer (D34). Never put colors or sizes in the scheme.
@@ -65,7 +68,8 @@ spec with rationale, not just notes.
   derive logic (sorting, berth inference, validation) from a seat number.
 - **`compose-renderer/` builds and runs** (verified 2026-10-05, spec §11). The run
   task is `wasmJsBrowserDevelopmentRun` — `wasmJsBrowserRun` no longer exists. Tests:
-  `composeApp:wasmJsBrowserTest`. For headless screenshots, Chrome needs
+  `:schemgen-compose:wasmJsBrowserTest` (and `iosSimulatorArm64Test`). Configuring
+  needs an Android SDK (`local.properties`, untracked). For headless screenshots, Chrome needs
   `--use-angle=swiftshader --enable-unsafe-swiftshader`, and host pages must be served
   over http, not `file://`.
 

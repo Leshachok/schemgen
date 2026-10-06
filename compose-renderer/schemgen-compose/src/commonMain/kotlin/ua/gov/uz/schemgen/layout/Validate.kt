@@ -1,10 +1,10 @@
-package schemgen.layout
+package ua.gov.uz.schemgen.layout
 
-import schemgen.model.Item
-import schemgen.model.Scheme
-import schemgen.model.SeatItem
-import schemgen.model.StructuralItem
-import schemgen.model.Vocabulary
+import ua.gov.uz.schemgen.model.Item
+import ua.gov.uz.schemgen.model.Scheme
+import ua.gov.uz.schemgen.model.SeatItem
+import ua.gov.uz.schemgen.model.StructuralItem
+import ua.gov.uz.schemgen.model.Vocabulary
 
 enum class Level { ERROR, WARN, OK }
 

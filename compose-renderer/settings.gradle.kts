@@ -1,4 +1,5 @@
-rootProject.name = "schemgen-compose"
+rootProject.name = "compose-renderer"
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
     repositories {
@@ -16,4 +17,5 @@ dependencyResolutionManagement {
     }
 }
 
-include(":composeApp")
+include(":schemgen-compose")   // the published library
+include(":composeApp")         // wasm preview harness for web/index.html

@@ -517,8 +517,9 @@ schemgen/
       render.js                SVG rendering
       app.js                    UI wiring: catalogue, builder, export, framework preview
     tools/                  regeneration scripts (see web/tools/README.md)
-  compose-renderer/         Compose Multiplatform module — Kotlin Multiplatform + Compose,
-                             wasmJs target first (see compose-renderer/README.md)
+  compose-renderer/         Compose Multiplatform renderer (see compose-renderer/README.md)
+    schemgen-compose/       the published library, ua.gov.uz:schemgen-compose
+    composeApp/             wasm preview harness for the web Preview tab
   shared-fixtures/          scheme JSON used to check every renderer agrees with format.js
 \`\`\`
 
@@ -526,9 +527,10 @@ Not yet created: the SwiftUI renderer, the production web renderer, and the shar
 tokens (§9). Each renderer subfolder is a sibling of \`web/\`, not nested inside it — \`web/\`
 is the reference implementation and UI shell, not the parent project.
 
-\`compose-renderer/\` today is a wasm **preview app** driven by \`postMessage\` from the web
-Preview tab, not a library anyone can depend on. Under D32 it becomes the published Compose
-library, with the preview app kept as a thin harness on top of it.
+\`compose-renderer/\` is split along D32's lines: \`schemgen-compose\` is the library other
+teams depend on (Android, iOS, wasm targets, published to the UZmiv Azure Artifacts feed
+next to \`uz-compose-ui-kit\`), and \`composeApp\` is the thin wasm harness the web Preview tab
+drives by \`postMessage\`. Consumers are documented in \`compose-renderer/INTEGRATION.md\`.
 
 \`web/\` is a prototype of the builder (D35) plus dev tooling. Its Catalogue tab and the
 bundled \`AUTO\` schemes are sample data for exercising renderers, not a product feature —
@@ -567,6 +569,17 @@ growing platform by platform, an undecided iOS stack, and train-only schemes.
    semantics (seat number and state spoken by TalkBack / VoiceOver) and the reconciliation
    rule from §4.6; publish to Maven. Consumers: Android sales app (via \`ComposeView\`),
    conductor app (Android + iOS), wagon admin (wasm).
+
+   **Started 2026-10-06.** Done: the library/harness split, all four targets, the
+   \`ua.gov.uz\` package, internals hidden, \`SchemeView(scheme, modifier, mode, available,
+   selected, colors, onSeatClick)\` with a colors-only \`SchemeColors\` (D34), and Azure
+   Artifacts publishing set up the same way as \`uz-compose-ui-kit\`. The first consumer is
+   the miv admin panel, which draws a read-only preview on its Mockups screens
+   (\`compose-renderer/INTEGRATION.md\`). It goes first because it's wasm, the target
+   that's already verified, and only needs VIEW mode. Still open: accessibility semantics
+   per seat (today there's one label per deck), the §4.6 reconciliation rule, and a run
+   on real Android and iOS devices. The API is 0.x until phase 4's tokens and phase 2's
+   fixtures have settled it.
 
 6. **Visual fidelity in Compose** — seat-back bracket, berth bars and real icons are
    already ported from \`render.js\` (§11); what's left is checking them against the web
@@ -660,6 +673,22 @@ The seat-back bracket, berth bars and real facility icons, previously listed as 
 (§9 phase 6), are already implemented in \`SchemeCanvas.kt\` / \`Icons.kt\`. What remains of
 phase 6 is confirming they match the web reference.
 
+**Library split, 2026-10-06.** \`compose-renderer/\` is now \`schemgen-compose\` (library)
+plus \`composeApp\` (harness), see §8. Checked:
+
+- \`:schemgen-compose:assemble\` builds Android, iosArm64, iosSimulatorArm64 and wasmJs.
+- The same 10 \`commonTest\` tests pass on \`wasmJsBrowserTest\` and \`iosSimulatorArm64Test\`.
+- \`publishToMavenLocal\` produces the root and all four platform publications.
+- miv-multiplatform (Kotlin 2.4.20, Compose 1.12.0) compiled for wasm and Android against
+  \`0.1.0\` from mavenLocal, with the preview from \`INTEGRATION.md\` wired in. That was a
+  throwaway worktree, not committed. Not yet clicked through in the running panel.
+- The harness standalone still draws the kupe sample correctly (headless screenshot).
+
+Two behaviour changes came with the split. \`SchemeView\` no longer scrolls or pads
+itself: a vertical scroll inside a consumer's scrolling screen crashes Compose, so the
+consumer adds \`horizontalScroll\` and padding instead. And every colour now comes from
+\`SchemeColors\`, whose defaults are the old hard-coded values.
+
 ## 12. Next steps
 
 Immediate actions, in order. The longer view is §9.
@@ -674,7 +703,11 @@ Immediate actions, in order. The longer view is §9.
 4. Draft the style token file and theme shape, and agree them with the consuming teams
    before any renderer depends on them.
 5. Sketch each renderer's public API and get sign-off from its consumer teams — once
-   published (D32), changing it costs every consumer a migration.
+   published (D32), changing it costs every consumer a migration. Compose has a first
+   cut (§9 phase 5); review it with the Android sales and conductor app teams before 1.0.
+6. Publish \`schemgen-compose\` 0.1.0 to the Azure feed, and wire the read-only preview into
+   the miv admin panel's Mockups screens (\`compose-renderer/INTEGRATION.md\`). Try it on a
+   few real schemes there.
 `;
 var DOCS_GUIDE_MARKDOWN = `# Seat Scheme Format — Field Reference
 

@@ -1,4 +1,4 @@
-package schemgen.render
+package ua.gov.uz.schemgen.render
 
 import androidx.compose.ui.graphics.Color
 
@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.Color
  * regenerated with new facility art, re-copy the changed `d` strings here.
  */
 
-data class IconPath(
+internal data class IconPath(
     val d: String,
     val stroke: Color? = null,
     val strokeWidth: Float = 2f,
@@ -17,13 +17,13 @@ data class IconPath(
     val evenOdd: Boolean = false
 )
 
-data class FacilityIcon(val boxX: Float, val boxY: Float, val boxW: Float, val boxH: Float, val paths: List<IconPath>)
+internal data class FacilityIcon(val boxX: Float, val boxY: Float, val boxW: Float, val boxH: Float, val paths: List<IconPath>)
 
 /** One colour for every facility glyph - the driver wheel's grey, as in web/js/icons.js. */
 private val ICON = Color(0xFF7E8386)
 
 /** The seat-back bracket path, reused (rotated per facing) for every "sit" seat. */
-object SeatBack {
+internal object SeatBack {
     const val PATH = "M7.5 3C5.01472 3 3 5.01472 3 7.5V33.5C3 35.9853 5.01472 38 7.5 38H20.5C21.3284 38 22 38.6716 22 39.5C22 40.3284 21.3284 41 20.5 41H7.5C3.35786 41 0 37.6421 0 33.5V7.5C0 3.35786 3.35786 0 7.5 0H20.5C21.3284 0 22 0.671573 22 1.5C22 2.32843 21.3284 3 20.5 3H7.5Z"
     const val SEAT_X = 4.5f
     const val SEAT_Y = 4.5f
@@ -31,7 +31,7 @@ object SeatBack {
     val ANGLE = mapOf("left" to 180f, "right" to 0f, "top" to 270f, "bottom" to 90f)
 }
 
-val FACILITY_ICONS: Map<String, FacilityIcon> = mapOf(
+internal val FACILITY_ICONS: Map<String, FacilityIcon> = mapOf(
     "toilet" to FacilityIcon(17f, 40f, 23f, 25f, listOf(
         IconPath("M23 47C24.1046 47 25 46.1046 25 45C25 43.8954 24.1046 43 23 43C21.8954 43 21 43.8954 21 45C21 46.1046 21.8954 47 23 47Z", stroke = ICON),
         IconPath("M21 62V57L20 56V52C20 51.7348 20.1054 51.4804 20.2929 51.2929C20.4804 51.1054 20.7348 51 21 51H25C25.2652 51 25.5196 51.1054 25.7071 51.2929C25.8946 51.4804 26 51.7348 26 52V56L25 57V62", stroke = ICON),
@@ -102,7 +102,7 @@ val FACILITY_ICONS: Map<String, FacilityIcon> = mapOf(
 )
 
 /** Fallback label for a facility with no icon (unknown type) or one this map hasn't ported yet. */
-val FACILITY_LABEL: Map<String, String> = mapOf(
+internal val FACILITY_LABEL: Map<String, String> = mapOf(
     "toilet" to "Toilet", "invalid_toilet" to "Toilet+", "baggage" to "Baggage", "bike" to "Bike",
     "handicapped" to "Handicapped", "handicapped_wheelchair" to "Wheelchair", "shield" to "Shield",
     "steps_up" to "Steps up", "steps_down" to "Steps down", "wardrobe" to "Wardrobe", "cafe" to "Cafe",
@@ -113,7 +113,7 @@ val FACILITY_LABEL: Map<String, String> = mapOf(
  * web/js/icons.js's ICONS.chair (ic_ps_chair_left): a stool whose back arc is on the
  * left, i.e. facing right at angle 0 - rotated by SeatBack.ANGLE, drawn without a block.
  */
-object ChairIcon {
+internal object ChairIcon {
     const val W = 37f
     const val H = 41f
     const val CX = 20.97f

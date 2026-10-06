@@ -1,4 +1,4 @@
-package schemgen.model
+package ua.gov.uz.schemgen.model
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -26,8 +26,11 @@ object SchemeParser {
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
-    fun parse(rawJson: String): Scheme {
-        val root = json.parseToJsonElement(rawJson).jsonObject
+    /** Throws on malformed JSON or a non-object root; missing fields fall back to defaults. */
+    fun parse(rawJson: String): Scheme = parse(json.parseToJsonElement(rawJson).jsonObject)
+
+    /** For a consumer that already holds the scheme as a [JsonObject] (e.g. from its own DTO). */
+    fun parse(root: JsonObject): Scheme {
         return Scheme(
             key = root["key"]?.jsonPrimitive?.contentOrNull,
             rev = root["rev"]?.jsonPrimitive?.intOrNull,
@@ -84,17 +87,5 @@ object SchemeParser {
             rows = o["rows"]?.jsonPrimitive?.intOrNull ?: 1,
             cols = o["cols"]?.jsonPrimitive?.intOrNull ?: 1
         )
-    }
-
-    /**
-     * The postMessage contract from web/js/app.js's "Send current scheme" button:
-     * `{ "type": "schemgen:scheme", "payload": <scheme JSON> }`. Returns null if
-     * [rawJson] isn't that envelope (e.g. some other message reached the frame).
-     */
-    fun parseEnvelope(rawJson: String): Scheme? {
-        val root = runCatching { json.parseToJsonElement(rawJson).jsonObject }.getOrNull() ?: return null
-        if (root["type"]?.jsonPrimitive?.contentOrNull != "schemgen:scheme") return null
-        val payload = root["payload"] as? JsonObject ?: return null
-        return parse(payload.toString())
     }
 }

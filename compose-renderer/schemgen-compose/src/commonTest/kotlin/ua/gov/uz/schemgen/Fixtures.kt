@@ -1,4 +1,4 @@
-package schemgen
+package ua.gov.uz.schemgen
 
 /**
  * A few of /shared-fixtures embedded as constants so the same test runs on every

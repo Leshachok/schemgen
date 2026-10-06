@@ -2,15 +2,28 @@
 # Current stable as of 2026-07-28 - see https://kotlinlang.org/docs/releases.html
 # and https://blog.jetbrains.com/kotlin/2026/05/compose-multiplatform-1-11-0/
 # Bump these together; Compose Multiplatform tracks a specific Kotlin baseline.
+# A published library should not be newer than its oldest consumer: miv-multiplatform
+# is on Kotlin 2.4.20 / Compose 1.12.0, so don't move past those without checking.
 kotlin = "2.4.10"
 compose-multiplatform = "1.11.1"
+material3 = "1.9.0"
 kotlinx-serialization = "1.8.0"
+# Same AGP and publish plugin as uz-compose-ui-kit, the other library on the Azure feed.
+agp = "9.2.1"
+android-compileSdk = "37"
+android-minSdk = "26"
+vanniktechMavenPublish = "0.36.0"
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+vanniktechMavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktechMavenPublish" }
 
 [libraries]
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-multiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-multiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-multiplatform" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }

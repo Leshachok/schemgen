@@ -1,4 +1,4 @@
-package schemgen.model
+package ua.gov.uz.schemgen.model
 
 /**
  * Mirrors the wagon scheme JSON format 1:1 - see /docs/wagon-scheme-format.md.

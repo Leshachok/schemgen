@@ -1,21 +1,31 @@
 # compose-renderer
 
-Compose Multiplatform module for schemgen. Web (`wasmJs`) target only for now —
-Android and iOS targets are commented scaffolding in `composeApp/build.gradle.kts`,
-meant to be enabled in roadmap phase 5 (see `docs/wagon-scheme-format.md` §9).
+The Compose Multiplatform renderer for schemgen (D31, D32), as two Gradle modules:
+
+- **`schemgen-compose`** is the library: Android, iOS (arm64, simulator arm64) and
+  wasmJs. It's published as `ua.gov.uz:schemgen-compose` to the UZmiv Azure Artifacts
+  feed, set up the same way as `uz-compose-ui-kit`. Consumers and the
+  miv-multiplatform hand-off are in [INTEGRATION.md](INTEGRATION.md). How to release is
+  in `/build.md`.
+- **`composeApp`** is the wasm preview harness that the Preview tab in `web/index.html`
+  talks to via `postMessage`. It has no renderer code of its own.
 
 ## Verification status
 
-Builds, tests pass, and renders schemes sent by postMessage — verified 2026-10-05,
-details in `docs/wagon-scheme-format.md` §11.
+Builds, tests pass, and renders schemes sent by postMessage. Verified 2026-10-05, and
+again after the library split on 2026-10-06. Details are in
+`docs/wagon-scheme-format.md` §11.
 
 ```
-./gradlew wasmJsBrowserDevelopmentRun          # dev server, http://localhost:8080
-./gradlew composeApp:wasmJsBrowserTest         # commonTest in headless Chrome
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun       # harness on http://localhost:8080
+./gradlew :schemgen-compose:wasmJsBrowserTest           # commonTest in headless Chrome
+./gradlew :schemgen-compose:iosSimulatorArm64Test       # same tests, iOS simulator
+./gradlew :schemgen-compose:publishToMavenLocal         # try it in a consumer
 ```
 
 (`wasmJsBrowserRun`, the name used in older notes, no longer exists in current
-Kotlin.)
+Kotlin.) Configuring the build needs an Android SDK: `ANDROID_HOME` or `sdk.dir` in
+an untracked `local.properties`.
 
 Seat-back bracket, berth bars and real facility icons are implemented. Not yet
 verified: pixel parity with `web/js/render.js`, which needs the golden fixture
@@ -24,21 +34,28 @@ suite (roadmap phase 2).
 ## Module map
 
 ```
-composeApp/src/
-  commonMain/kotlin/schemgen/
-    model/Scheme.kt        data classes mirroring the JSON format 1:1
-    model/SchemeParser.kt  hand-written parser (the format isn't a clean tagged
-                            union, so this mirrors web/js/format.js's own
-                            duck-typed dispatch rather than fighting
-                            kotlinx.serialization's polymorphism)
-    layout/Layout.kt       layout math, ported line-for-line from format.js
-    layout/Validate.kt     structural validation, same rules as format.js
-    render/SchemeCanvas.kt the Composable renderer
-  wasmJsMain/kotlin/schemgen/main.kt   web entry point + postMessage listener
-  wasmJsMain/resources/index.html      HTML shell for the wasmJs build
-  commonTest/kotlin/schemgen/          fixture-based parser/validator tests
-                                        (also never run - see above)
+schemgen-compose/src/
+  commonMain/kotlin/ua/gov/uz/schemgen/
+    model/Scheme.kt          public: data classes mirroring the JSON format 1:1
+    model/SchemeParser.kt    public: hand-written parser (the format isn't a clean
+                              tagged union, so this mirrors web/js/format.js's own
+                              duck-typed dispatch rather than fighting
+                              kotlinx.serialization's polymorphism)
+    layout/SeatState.kt      public SchemeMode; internal seat state rule (D45)
+    layout/Validate.kt       public: structural validation, same rules as format.js
+    layout/Layout.kt         internal: layout math, ported line-for-line from format.js
+    render/SchemeCanvas.kt   public SchemeView composable
+    render/SchemeColors.kt   public theme, colors only (D34)
+    render/Icons.kt          internal: facility art, ported from web/js/icons.js
+  commonTest/kotlin/ua/gov/uz/schemgen/   fixture-based parser/validator/layout tests
+composeApp/src/wasmJsMain/
+  kotlin/ua/gov/uz/schemgen/main.kt       harness entry point + postMessage listener
+  resources/index.html                    HTML shell for the wasmJs build
 ```
+
+Anything not listed as public is `internal`, so the published API stays as small as
+INTEGRATION.md describes. Making something public is an API decision (D32), not a
+convenience.
 
 ## Keeping this in sync with the JS reference
 
