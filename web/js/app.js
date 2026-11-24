@@ -26,6 +26,28 @@ function init(){
     catch(e){ toast("Copy failed — select the JSON manually"); }
     ta.remove();
   }
+  /* the theme is applied before first paint by the inline script in index.html's
+     <head>; this only switches it. Schemes and the canvas draw with CSS variables,
+     so nothing needs redrawing. */
+  function applyTheme(t){
+    document.documentElement.setAttribute("data-theme", t);
+    $("btnTheme").setAttribute("aria-pressed", t==="dark" ? "true" : "false");
+  }
+  applyTheme(document.documentElement.getAttribute("data-theme")==="dark" ? "dark" : "light");
+  $("btnTheme").addEventListener("click", function(){
+    var t=document.documentElement.getAttribute("data-theme")==="dark" ? "light" : "dark";
+    applyTheme(t);
+    try { localStorage.setItem("schemgen-theme", t); } catch(e){}
+  });
+  if (window.matchMedia){
+    var sys=window.matchMedia("(prefers-color-scheme: dark)");
+    var follow=function(e){
+      var saved=null; try { saved=localStorage.getItem("schemgen-theme"); } catch(err){}
+      if (saved!=="dark" && saved!=="light") applyTheme(e.matches ? "dark" : "light");
+    };
+    if (sys.addEventListener) sys.addEventListener("change", follow);
+  }
+
   $("btnDownload").addEventListener("click", function(){
     var s=activeScheme();
     var blob=new Blob([JSON.stringify(s,null,2)], {type:"application/json"});
@@ -72,7 +94,7 @@ function init(){
   }
   /* the catalogue plays the app: it owns `selected` and re-renders on each tap (D46) */
   var pstate={ scheme:SCHEMES[0].build(), mode:"select", available:null, selected:new Set(),
-    showGrid:false, showBack:true, theme:"light",
+    showGrid:false, showBack:true,
     onSeatClick:function(id){
       if (pstate.selected.has(id)) pstate.selected["delete"](id); else pstate.selected.add(id);
       drawPreview();
@@ -114,7 +136,6 @@ function init(){
     if (pstate.mode==="view") pstate.selected.clear();
     pstate.showGrid=$("showGrid").checked;
     pstate.showBack=$("showBack").checked;
-    pstate.theme=$("darkP").checked ? "dark" : "light";
     var s=pstate.scheme, deck=(s.decks||[])[0]||{};
     $("title").textContent=(s.key||"—")+" · rev "+(s.rev!=null?s.rev:"?");
     $("meta").innerHTML="<b>"+countSeats(s)+"</b> seats · <b>"+(deck.columns||[]).length
@@ -127,7 +148,7 @@ function init(){
     $("picked").textContent = pstate.selected.size
       ? "selected: "+Array.from(pstate.selected).join(", ") : "No seats selected.";
   }
-  ["viewOnly","showGrid","showBack","darkP"].forEach(function(id){
+  ["viewOnly","showGrid","showBack"].forEach(function(id){
     $(id).addEventListener("change", drawPreview);
   });
   bindJson($("jsonP"), function(parsed){
@@ -213,7 +234,6 @@ function init(){
   $("bVehicle").addEventListener("change", function(){
     bstate.scheme.vehicle=$("bVehicle").value; drawBuilder();
   });
-  $("darkB").addEventListener("change", function(){ drawBuilder(); });
   $("bAddDeck").addEventListener("click", function(){
     var ds=bstate.scheme.decks;
     if (ds.length>=LEVELS.length) return;
@@ -394,7 +414,7 @@ function init(){
 
     function marker(x,y,glyph,color,onClick){
       var g=el("g",{ style:"cursor:pointer" });
-      g.appendChild(el("circle",{ cx:x, cy:y, r:7, fill:"#fff", stroke:color }));
+      g.appendChild(el("circle",{ cx:x, cy:y, r:7, fill:"var(--surface)", stroke:color }));
       var t=el("text",{ x:x, y:y, "text-anchor":"middle","dominant-baseline":"central",
         "font-size":9, fill:color });
       t.textContent=glyph; g.appendChild(t);
@@ -428,7 +448,7 @@ function init(){
           var isSel=!!(bstate.sel && bstate.sel.item===it && it);
           var cellG=el("g",{});
           var rect=el("rect",{ x:x,y:y,width:cellW,height:cellH,rx:5,
-            fill: it ? (it.seat!=null ? "var(--navy)" : "var(--fill)") : "#fff",
+            fill: it ? (it.seat!=null ? "var(--navy)" : "var(--fill)") : "var(--surface)",
             stroke: isSel ? "var(--sel)" : "var(--border-firm)",
             "stroke-width": isSel ? 2 : 1,
             "stroke-dasharray": it ? null : "3 3",
@@ -444,11 +464,11 @@ function init(){
               : (FAC_LABEL[it.type]||it.type||"?");
             var t=el("text",{ x:x+cellW/2, y:y+cellH/2, "text-anchor":"middle",
               "dominant-baseline":"central","font-size":10,"font-weight":600,
-              fill: it.seat!=null ? "#fff" : "var(--muted)", style:"pointer-events:none" });
+              fill: it.seat!=null ? "var(--on-accent)" : "var(--muted)", style:"pointer-events:none" });
             t.textContent=label; cellG.appendChild(t);
 
             var cross=el("g",{ opacity:0, style:"cursor:pointer" });
-            cross.appendChild(el("circle",{ cx:x+cellW, cy:y, r:7, fill:"#fff", stroke:"var(--err)" }));
+            cross.appendChild(el("circle",{ cx:x+cellW, cy:y, r:7, fill:"var(--surface)", stroke:"var(--err)" }));
             var xt=el("text",{ x:x+cellW, y:y, "text-anchor":"middle","dominant-baseline":"central",
               "font-size":9, fill:"var(--err)" });
             xt.textContent="✕"; cross.appendChild(xt);
@@ -459,7 +479,7 @@ function init(){
             attachMove(rect, ci, rr, it);
             if (isSel && !isSeat(it)){
               var handle=el("rect",{ x:x+cellW-6, y:y+cellH-6, width:12, height:12, rx:3,
-                fill:"var(--sel)", stroke:"#fff","stroke-width":1.5,
+                fill:"var(--sel)", stroke:"var(--surface)","stroke-width":1.5,
                 style:"cursor:"+(canSpanCols(it) ? "nwse-resize" : "ns-resize") });
               handle.addEventListener("click", function(e){ e.stopPropagation(); });
               attachResize(handle, ci, it);
@@ -599,7 +619,7 @@ function init(){
 
     $("bStage").innerHTML="";
     try { $("bStage").appendChild(render(bstate.scheme,
-      { mode:"view", showGrid:false, showBack:true, theme:$("darkB").checked ? "dark" : "light" })); }
+      { mode:"view", showGrid:false, showBack:true })); }
     catch(e){ $("bStage").textContent="Render failed: "+e.message; }
     if (bwstate.framework==="compose" && bwstate.loaded) sendToCompose();
     var bd=deck();

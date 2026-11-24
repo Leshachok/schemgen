@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Wagon scheme format — prototype</title>
+<script>
+/* before first paint, so a dark page never flashes light: the saved choice, else the
+   system setting. app.js owns the toggle. */
+(function(){
+  var t=null;
+  try { t=localStorage.getItem("schemgen-theme"); } catch(e){}
+  if (t!=="dark" && t!=="light")
+    t=window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -17,6 +28,7 @@
     <button id="mDocs" aria-pressed="false">Docs</button>
   </div>
   <div class="spacer"></div>
+  <button class="btn" id="btnTheme" aria-pressed="false">Dark mode</button>
   <button class="btn" id="btnCopy">Copy JSON</button>
   <button class="btn" id="btnDownload">Download</button>
   <button class="btn primary" id="btnTemplate">Use as template</button>
@@ -38,16 +50,15 @@
           <label><input type="checkbox" id="viewOnly"> View only</label>
           <label><input type="checkbox" id="showGrid"> Grid</label>
           <label><input type="checkbox" id="showBack" checked> Seat backs</label>
-          <label><input type="checkbox" id="darkP"> Dark</label>
         </div>
       </div>
       <div class="card-b"><div class="meta" id="meta" style="margin-bottom:14px"></div><div id="stage"></div></div>
       <div class="legend">
-        <span><i style="background:#213786"></i>available</span>
-        <span><i style="background:#E3E5ED"></i>unavailable</span>
-        <span><i style="background:#EF9010"></i>selected</span>
-        <span><i style="background:#fff;border:2px solid #213786"></i>folding</span>
-        <span><i style="background:#F7F6F8;border:1px solid #D4D5D6"></i>facility</span>
+        <span><i style="background:var(--s-avail)"></i>available</span>
+        <span><i style="background:var(--s-off)"></i>unavailable</span>
+        <span><i style="background:var(--s-sel)"></i>selected</span>
+        <span><i style="background:var(--s-folding);border:2px solid var(--s-avail)"></i>folding</span>
+        <span><i style="background:var(--s-block);border:1px solid var(--s-line)"></i>facility</span>
       </div>
     </div>
     <div class="card">
@@ -107,7 +118,6 @@
           <option value="web">Web (reference)</option>
           <option value="compose">Compose Multiplatform (Web)</option>
         </select>
-        <label class="meta"><input type="checkbox" id="darkB"> Dark</label>
         <div class="meta" id="bMeta"></div></div>
       <div class="card-b">
         <div id="bStage"></div>

@@ -1,11 +1,15 @@
 /* SVG rendering: turns a scheme + item into DOM nodes. Colours are the --s-* custom
-   properties of the .sch / .sch-dark classes in css/app.css (D34, D50). */
+   properties in css/app.css (D34, D50): a drawing follows the page theme unless
+   state.theme pins "light" or "dark" on it. */
 "use strict";
 
 var NS="http://www.w3.org/2000/svg";
 function el(n,a){ var e=document.createElementNS(NS,n);
   for (var k in a) if (a[k]!=null) e.setAttribute(k,a[k]); return e; }
-function themeClass(state){ return "sch"+(state && state.theme==="dark" ? " sch-dark" : ""); }
+function themeClass(state){
+  var t=state && state.theme;
+  return "sch"+(t==="dark" ? " sch-dark" : t==="light" ? " sch-light" : "");
+}
 
 function render(scheme, state){
   var frag=document.createDocumentFragment();
@@ -148,7 +152,8 @@ function previewItem(it, size, stateOverride){
   var state={ mode:"view", showBack:true };
   if (stateOverride) for (var key in stateOverride) state[key]=stateOverride[key];
   var svg=el("svg",{ width:vw*k, height:vh*k, viewBox:"0 0 "+vw+" "+vh, "class":themeClass(state) });
-  if (state.theme==="dark") svg.appendChild(el("rect",{ width:vw, height:vh, rx:6, fill:"var(--s-body)" }));
+  // a pinned palette brings its own body, or a light swatch would sit on a dark page
+  if (state.theme) svg.appendChild(el("rect",{ width:vw, height:vh, rx:6, fill:"var(--s-body)" }));
   drawItem(svg, { key:"preview" }, it, pad, pad, w, h, state);
   return svg;
 }

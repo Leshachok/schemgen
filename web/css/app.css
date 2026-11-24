@@ -1,24 +1,44 @@
 :root {
-    --navy:#213786; --navy-dim:#4A5A9E; --fill:#F7F6F8; --border:#E1E2E5; --border-firm:#D4D5D6;
-    --off:#EDEEF0; --off-text:#9AA0A6; --sel:#0F7B5A; --sel-soft:#E6F3ED;
+    color-scheme: light;
+    --navy:#213786; --navy-hover:#1B2E70; --navy-dim:#4A5A9E; --accent-soft:#F3F5FC; --on-accent:#FFFFFF;
+    --fill:#F7F6F8; --border:#E1E2E5; --border-firm:#D4D5D6;
+    --off:#EDEEF0; --off-text:#9AA0A6; --sel:#0F7B5A; --sel-soft:#E6F3ED; --sel-border:#BFDCD1;
     --seat-selected:#EA580C;
-    --bg:#F4F5F7; --surface:#FFFFFF; --ink:#15171B; --muted:#6B7078; --faint:#9AA0A6;
-    --warn:#B4531B; --err:#B3261E;
+    --bg:#F4F5F7; --surface:#FFFFFF; --ink:#15171B; --prose:#2A2D33; --muted:#6B7078; --faint:#9AA0A6;
+    --warn:#B4531B; --warn-soft:#FDF9F4; --warn-border:#E8D3C0;
+    --err:#B3261E; --err-soft:#FDF6F5; --err-border:#E7C3C0;
+    --toast-bg:#15171B; --toast-ink:#FFFFFF;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --shadow: 0 1px 2px rgba(20,22,28,.05), 0 4px 14px rgba(20,22,28,.05);
     --r: 12px;
+    --s-font:"UZ Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  /* The whole page follows data-theme on <html>, set by app.js from the saved choice
+     or the system setting. Page colours are the builder's own; there is no dark page
+     design in the guidelines, so they're picked to sit around the scheme palette. */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --navy:#3A5BCF; --navy-hover:#4C6BDB; --navy-dim:#7F93DD; --accent-soft:#1A2240;
+    --fill:#1E2127; --border:#2A2D33; --border-firm:#3A3D44;
+    --off:#252931; --off-text:#8A8F97; --sel:#3DBE8B; --sel-soft:#12291F; --sel-border:#1F4A39;
+    --bg:#0B0D11; --surface:#15171C; --ink:#E8E9EC; --prose:#D3D5DA; --muted:#A0A4AB; --faint:#6E727A;
+    --warn:#E8A06A; --warn-soft:#2A1E12; --warn-border:#5A3F22;
+    --err:#F2867D; --err-soft:#2A1615; --err-border:#5A2A27;
+    --toast-bg:#E8E9EC; --toast-ink:#15171B;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
   }
   /* Scheme colours, Light and Dark, from the guidelines file "Wagon components" (D50).
-     The body and unknown-kind colours aren't in the guidelines yet. */
-  .sch {
+     A scheme follows the page; .sch-light / .sch-dark pin one palette on a single
+     drawing (the Docs gallery shows both side by side). The body and unknown-kind
+     colours aren't in the guidelines yet. */
+  :root, .sch-light {
     --s-avail:#213786; --s-sel:#EF9010; --s-off:#E3E5ED; --s-on-text:#FFFFFF; --s-off-text:#6C6E75;
     --s-folding:#FFFFFF; --s-block:#F7F6F8; --s-icon:#B7BABC; --s-line:#D4D5D6; --s-marker:#D4D5D6;
     --s-body:#FFFFFF; --s-body-line:#D4D5D6; --s-unknown:#E3E4E7;
-    --s-font:"UZ Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
-  .sch-dark {
-    --s-avail:#3A5BCF; --s-off:#252931; --s-off-text:#B7BABC;
-    --s-block:#04060B; --s-icon:#686A6D; --s-line:#2C2E32; --s-marker:#686A6D;
+  :root[data-theme="dark"], .sch-dark {
+    --s-avail:#3A5BCF; --s-sel:#EF9010; --s-off:#252931; --s-on-text:#FFFFFF; --s-off-text:#B7BABC;
+    --s-folding:#FFFFFF; --s-block:#04060B; --s-icon:#686A6D; --s-line:#2C2E32; --s-marker:#686A6D;
     --s-body:#15171C; --s-body-line:#2C2E32; --s-unknown:#3A3D44;
   }
   * { box-sizing:border-box; }
@@ -40,10 +60,11 @@
   .btn { font:inherit; font-size:12.5px; padding:6px 12px; border:1px solid var(--border-firm);
     background:var(--surface); border-radius:8px; cursor:pointer; color:var(--ink); white-space:nowrap; }
   .btn:hover { background:var(--fill); }
-  .btn.primary { background:var(--navy); border-color:var(--navy); color:#fff; }
-  .btn.primary:hover { background:#1B2E70; }
-  .btn.danger { color:var(--err); border-color:#E7C3C0; }
+  .btn.primary { background:var(--navy); border-color:var(--navy); color:var(--on-accent); }
+  .btn.primary:hover { background:var(--navy-hover); }
+  .btn.danger { color:var(--err); border-color:var(--err-border); }
   .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .btn[aria-pressed="true"] { background:var(--accent-soft); border-color:var(--navy); }
   button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
     outline:2px solid var(--navy); outline-offset:1px; }
 
@@ -79,8 +100,8 @@
     padding-top:20px; }
   .docs-card h3 { font-size:14px; margin:20px 0 8px; }
   .docs-card h4 { font-size:12.5px; margin:16px 0 6px; color:var(--muted); }
-  .docs-card p { font-size:13.5px; line-height:1.65; margin:0 0 12px; color:#2A2D33; }
-  .docs-card li { font-size:13.5px; line-height:1.6; margin-bottom:4px; color:#2A2D33; }
+  .docs-card p { font-size:13.5px; line-height:1.65; margin:0 0 12px; color:var(--prose); }
+  .docs-card li { font-size:13.5px; line-height:1.6; margin-bottom:4px; color:var(--prose); }
   .docs-card code { font:11.5px var(--mono); background:var(--fill); padding:1px 5px; border-radius:4px; }
   .docs-card pre { background:var(--fill); border:1px solid var(--border); border-radius:8px;
     padding:12px 14px; overflow-x:auto; margin:0 0 14px; }
@@ -120,8 +141,8 @@
     background:transparent; border-radius:8px; cursor:pointer; color:var(--ink);
     display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
   .slist button:hover { background:var(--bg); }
-  .slist button[aria-pressed="true"] { background:var(--navy); color:#fff; }
-  .slist button[aria-pressed="true"] .cnt { color:rgba(255,255,255,.7); }
+  .slist button[aria-pressed="true"] { background:var(--navy); color:var(--on-accent); }
+  .slist button[aria-pressed="true"] .cnt { color:var(--on-accent); opacity:.7; }
   .slist .cnt { font-size:11px; color:var(--faint); font-variant-numeric:tabular-nums; }
   .grp { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint);
     padding:12px 10px 4px; font-weight:650; }
@@ -151,7 +172,7 @@
     display:flex; flex-direction:column; align-items:center; gap:4px; line-height:1.15; }
   .pal button:hover { border-color:var(--border-firm); background:var(--fill); }
   .pal button[aria-pressed="true"]{ border-color:var(--navy); color:var(--ink);
-    box-shadow:inset 0 0 0 1px var(--navy); background:#F3F5FC; }
+    box-shadow:inset 0 0 0 1px var(--navy); background:var(--accent-soft); }
   .pal button:active { cursor:grabbing; }
   .pal-note { font-size:11px; color:var(--faint); padding:0 16px 14px; }
 
@@ -176,14 +197,14 @@
   .msgs { font-size:12px; }
   .msgs div { padding:6px 9px; border-radius:7px; margin-bottom:5px; background:var(--surface);
     border:1px solid var(--border); }
-  .msgs .e { color:var(--err); border-color:#E7C3C0; background:#FDF6F5; }
-  .msgs .w { color:var(--warn); border-color:#E8D3C0; background:#FDF9F4; }
-  .msgs .ok { color:var(--sel); border-color:#BFDCD1; background:var(--sel-soft); }
+  .msgs .e { color:var(--err); border-color:var(--err-border); background:var(--err-soft); }
+  .msgs .w { color:var(--warn); border-color:var(--warn-border); background:var(--warn-soft); }
+  .msgs .ok { color:var(--sel); border-color:var(--sel-border); background:var(--sel-soft); }
   .picked { font:12px/1.6 var(--mono); color:var(--muted); word-break:break-word; }
 
   .btnrow { display:flex; gap:7px; flex-wrap:wrap; padding:0 16px 16px; }
   .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
-    background:var(--ink); color:#fff; font-size:12.5px; padding:9px 16px; border-radius:9px;
+    background:var(--toast-bg); color:var(--toast-ink); font-size:12.5px; padding:9px 16px; border-radius:9px;
     box-shadow:0 6px 24px rgba(0,0,0,.22); opacity:0; pointer-events:none; transition:opacity .18s; z-index:99; }
   .toast.on { opacity:1; }
   .seat { cursor:default; } .seat.tap { cursor:pointer; } .seat.dis { cursor:not-allowed; }
