@@ -649,9 +649,6 @@ Known gaps:
   define them (§7 Q10).
 - The builder's canvas is an abstract grid (every cell one size); only the live preview
   shows real sizes, column widths and overhangs.
-- Placing an item by clicking a cell leaves it unselected: the click bubbles on to the
-  page-level "click outside deselects" handler after the canvas has been redrawn. Click the
-  item again to edit it. Found 2026-11-24, older than the guidelines work.
 - The Figma importer predates wide items (D48): a block two seats long still comes out as
   two neighbouring one-column items (several `CAT-*` samples have such baggage pairs).
   Merging them into one wide item is importer work, not done yet.

@@ -738,8 +738,10 @@ function init(){
 
   document.addEventListener("click", function(e){
     if (mode!=="builder" || !bstate.sel) return;
-    var t=e.target;
-    var inside = t.closest && (t.closest("#bCanvas")||t.closest("#propCard")||t.closest("#palette"));
+    // composedPath, not target.closest: a click inside the canvas redraws it before the
+    // event bubbles here, so the target is already detached and closest() finds nothing
+    var inside = e.composedPath().some(function(n){
+      return n.id==="bCanvas" || n.id==="propCard" || n.id==="palette"; });
     if (!inside){ bstate.sel=null; drawBuilder(); }
   });
 
