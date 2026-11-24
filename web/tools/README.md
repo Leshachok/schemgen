@@ -5,8 +5,8 @@ automatically — run them by hand after the thing they read from changes.
 
 ## figma_icons.py
 
-Rewrites the generated `ICONS` block of `web/js/icons.js` (between the
-`<generated:icons>` markers) from one SVG per element, exported from the guidelines
+Rewrites the generated icon blocks of `web/js/icons.js` and of the Compose renderer's
+`render/Icons.kt` (between the `<generated:icons>` markers) from one SVG per element, exported from the guidelines
 file **"Wagon components"**, the source of truth for elements, colours and sizes
 (D50 in `docs/wagon-scheme-format.md`).
 

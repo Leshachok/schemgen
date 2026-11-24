@@ -7,7 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** Run with `./gradlew composeApp:wasmJsBrowserTest`. */
+/** Run with `./gradlew :schemgen-renderer-compose:wasmJsBrowserTest` (or iosSimulatorArm64Test). */
 class SchemeParserTest {
 
     @Test
@@ -63,15 +63,17 @@ class SchemeParserTest {
         assertEquals("driver", (driver as ua.gov.uz.schemgen.model.StructuralItem).type)
     }
 
+    /** One cell is the driver's minimum, not its size (D51). */
     @Test
-    fun driverIsAlwaysOneCell() {
+    fun driverResizesLikeAnyFacility() {
         val scheme = SchemeParser.parse(
-            """{"decks":[{"rows":3,"columns":[{"items":[{"type":"driver","row":1,"span":{"rows":3}}]}]}]}"""
+            """{"decks":[{"rows":3,"columns":[{"items":[{"type":"driver","row":1,"span":{"rows":3,"cols":2}}]},{"items":[]}]}]}"""
         )
         val msgs = validate(scheme)
-        assertTrue(msgs.none { it.level == Level.ERROR }, "span on driver must not error: $msgs")
-        assertTrue(msgs.any { it.level == Level.WARN && "driver" in it.text })
-        assertEquals(1, ua.gov.uz.schemgen.layout.clampedEndRow(scheme.decks[0].columns[0].items[0], 3))
+        assertTrue(msgs.none { it.level != Level.OK }, "a resized driver is valid: $msgs")
+        val item = scheme.decks[0].columns[0].items[0]
+        assertEquals(3, ua.gov.uz.schemgen.layout.clampedEndRow(item, 3))
+        assertEquals(2, ua.gov.uz.schemgen.layout.spanCols(item))
     }
 
     @Test
@@ -132,5 +134,111 @@ class SchemeParserTest {
         val wideSeat = msgs("""{"items":[{"seat":"1","kind":"sit","row":1,"span":{"cols":2}}]},{"items":[]}""")
         assertTrue(wideSeat.none { it.level == Level.ERROR }, "cols on a seat is ignored, not an error: $wideSeat")
         assertTrue(wideSeat.any { it.level == Level.WARN && "one column wide" in it.text })
+    }
+
+    /**
+     * Item boxes and deck sizes must equal web/js/format.js's for the same fixtures - the
+     * expected values are its own output (itemBox / layout under jsc). Until the golden
+     * fixture suite exists (roadmap phase 3), this is what holds the port to format.js.
+     */
+    @Test
+    fun geometryMatchesFormatJs() {
+        data class Expect(val deck: String, val boxes: List<String>)
+        val expected = mapOf(
+            Fixtures.KUPE to Expect("1380x170", listOf("16,8,56,96", "84,2,10,110", "106,16,40,38")),
+            Fixtures.PLATSKART to Expect("1312x220", listOf("16,8,56,146", "84,2,10,160", "106,16,40,38")),
+            Fixtures.LUX to Expect("1312x120", listOf("16,8,56,104", "84,2,10,116", "106,16,40,88")),
+            Fixtures.BUS to Expect("764x270", listOf("16,216,56,46", "84,16,40,38", "136,16,40,38")),
+            Fixtures.WIDE to Expect("460x170", listOf("16,8,108,96", "136,2,10,110")),
+            Fixtures.SMALLTABLE to Expect("978x170", listOf("16,8,56,96", "84,2,10,110", "106,16,40,38")),
+        )
+        fun f(v: Float) = if (v == v.toInt().toFloat()) v.toInt().toString() else v.toString()
+        expected.forEach { (json, e) ->
+            val deck = SchemeParser.parse(json).decks[0]
+            val L = ua.gov.uz.schemgen.layout.layout(deck)
+            assertEquals(e.deck, "${f(L.width)}x${f(L.height)}", "deck size of ${SchemeParser.parse(json).key}")
+            val boxes = ua.gov.uz.schemgen.layout.itemBoxes(deck, L)
+            // the first item of each of the first three non-empty columns, as the jsc dump took them
+            val firsts = L.columns.take(3).filter { it.column.items.isNotEmpty() }
+                .map { pc -> boxes.first { it.item === pc.column.items[0] } }
+                .map { "${f(it.x)},${f(it.y)},${f(it.w)},${f(it.h)}" }
+            assertEquals(e.boxes, firsts, "boxes of ${SchemeParser.parse(json).key}")
+        }
+    }
+
+    /** Blocks on the same rows line up whatever is next to them (D51, the deck-edge overhang). */
+    @Test
+    fun facilityHeightDependsOnlyOnItsRows() {
+        val deck = SchemeParser.parse(
+            """{"decks":[{"rows":5,"columns":[
+                {"items":[{"type":"toilet","row":3,"span":{"rows":3}}]},
+                {"items":[{"type":"baggage","row":1,"span":{"rows":2}},{"type":"toilet","row":3,"span":{"rows":3}}]}]}]}"""
+        ).decks[0]
+        val toilets = ua.gov.uz.schemgen.layout.itemBoxes(deck)
+            .filter { (it.item as ua.gov.uz.schemgen.model.StructuralItem).type == "toilet" }
+        assertEquals(toilets[0].y, toilets[1].y)
+        assertEquals(toilets[0].h, toilets[1].h)
+        val baggage = ua.gov.uz.schemgen.layout.itemBoxes(deck)
+            .first { (it.item as ua.gov.uz.schemgen.model.StructuralItem).type == "baggage" }
+        assertEquals(12f, toilets[1].y - (baggage.y + baggage.h), "stacked blocks keep the row gap")
+    }
+
+    /** A partition is fixed to the vehicle wall; an end inside the deck stops 8 past its row. */
+    @Test
+    fun partitionRunsToTheWall() {
+        fun ends(rows: Int, item: String): Pair<Float, Float> {
+            val deck = SchemeParser.parse("""{"decks":[{"rows":$rows,"columns":[{"items":[$item]}]}]}""").decks[0]
+            val L = ua.gov.uz.schemgen.layout.layout(deck)
+            val b = ua.gov.uz.schemgen.layout.itemBoxes(deck, L).single()
+            return b.y to (L.height - (b.y + b.h))
+        }
+        assertEquals(2f to 2f, ends(2, """{"type":"separator","row":1,"span":{"rows":2}}"""), "full height: wall to wall")
+        assertEquals(2f, ends(3, """{"type":"separator","row":1,"span":{"rows":2}}""").first, "top end on the wall")
+        assertEquals(58f, ends(5, """{"type":"separator","row":2,"span":{"rows":2}}""").first, "inner end: row 2 minus 8")
+    }
+
+    /** D52: the outlined seat is a kind, takes facing, and `inclusive` is no longer read. */
+    @Test
+    fun foldingSeatIsAKind() {
+        val scheme = SchemeParser.parse(
+            """{"decks":[{"rows":1,"columns":[{"items":[{"seat":"1","kind":"folding","facing":"left","inclusive":true,"row":1}]}]}]}"""
+        )
+        assertTrue(validate(scheme).none { it.level != Level.OK })
+        val seat = scheme.decks[0].columns[0].items[0] as ua.gov.uz.schemgen.model.SeatItem
+        assertEquals("AVAILABLE", ua.gov.uz.schemgen.layout.seatState(seat, ua.gov.uz.schemgen.layout.Interaction()).name)
+    }
+
+    @Test
+    fun facilitiesBelowTheirMinimumWarn() {
+        fun msgs(item: String) = validate(SchemeParser.parse("""{"decks":[{"rows":3,"columns":[{"items":[$item]}]}]}"""))
+        assertTrue(msgs("""{"type":"toilet","row":1}""").any { it.level == Level.WARN && "at least 2 rows" in it.text })
+        assertTrue(msgs("""{"type":"toilet","row":1,"span":{"rows":2}}""").none { it.level != Level.OK })
+        assertTrue(msgs("""{"type":"driver","row":1}""").none { it.level != Level.OK }, "a driver may be one row")
+    }
+
+    /** D50: `chair` and `half_table` are gone with no alias - they draw as unknown types. */
+    @Test
+    fun removedNamesAreUnknownTypes() {
+        listOf("chair", "half_table").forEach { type ->
+            val msgs = validate(SchemeParser.parse("""{"decks":[{"rows":1,"columns":[{"items":[{"type":"$type","row":1}]}]}]}"""))
+            assertTrue(msgs.any { it.level == Level.WARN && "unknown type \"$type\"" in it.text }, "$type: $msgs")
+        }
+    }
+
+    /** Every non-seat item may be wide except separator, which only grows in length (D51). */
+    @Test
+    fun onlySeatsAndSeparatorsStayOneColumn() {
+        fun msgs(type: String) =
+            validate(SchemeParser.parse("""{"decks":[{"rows":1,"columns":[{"items":[{"type":"$type","row":1,"span":{"cols":2}}]},{"items":[]}]}]}"""))
+        assertTrue(msgs("separator").any { it.level == Level.WARN && "one column wide" in it.text })
+        listOf("small_table", "driver", "table").forEach { type ->
+            assertTrue(msgs(type).none { it.level != Level.OK }, "$type may be wide: ${msgs(type)}")
+        }
+    }
+
+    @Test
+    fun everyFacilityHasArt() {
+        val missing = ua.gov.uz.schemgen.model.Vocabulary.FACILITIES.filter { it !in ua.gov.uz.schemgen.render.ICONS }
+        assertTrue(missing.isEmpty(), "no icon for $missing - regenerate with web/tools/figma_icons.py")
     }
 }

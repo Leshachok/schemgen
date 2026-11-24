@@ -21,7 +21,7 @@ It's published the same way as `uz-compose-ui-kit`: the vanniktech plugin, the s
 the same credential lookup (`azureUser`/`azureToken` Gradle properties or
 `AZURE_ARTIFACTS_USER`/`SYSTEM_ACCESSTOKEN` env vars). See `build.md` for how to release.
 
-### Public API (0.1.0)
+### Public API (0.2.0)
 
 ```kotlin
 import ua.gov.uz.schemgen.model.SchemeParser   // String or JsonObject -> Scheme
@@ -39,7 +39,7 @@ fun SchemeView(
     mode: SchemeMode = SchemeMode.VIEW,
     available: Set<String> = emptySet(),   // SELECT only: seats that can be picked
     selected: Set<String> = emptySet(),    // owned by the app (D46)
-    colors: SchemeColors = SchemeColors(),
+    colors: SchemeColors = SchemeColors.Light,  // or SchemeColors.Dark
     onSeatClick: (String) -> Unit = {},    // SELECT only: reports the tapped seat number
 )
 ```
@@ -57,8 +57,25 @@ Rules a consumer needs to know:
   the app updates its own set and passes it back.
 - **Seat numbers are opaque strings.** Don't sort or derive anything from them.
 - **No colours or sizes in the scheme.** Only `colors` changes appearance.
-- **The API is 0.x.** Expect a break when the shared style tokens land (roadmap phase 4).
-  The `SchemeColors` shape is meant to survive that; its defaults will change.
+- **Light and dark come from the guidelines file** (D50). Pass `SchemeColors.Dark` when the
+  host screen is dark; copy either one to change single colours.
+- **The API is 0.x.** Expect breaks while the format settles; each one is listed below.
+
+### Changes in 0.2.0 (guidelines file, D50–D52)
+
+Breaking:
+- `SchemeColors` was reshaped around the guidelines' colour roles: `line` and `marker` and
+  `folding` are new; `unknownBorder` and `iconLabel` are gone. `SchemeColors()` is
+  `SchemeColors.Light`. A consumer that only passed the default needs no change.
+- `SeatItem.inclusive` is gone — there are no inclusive seats; the outlined seat is
+  `kind: "folding"`. `StructuralItem.hasExplicitSpan` is gone too.
+- `Vocabulary.ONE_CELL_TYPES` and `CHAIR_DEFAULT_FACING` are gone; `chair` and `half_table`
+  are no longer known types (`half_table` is now `small_table`).
+
+Look and layout: the guidelines' sizes (berth 40×38, rows 50 apart, facility blocks at
+least 56 wide), real art for every element, icons at a fixed size, the seat-back bracket
+at 50%. Every non-seat item can be resized, except a partition, which grows only in
+length. Validation warns when a facility is shorter than its minimum rows.
 
 ### Trying a local build before it's on the feed
 
@@ -91,7 +108,7 @@ clicked through in a running panel yet. That's step 6.
 - Read `miv-multiplatform/CLAUDE.md`. Its conventions apply: strings in `strings.xml`,
   shared components from the UI kit, no tests in that repo (verify by compiling and
   running the web target).
-- Check that `ua.gov.uz:schemgen-renderer-compose:0.1.0` is on the feed (or in `~/.m2`, see above).
+- Check that `ua.gov.uz:schemgen-renderer-compose:0.2.0` is on the feed (or in `~/.m2`, see above).
   No repository changes are needed: `settings.gradle.kts` already points at the UZmiv
   feed with the right credentials. If resolution fails with 401, the credentials are
   missing, not the repo.
@@ -104,7 +121,7 @@ Next to the existing UI kit entries:
 
 ```toml
 [versions]
-uz-schemgen-renderer-compose = "0.1.0"
+uz-schemgen-renderer-compose = "0.2.0"
 
 [libraries]
 uz-schemgen-renderer-compose = { module = "ua.gov.uz:schemgen-renderer-compose", version.ref = "uz-schemgen-renderer-compose" }
@@ -255,6 +272,6 @@ and a bus. Check:
 - Don't copy the renderer's code into miv, or fork it. Fixes go into `uz-schemgen`, get a
   new version, and miv bumps `uz-schemgen-renderer-compose`.
 - Don't add colours or sizes to the scheme JSON to change the look. Pass `colors =
-  SchemeColors(...)` if the panel needs different colours.
+  SchemeColors.Dark` (or a copy of either palette) if the panel needs different colours.
 - Don't put `Scheme` (a library type) into domain models or DTOs. The domain keeps
   `JsonObject`, and parsing happens at the UI edge, as above.

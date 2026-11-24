@@ -52,7 +52,7 @@ spec with rationale, not just notes.
 - **`format.js` is canonical.** `compose-renderer`'s Kotlin layout/validate code is
   a port of it, not an independent implementation. If they diverge, `format.js` is
   right until a golden-fixture test says otherwise (roadmap phase 3, not built yet).
-  The Kotlin port is behind D50–D52 until roadmap phase 4 (spec §11).
+  Icon art for both is generated from one set of exports (`web/tools/figma_icons.py`).
 - **No aisle field.** Removed from the format entirely — a wagon with space just
   leaves a row unoccupied. Don't reintroduce `aisleAfterRow`.
 - **Removed fields stay removed** (D38, D39, D50, D52): `class`, `hull`, `artwork`, seat

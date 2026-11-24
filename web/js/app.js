@@ -38,6 +38,7 @@ function init(){
     var t=document.documentElement.getAttribute("data-theme")==="dark" ? "light" : "dark";
     applyTheme(t);
     try { localStorage.setItem("schemgen-theme", t); } catch(e){}
+    if (bwstate.framework==="compose" && bwstate.loaded) sendToCompose();
   });
   if (window.matchMedia){
     var sys=window.matchMedia("(prefers-color-scheme: dark)");
@@ -800,7 +801,8 @@ function init(){
     var frame = $("bwFrame");
     if (!frame.src) return;
     try {
-      var msg = JSON.stringify({ type:"schemgen:scheme", payload: bstate.scheme });
+      var msg = JSON.stringify({ type:"schemgen:scheme", payload: bstate.scheme,
+        theme: document.documentElement.getAttribute("data-theme")==="dark" ? "dark" : "light" });
       frame.contentWindow.postMessage(msg, "*");
       $("bwStatus").textContent = "Synced "+(bstate.scheme.key||"scheme");
     } catch(e){

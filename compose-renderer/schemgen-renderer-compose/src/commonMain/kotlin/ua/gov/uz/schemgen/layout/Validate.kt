@@ -60,10 +60,15 @@ fun validate(scheme: Scheme): List<Message> {
                         "col $ci: item at row $row spans $spanCols columns, past the last column."
                     )
                 }
-                val oneCell = item is StructuralItem && item.type in Vocabulary.ONE_CELL_TYPES
-                if (item.span.cols != 1 && !canSpanCols(item) && !oneCell) {
+                if (item.span.cols != 1 && !canSpanCols(item)) {
                     val what = if (item is SeatItem) "seat ${item.seat}" else (item as StructuralItem).type
                     msgs += Message(Level.WARN, "col $ci: $what is always one column wide — span.cols ignored.")
+                }
+                if (spanRows < minRows(item)) {
+                    msgs += Message(
+                        Level.WARN,
+                        "col $ci: ${(item as? StructuralItem)?.type ?: "seat"} is at least ${minRows(item)} rows tall in the guidelines — it spans $spanRows."
+                    )
                 }
                 for (c in ci until minOf(ci + spanCols, maxCol)) {
                     for (r in row until row + spanRows) {
@@ -106,11 +111,8 @@ fun validate(scheme: Scheme): List<Message> {
                         } else if (type !in Vocabulary.KNOWN_TYPES) {
                             msgs += Message(Level.WARN, "unknown type \"$type\" — drawn as placeholder.")
                         }
-                        if (type == "chair" && item.facing != null && item.facing !in Vocabulary.FACING) {
-                            msgs += Message(Level.WARN, "col $ci: chair has unknown facing \"${item.facing}\".")
-                        }
-                        if (type in Vocabulary.ONE_CELL_TYPES && item.hasExplicitSpan) {
-                            msgs += Message(Level.WARN, "col $ci: $type is always one cell — span ignored.")
+                        if (type == "small_table" && item.facing != null && item.facing != "top" && item.facing != "bottom") {
+                            msgs += Message(Level.WARN, "col $ci: small_table facing must be top or bottom.")
                         }
                     }
                 }

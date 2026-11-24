@@ -5,8 +5,6 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.boolean
-import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
@@ -65,7 +63,6 @@ object SchemeParser {
                 kind = o["kind"]?.jsonPrimitive?.contentOrNull ?: "",
                 berth = o["berth"]?.jsonPrimitive?.contentOrNull,
                 facing = o["facing"]?.jsonPrimitive?.contentOrNull,
-                inclusive = o["inclusive"]?.jsonPrimitive?.booleanOrNull ?: false,
                 row = row,
                 span = span
             )
@@ -74,8 +71,7 @@ object SchemeParser {
                 type = o["type"]?.jsonPrimitive?.contentOrNull,
                 facing = o["facing"]?.jsonPrimitive?.contentOrNull,
                 row = row,
-                span = span,
-                hasExplicitSpan = o["span"] != null
+                span = span
             )
         }
     }

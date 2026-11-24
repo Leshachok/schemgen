@@ -14,13 +14,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -30,7 +28,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.min
 import ua.gov.uz.schemgen.layout.Interaction
 import ua.gov.uz.schemgen.layout.SchemeMode
 import ua.gov.uz.schemgen.layout.SeatState
@@ -49,9 +46,9 @@ import ua.gov.uz.schemgen.model.StructuralItem
 import ua.gov.uz.schemgen.model.Vocabulary
 
 /**
- * Seat blocks (with seat-back bracket and berth bars), facility blocks with
- * icons, tables, half-tables and separators, using the JS reference's color
- * roles. Pixel parity with web/js/render.js is not yet fixture-verified.
+ * Seats (with seat-back bracket and berth bars), facility blocks with icons, tables,
+ * small tables and separators: a port of web/js/render.js, drawn to the guidelines file
+ * (D50-D52). Pixel parity with it is not yet fixture-verified.
  */
 
 /** Text is measured unscaled: the deck's DrawScope is already scaled by density. */
@@ -117,14 +114,14 @@ private fun DeckCanvas(
         val outlineRadius = 12f
         drawRoundRect(
             color = colors.background,
-            topLeft = Offset(2f, 2f),
-            size = Size(L.width - 4f, L.height - 4f),
+            topLeft = Offset(T.WALL, T.WALL),
+            size = Size(L.width - T.WALL * 2f, L.height - T.WALL * 2f),
             cornerRadius = CornerRadius(outlineRadius)
         )
         drawRoundRect(
             color = colors.border,
-            topLeft = Offset(2f, 2f),
-            size = Size(L.width - 4f, L.height - 4f),
+            topLeft = Offset(T.WALL, T.WALL),
+            size = Size(L.width - T.WALL * 2f, L.height - T.WALL * 2f),
             cornerRadius = CornerRadius(outlineRadius),
             style = Stroke(width = 1f)
         )
@@ -142,175 +139,147 @@ private fun DrawScope.drawItem(
         is SeatItem -> drawSeat(item, x, y, w, h, textMeasurer, interaction, colors)
         is StructuralItem -> when {
             isSeparator(item) -> drawSeparator(x, y, w, h, colors)
-            item.type == "half_table" -> drawHalfTable(x, y, w, h, item.facing, colors)
-            item.type == "table" -> drawBlock(x, y, w, h, colors)
-            item.type == "chair" -> drawChair(x, y, w, h, item.facing, colors)
-            item.type != null && item.type in Vocabulary.FACILITIES -> drawFacility(item.type, x, y, w, h, textMeasurer, colors)
-            else -> drawBlock(x, y, w, h, colors) // unknown/null type - inert placeholder (D6)
+            item.type == "small_table" -> drawSmallTable(x, y, w, h, item.facing, colors)
+            item.type == "table" -> drawTable(x, y, w, h, colors)
+            // an unknown type gets its fallback label, no type at all a "?" (D6)
+            item.type != null -> drawFacility(item.type, x, y, w, h, textMeasurer, colors)
+            else -> drawBlock(x, y, w, h, colors, "?", textMeasurer)
         }
     }
 }
 
-private fun DrawScope.drawBlock(x: Float, y: Float, w: Float, h: Float, colors: SchemeColors) {
-    drawRoundRect(
-        color = colors.block,
-        topLeft = Offset(x, y),
-        size = Size(w, h),
-        cornerRadius = CornerRadius(4f)
+private fun DrawScope.drawBlock(
+    x: Float, y: Float, w: Float, h: Float, colors: SchemeColors, label: String? = null, textMeasurer: TextMeasurer? = null
+) {
+    drawRoundRect(color = colors.block, topLeft = Offset(x, y), size = Size(w, h), cornerRadius = CornerRadius(T.RADIUS))
+    if (label != null && textMeasurer != null) drawLabel(label, x, y, w, h, textMeasurer, colors.icon)
+}
+
+private fun DrawScope.drawLabel(text: String, x: Float, y: Float, w: Float, h: Float, textMeasurer: TextMeasurer, color: Color) {
+    val r = textMeasurer.measure(
+        text = text, style = TextStyle(color = color, fontSize = 8.sp, textAlign = TextAlign.Center), density = UNSCALED
     )
+    drawText(textLayoutResult = r, topLeft = Offset(x + (w - r.size.width) / 2f, y + (h - r.size.height) / 2f))
+}
+
+/** Tables carry a 2px outline drawn inside their box, as in the guidelines. */
+private fun DrawScope.drawTable(x: Float, y: Float, w: Float, h: Float, colors: SchemeColors) {
+    val topLeft = Offset(x + 1f, y + 1f)
+    val size = Size(w - 2f, h - 2f)
+    drawRoundRect(color = colors.block, topLeft = topLeft, size = size, cornerRadius = CornerRadius(T.RADIUS))
     drawRoundRect(
-        color = colors.border,
-        topLeft = Offset(x, y),
-        size = Size(w, h),
-        cornerRadius = CornerRadius(4f),
-        style = Stroke(width = 1f)
+        color = colors.line, topLeft = topLeft, size = size, cornerRadius = CornerRadius(T.RADIUS), style = Stroke(width = 2f)
     )
 }
 
-private fun DrawScope.drawSeparator(x: Float, y: Float, w: Float, h: Float, colors: SchemeColors) {
-    drawLine(
-        color = colors.border,
-        start = Offset(x + w / 2f, y - 8f),
-        end = Offset(x + w / 2f, y + h + 8f),
-        strokeWidth = 1f
-    )
-}
-
-/** Half the row's height, top or bottom half - fixed size, never resized (D29). */
-private fun DrawScope.drawHalfTable(x: Float, y: Float, w: Float, h: Float, facing: String?, colors: SchemeColors) {
+/** Half the height of the rows it covers, in their top or bottom half. */
+private fun DrawScope.drawSmallTable(x: Float, y: Float, w: Float, h: Float, facing: String?, colors: SchemeColors) {
     val hh = h / 2f
-    val hy = if (facing == "bottom") y + h - hh else y
-    drawBlock(x, hy, w, hh, colors)
+    drawTable(x, if (facing == "bottom") y + h - hh else y, w, hh, colors)
 }
 
-/** render.js's drawChair: a free-standing stool, back arc turned by SeatBack.ANGLE (D47). */
-private fun DrawScope.drawChair(x: Float, y: Float, w: Float, h: Float, facing: String?, colors: SchemeColors) {
-    val f = if (facing in Vocabulary.FACING) facing!! else Vocabulary.CHAIR_DEFAULT_FACING
-    val s = min(w / ChairIcon.W, h / ChairIcon.H)
-    val cx = x + w / 2f
-    val cy = y + h / 2f
-    withTransform({
-        rotate(degrees = SeatBack.ANGLE.getValue(f), pivot = Offset(cx, cy))
-        translate(cx - ChairIcon.W * s / 2f, cy - ChairIcon.H * s / 2f)
-        scale(s, s, pivot = Offset.Zero)
-    }) {
-        val c = Offset(ChairIcon.CX, ChairIcon.CY)
-        drawCircle(color = colors.unavailable, radius = ChairIcon.R, center = c)
-        drawCircle(color = colors.border, radius = ChairIcon.R, center = c, style = Stroke(width = 1f))
-        drawPath(
-            PathParser().parsePathString(ChairIcon.BACK).toPath(), color = colors.icon, alpha = 0.5f,
-            style = Stroke(width = ChairIcon.BACK_WIDTH, cap = StrokeCap.Round)
-        )
-    }
+/** The box already runs to the wall or past its rows (overhangs() in Layout.kt). */
+private fun DrawScope.drawSeparator(x: Float, y: Float, w: Float, h: Float, colors: SchemeColors) {
+    drawRoundRect(color = colors.line, topLeft = Offset(x + w / 2f - 1f, y), size = Size(2f, h), cornerRadius = CornerRadius(1f))
 }
 
-/** render.js's drawFacility: the block, plus a fitted icon (or a text fallback if unknown). */
+/** A facility block with its icon centred at its own size - icons never scale (D51). Steps
+ *  and the wheelchair marker are their own art, with no block. */
 private fun DrawScope.drawFacility(
     type: String, x: Float, y: Float, w: Float, h: Float, textMeasurer: TextMeasurer, colors: SchemeColors
 ) {
-    drawBlock(x, y, w, h, colors)
-    val icon = FACILITY_ICONS[type]
+    val bare = type in Vocabulary.BARE_TYPES
+    val icon = ICONS[type]
+    if (!bare || icon == null) drawBlock(x, y, w, h, colors)
     if (icon == null) {
-        val layoutResult = textMeasurer.measure(
-            text = FACILITY_LABEL[type] ?: "?",
-            style = TextStyle(color = colors.iconLabel, fontSize = 8.sp, textAlign = TextAlign.Center),
-            density = UNSCALED
-        )
-        drawText(
-            textLayoutResult = layoutResult,
-            topLeft = Offset(x + (w - layoutResult.size.width) / 2f, y + (h - layoutResult.size.height) / 2f)
-        )
+        drawLabel(FACILITY_LABEL[type] ?: "?", x, y, w, h, textMeasurer, colors.icon)
         return
     }
-    val pad = 3f
-    val s = min((w - pad * 2f) / icon.boxW, (h - pad * 2f) / icon.boxH)
-    val tx = x + (w - icon.boxW * s) / 2f - icon.boxX * s
-    val ty = y + (h - icon.boxH * s) / 2f - icon.boxY * s
-    withTransform({
-        translate(tx, ty)
-        scale(s, s, pivot = Offset.Zero)
-    }) {
-        // every glyph is one colour (icons.js), so the theme's icon colour replaces it
+    val color = when {
+        type == "handicapped_wheelchair" -> colors.marker
+        bare -> colors.line
+        else -> colors.icon
+    }
+    withTransform({ translate(x + (w - icon.w) / 2f, y + (h - icon.h) / 2f) }) {
         icon.paths.forEach { p ->
-            val path = PathParser().parsePathString(p.d).toPath()
-            if (p.evenOdd) path.fillType = PathFillType.EvenOdd
-            if (p.fill != null) drawPath(path, color = colors.icon)
-            if (p.stroke != null) {
-                drawPath(
-                    path, color = colors.icon,
-                    style = Stroke(width = p.strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
-                )
+            withTransform({ translate(p.tx, p.ty) }) {
+                if (p.fill) drawPath(p.path, color = color)
+                if (p.stroke > 0f) {
+                    drawPath(
+                        p.path, color = color,
+                        style = Stroke(
+                            width = p.stroke,
+                            cap = if (p.roundCap) StrokeCap.Round else StrokeCap.Butt,
+                            join = if (p.roundJoin) StrokeJoin.Round else StrokeJoin.Miter
+                        )
+                    )
+                }
             }
         }
     }
 }
 
+/** render.js's drawSeat: sit and folding seats are a 32 px body with the back bracket at
+ *  50% (D50); a berth carries its bar above (upper) or below (lower); a folding seat is an
+ *  outline in the state colour (D52). */
 private fun DrawScope.drawSeat(
     item: SeatItem, x: Float, y: Float, w: Float, h: Float, textMeasurer: TextMeasurer, interaction: Interaction,
     colors: SchemeColors
 ) {
-    val known = item.kind in Vocabulary.KINDS
-    val fill: Color
-    val strokeColor: Color?
-    val textColor: Color
-    val backFill: Color
-    var outline = false
-    // same precedence as render.js: unknown > selected > unavailable > inclusive > available
-    when (seatState(item, interaction)) {
-        SeatState.UNKNOWN -> { fill = colors.unknown; strokeColor = colors.unknownBorder; textColor = colors.onUnavailable; backFill = colors.unknownBorder }
-        SeatState.SELECTED -> { fill = colors.selected; strokeColor = null; textColor = colors.onSelected; backFill = colors.selected }
-        SeatState.UNAVAILABLE -> { fill = colors.unavailable; strokeColor = colors.border; textColor = colors.onUnavailable; backFill = colors.border }
-        SeatState.AVAILABLE ->
-            if (item.inclusive) { fill = colors.background; strokeColor = colors.seat; textColor = colors.seat; backFill = colors.seat; outline = true }
-            else { fill = colors.seat; strokeColor = null; textColor = colors.onSeat; backFill = colors.seat }
+    val state = seatState(item, interaction)
+    val c = when (state) {
+        SeatState.UNKNOWN -> colors.unknown
+        SeatState.SELECTED -> colors.selected
+        SeatState.UNAVAILABLE -> colors.unavailable
+        SeatState.AVAILABLE -> colors.seat
     }
+    var textColor = when (state) {
+        SeatState.UNKNOWN, SeatState.UNAVAILABLE -> colors.onUnavailable
+        SeatState.SELECTED -> colors.onSelected
+        SeatState.AVAILABLE -> colors.onSeat
+    }
+    val folding = item.kind == "folding" && state != SeatState.UNKNOWN
 
-    // Seat-back bracket: rendered opposite the facing direction, behind the seat block.
-    if (item.kind == "sit" && item.facing in Vocabulary.FACING) {
-        val angle = SeatBack.ANGLE.getValue(item.facing!!)
-        val k = w / SeatBack.SEAT_SIZE
-        val cx = x + w / 2f
-        val cy = y + h / 2f
-        val backPath = PathParser().parsePathString(SeatBack.PATH).toPath()
-        withTransform({
-            rotate(degrees = angle, pivot = Offset(cx, cy))
-            translate(x - SeatBack.SEAT_X * k, y - SeatBack.SEAT_Y * k)
-            scale(k, k, pivot = Offset.Zero)
-        }) {
-            drawPath(backPath, color = backFill, alpha = 0.5f)
+    var bx = x; var by = y; var bw = w; var bh = h
+    if (item.kind in Vocabulary.FACING_KINDS) {
+        bx = x + (w - T.SQUARE) / 2f; by = y + (h - T.SQUARE) / 2f; bw = T.SQUARE; bh = T.SQUARE
+        val facing = item.facing
+        if (facing != null && facing in Vocabulary.FACING) {
+            val k = T.SQUARE / SeatBack.SEAT_SIZE
+            withTransform({
+                rotate(degrees = SeatBack.ANGLE.getValue(facing), pivot = Offset(bx + bw / 2f, by + bh / 2f))
+                translate(bx - SeatBack.SEAT_X * k, by - SeatBack.SEAT_Y * k)
+                scale(k, k, pivot = Offset.Zero)
+            }) {
+                drawPath(SeatBack.path, color = c, alpha = T.BACK_OPACITY)
+            }
         }
+    } else if (item.kind == "sleep" && (item.berth == "upper" || item.berth == "lower")) {
+        val upper = item.berth == "upper"
+        drawRoundRect(
+            color = c, topLeft = Offset(x, if (upper) y else y + h - T.BAR_H), size = Size(w, T.BAR_H),
+            cornerRadius = CornerRadius(T.BAR_H / 2f)
+        )
+        val bar = T.BAR_H + T.BAR_GAP
+        by = if (upper) y + bar else y
+        bh = h - bar
     }
 
-    // Berth bar: a short indicator above (upper) or below (lower) the seat block.
-    if (item.kind == "sleep" && (item.berth == "upper" || item.berth == "lower")) {
-        val barY = if (item.berth == "upper") y - T.BAR_GAP - T.BAR_H else y + h + T.BAR_GAP
-        drawRoundRect(
-            color = backFill,
-            topLeft = Offset(x + 4f, barY),
-            size = Size(w - 8f, T.BAR_H),
-            cornerRadius = CornerRadius(1.5f)
-        )
+    if (folding) {
+        val topLeft = Offset(bx + 1f, by + 1f)
+        val size = Size(bw - 2f, bh - 2f)
+        drawRoundRect(color = colors.folding, topLeft = topLeft, size = size, cornerRadius = CornerRadius(T.RADIUS))
+        drawRoundRect(color = c, topLeft = topLeft, size = size, cornerRadius = CornerRadius(T.RADIUS), style = Stroke(width = 2f))
+        if (state != SeatState.UNAVAILABLE) textColor = c
+    } else {
+        drawRoundRect(color = c, topLeft = Offset(bx, by), size = Size(bw, bh), cornerRadius = CornerRadius(T.RADIUS))
     }
 
-    drawRoundRect(color = fill, topLeft = Offset(x, y), size = Size(w, h), cornerRadius = CornerRadius(4f))
-    if (strokeColor != null) {
-        drawRoundRect(
-            color = strokeColor, topLeft = Offset(x, y), size = Size(w, h),
-            cornerRadius = CornerRadius(4f),
-            // inclusive outline is 2px, the grey unavailable/unknown border 1px - as in render.js
-            style = Stroke(width = if (outline) 2f else 1f)
-        )
-    }
-    // Seat label, always drawn (render.js's drawSeat: "?" for an unknown kind, the
-    // seat id otherwise) - centered, matching the reference's 12sp/600 text.
-    val label = if (known) item.seat else "?"
-    val layoutResult = textMeasurer.measure(
+    val label = if (item.kind in Vocabulary.KINDS) item.seat else "?"
+    val r = textMeasurer.measure(
         text = label,
-        style = TextStyle(color = textColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center),
+        style = TextStyle(color = textColor, fontSize = T.FONT.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
         density = UNSCALED
     )
-    drawText(
-        textLayoutResult = layoutResult,
-        topLeft = Offset(x + (w - layoutResult.size.width) / 2f, y + (h - layoutResult.size.height) / 2f)
-    )
+    drawText(textLayoutResult = r, topLeft = Offset(bx + (bw - r.size.width) / 2f, by + (bh - r.size.height) / 2f))
 }

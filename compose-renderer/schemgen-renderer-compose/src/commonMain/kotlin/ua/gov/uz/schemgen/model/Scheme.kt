@@ -18,27 +18,26 @@ sealed interface Item {
 }
 
 /** A named seat: [seat] is its identifier (opaque string, per format decision D10 -
- *  never derive logic from it). [kind] is sit | sleep | luxury; unknown values render
- *  as an inert placeholder (format decision D6), never a crash. */
+ *  never derive logic from it). [kind] is sit | folding | sleep | luxury; unknown values
+ *  render as an inert placeholder (format decision D6), never a crash. There is no
+ *  `inclusive` seat (D52): accessibility belongs to the handicapped items only. */
 data class SeatItem(
     val seat: String,
     val kind: String,
     val berth: String? = null,     // lower | middle | upper, only for kind == "sleep"
-    val facing: String? = null,    // left | right | top | bottom, only for kind == "sit"
-    val inclusive: Boolean = false,
+    val facing: String? = null,    // left | right | top | bottom, for sit and folding
     override val row: Int = 1,
     override val span: Span = Span()
 ) : Item
 
-/** Everything else - facility, table, half_table, separator - shares one shape
+/** Everything else - facility, table, small_table, separator - shares one shape
  *  (format decision D30): [type] names what it is, [facing] only applies to
- *  half_table (top | bottom). A null or unrecognized [type] renders inert. */
+ *  small_table (top | bottom). A null or unrecognized [type] renders inert. */
 data class StructuralItem(
     val type: String?,
     val facing: String? = null,
     override val row: Int = 1,
-    override val span: Span = Span(),
-    val hasExplicitSpan: Boolean = false   // lets the validator flag a span on a one-cell type
+    override val span: Span = Span()
 ) : Item
 
 data class Column(val items: List<Item> = emptyList())
@@ -60,21 +59,26 @@ data class Scheme(
 
 /** Known vocabulary - keep this in lockstep with web/js/format.js. */
 object Vocabulary {
-    val KINDS = listOf("sit", "sleep", "luxury")
+    val KINDS = listOf("sit", "folding", "sleep", "luxury")
+    /** Kinds drawn as a seat body with a back bracket, turned by `facing`. */
+    val FACING_KINDS = listOf("sit", "folding")
     val BERTHS = listOf("lower", "middle", "upper")
     val FACING = listOf("left", "right", "top", "bottom")
     val LEVELS = listOf("lower", "upper")
     val VEHICLES = listOf("train", "bus")
-    /** Names follow the Android sales app's drawables (D47). */
+    /** The elements of the guidelines file "Wagon components" (D50), named after the
+     *  Android sales app's drawables (D47). */
     val FACILITIES = listOf(
         "toilet", "invalid_toilet", "baggage", "bike", "handicapped", "handicapped_wheelchair",
-        "shield", "steps_up", "steps_down", "wardrobe", "cafe", "coffee_machine", "chair",
-        "kid", "driver"
+        "shield", "steps_up", "steps_down", "wardrobe", "cafe", "coffee_machine", "kid", "driver"
     )
-    /** Always exactly one cell, whatever `span` says. */
-    val ONE_CELL_TYPES = listOf("driver", "chair")
-    /** A chair's facing when omitted - it rotates like a seat back (D47). */
-    const val CHAIR_DEFAULT_FACING = "right"
-    val STRUCTURAL_TYPES = listOf("table", "half_table", "separator")
+    val STRUCTURAL_TYPES = listOf("table", "small_table", "separator")
     val KNOWN_TYPES = FACILITIES + STRUCTURAL_TYPES
+    /** Drawn as their own art with no facility block behind it. */
+    val BARE_TYPES = listOf("steps_up", "steps_down", "handicapped_wheelchair")
+    /** The guidelines' minimum heights in rows (D51); anything not listed may be one row. */
+    val MIN_ROWS = mapOf(
+        "toilet" to 2, "invalid_toilet" to 2, "baggage" to 2, "bike" to 2, "handicapped" to 2,
+        "shield" to 2, "wardrobe" to 2, "cafe" to 2, "coffee_machine" to 2, "kid" to 2
+    )
 }

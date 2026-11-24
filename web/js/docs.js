@@ -588,7 +588,8 @@ assumed a SwiftUI iOS app, a Compose Android app and an admin import API.
    The fixtures are also the only way to hold the web sales site's own drawing to the
    format (D49).
 
-4. **Compose renderer to the guidelines, tried in a demo app.** Port D50–D52: \`folding\`
+4. **Compose renderer to the guidelines, tried in a demo app.** Port done 2026-11-24 (§11);
+   the demo app is next. Port D50–D52: \`folding\`
    seats, \`small_table\`, the removal of \`inclusive\` and \`chair\`, resizing driver and small
    table, minimum sizes, the facility overhang, per-type column widths, fixed-size icons
    from the new art, and Light/Dark default \`SchemeColors\` from the guidelines. Then run it
@@ -723,11 +724,21 @@ itself: a vertical scroll inside a consumer's scrolling screen crashes Compose, 
 consumer adds \`horizontalScroll\` and padding instead. And every colour now comes from
 \`SchemeColors\`, whose defaults are the old hard-coded values.
 
-**Behind the format since 2026-11-24.** D50–D52 are in \`format.js\` and the builder only.
-The Kotlin model still has \`inclusive\`, \`half_table\`, \`chair\`, a one-cell \`driver\`, scaled
-icons with the old art, and the old colours. Until §9 phase 4 ports them, it draws
-\`folding\` seats and \`small_table\` as unknown placeholders, and the builder's Compose
-preview shows exactly that.
+**Ported to the guidelines, 2026-11-24 (0.2.0, not yet published).** D50–D52 are in the
+Kotlin model, layout, validator and canvas, mirroring \`format.js\` and \`render.js\` rule for
+rule: \`folding\` seats, \`small_table\`, \`inclusive\` and \`chair\` gone, resizable driver and
+small table, minimum rows, the deck-edge overhang, per-type column widths, fixed-size icons
+and the 50% seat back. \`SchemeColors.Light\` / \`.Dark\` are the guidelines' palettes. Icon
+art is no longer hand-copied: \`web/tools/figma_icons.py\` writes the same exports into
+\`Icons.kt\` and \`icons.js\`. Checked:
+
+- 17 \`commonTest\` tests pass on \`wasmJsBrowserTest\` and \`iosSimulatorArm64Test\`, among them
+  item boxes and deck sizes for six shared fixtures, compared with \`format.js\`'s own output
+  (run under JavaScriptCore), and the overhang rule's alignment case.
+- The Android target compiles; the wasm harness compiles and now takes the builder's page
+  theme from the postMessage envelope (\`"theme": "dark"\`).
+- Not checked: how the canvas looks next to the web builder, and anything on a device.
+  The public API changed (listed in \`compose-renderer/INTEGRATION.md\`), hence 0.2.0.
 
 ## 12. Next steps
 
@@ -739,8 +750,8 @@ Immediate actions, in order. The longer view is §9.
 4. Build the golden fixture suite from \`format.js\`: scheme JSON → the expected box of every
    item plus tap-resolution cases. Cover купе, плацкарт, люкс, a seated car with folding
    seats and an accessible area, a wide item, and a bus.
-5. Port D50–D52 to the Compose renderer, check it against the fixtures, and try it in a
-   demo Android app inside a \`ComposeView\` (§9 phase 4).
+5. ~~Port D50–D52 to the Compose renderer~~ — done 2026-11-24 (§11). Next: look at it next
+   to the web builder, and try it in a demo Android app inside a \`ComposeView\` (§9 phase 4).
 6. Review the Compose public API with the Android sales app team before 1.0 — once
    published (D32), changing it costs every consumer a migration. Then integrate (§9
    phase 5).

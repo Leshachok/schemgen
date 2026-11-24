@@ -1,6 +1,8 @@
 package ua.gov.uz.schemgen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -14,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeViewport
 import kotlin.js.ExperimentalWasmJsInterop
@@ -27,6 +30,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import ua.gov.uz.schemgen.layout.SchemeMode
 import ua.gov.uz.schemgen.model.Scheme
 import ua.gov.uz.schemgen.model.SchemeParser
+import ua.gov.uz.schemgen.render.SchemeColors
 import ua.gov.uz.schemgen.render.SchemeView
 
 /**
@@ -48,7 +52,7 @@ private external fun registerMessageListener(callback: (String) -> Unit)
 private const val SAMPLE_FALLBACK_DELAY_MS = 800L
 
 /** shared-fixtures/kupe.json, inlined so the standalone fallback needs no fetch. */
-private const val SAMPLE_SCHEME = """{"key":"KUP-34","rev":1,"decks":[{"rows":3,"columns":[{"items":[{"type":"toilet","row":1,"span":{"rows":2}}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"3","kind":"sleep","berth":"upper","row":1},{"seat":"1","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"4","kind":"sleep","berth":"upper","row":1},{"seat":"2","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"7","kind":"sleep","berth":"upper","row":1},{"seat":"5","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"8","kind":"sleep","berth":"upper","row":1},{"seat":"6","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"11","kind":"sleep","berth":"upper","row":1},{"seat":"9","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"12","kind":"sleep","berth":"upper","row":1},{"seat":"10","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"15","kind":"sleep","berth":"upper","row":1},{"seat":"13","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"16","kind":"sleep","berth":"upper","row":1},{"seat":"14","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"19","kind":"sleep","berth":"upper","row":1},{"seat":"17","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"20","kind":"sleep","berth":"upper","row":1},{"seat":"18","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"23","kind":"sleep","berth":"upper","row":1},{"seat":"21","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"24","kind":"sleep","berth":"upper","row":1},{"seat":"22","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"27","kind":"sleep","berth":"upper","row":1},{"seat":"25","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"28","kind":"sleep","berth":"upper","row":1},{"seat":"26","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"31","kind":"sleep","berth":"upper","row":1},{"seat":"29","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"32","kind":"sleep","berth":"upper","row":1},{"seat":"30","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"33","kind":"sleep","berth":"lower","row":1,"inclusive":true,"span":{"rows":2}}]},{"items":[{"seat":"34","kind":"sleep","berth":"lower","row":1,"inclusive":true,"span":{"rows":2}}]},{"items":[{"type":"handicapped","row":1,"span":{"rows":2}}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"type":"baggage","row":1,"span":{"rows":2}}]}]}]}"""
+private const val SAMPLE_SCHEME = """{"key":"KUP-34","rev":1,"decks":[{"rows":3,"columns":[{"items":[{"type":"toilet","row":1,"span":{"rows":2}}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"3","kind":"sleep","berth":"upper","row":1},{"seat":"1","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"4","kind":"sleep","berth":"upper","row":1},{"seat":"2","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"7","kind":"sleep","berth":"upper","row":1},{"seat":"5","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"8","kind":"sleep","berth":"upper","row":1},{"seat":"6","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"11","kind":"sleep","berth":"upper","row":1},{"seat":"9","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"12","kind":"sleep","berth":"upper","row":1},{"seat":"10","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"15","kind":"sleep","berth":"upper","row":1},{"seat":"13","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"16","kind":"sleep","berth":"upper","row":1},{"seat":"14","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"19","kind":"sleep","berth":"upper","row":1},{"seat":"17","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"20","kind":"sleep","berth":"upper","row":1},{"seat":"18","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"23","kind":"sleep","berth":"upper","row":1},{"seat":"21","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"24","kind":"sleep","berth":"upper","row":1},{"seat":"22","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"27","kind":"sleep","berth":"upper","row":1},{"seat":"25","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"28","kind":"sleep","berth":"upper","row":1},{"seat":"26","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"31","kind":"sleep","berth":"upper","row":1},{"seat":"29","kind":"sleep","berth":"lower","row":2}]},{"items":[{"seat":"32","kind":"sleep","berth":"upper","row":1},{"seat":"30","kind":"sleep","berth":"lower","row":2}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"seat":"33","kind":"sleep","berth":"lower","row":1,"span":{"rows":2}}]},{"items":[{"seat":"34","kind":"sleep","berth":"lower","row":1,"span":{"rows":2}}]},{"items":[{"type":"handicapped","row":1,"span":{"rows":2}}]},{"items":[{"type":"separator","row":1,"span":{"rows":2}}]},{"items":[{"type":"baggage","row":1,"span":{"rows":2}}]}]}]}"""
 
 private object PreviewState {
     var scheme: Scheme? by mutableStateOf(null)
@@ -58,6 +62,8 @@ private object PreviewState {
     var mode: SchemeMode by mutableStateOf(SchemeMode.VIEW)
     var available: Set<String> by mutableStateOf(emptySet())
     var selected: Set<String> by mutableStateOf(emptySet())
+    // optional envelope field "theme": "dark" - the web builder sends its page theme
+    var dark: Boolean by mutableStateOf(false)
 }
 
 /**
@@ -79,6 +85,7 @@ private fun readInteraction(raw: String) {
     PreviewState.available = (root["available"] as? JsonArray)
         ?.mapNotNull { it.jsonPrimitive.contentOrNull }?.toSet() ?: emptySet()
     PreviewState.selected = emptySet()
+    PreviewState.dark = root["theme"]?.jsonPrimitive?.contentOrNull == "dark"
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -119,11 +126,14 @@ private fun App() {
                 Text(PreviewState.status, style = MaterialTheme.typography.bodySmall)
             }
         } else {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            // the builder's card colour behind the frame, light or dark (web/css/app.css --surface)
+            val surface = if (PreviewState.dark) Color(0xFF15171C) else Color.White
+            Column(modifier = Modifier.fillMaxSize().background(surface).verticalScroll(rememberScrollState())) {
                 SchemeView(
                     scheme,
                     modifier = Modifier.horizontalScroll(rememberScrollState()).padding(16.dp),
                     mode = PreviewState.mode,
+                    colors = if (PreviewState.dark) SchemeColors.Dark else SchemeColors.Light,
                     available = PreviewState.available,
                     selected = PreviewState.selected,
                     onSeatClick = { seat ->
@@ -136,7 +146,8 @@ private fun App() {
                     Text(
                         "selected: " + PreviewState.selected.sorted().joinToString(", ").ifEmpty { "none" },
                         modifier = Modifier.padding(horizontal = 16.dp),
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (PreviewState.dark) Color(0xFFA0A4AB) else Color(0xFF6B7078)
                     )
                 }
             }
