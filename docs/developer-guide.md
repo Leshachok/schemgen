@@ -38,7 +38,8 @@ field anywhere in the format.
 - **The scheme is layout only.** Whether a seat is free, taken or selected comes from the
   availability payload at runtime, never from this file.
 - **No pixel values.** Seat size, row pitch and gaps belong to each renderer; the same
-  scheme renders on every platform.
+  scheme renders on every platform. Colours, element art and minimum sizes come from the
+  guidelines file "Wagon components" (spec D50).
 - **Seat numbers are opaque strings.** Nothing — sorting, berth, validation — may be derived
   from one.
 - **Unknown values never crash.** An unknown `kind` or `type` renders as an inert grey
@@ -72,7 +73,7 @@ Removed, do not write: `id` — replaced by `level` (spec D39).
 
 | Field | Type | Required | Default | What it changes |
 |---|---|---|---|---|
-| `items` | array of Item | no | `[]` | What sits in this column. An empty column draws as a narrow gap — there is no separate gap marker. A column is as wide as its widest item. |
+| `items` | array of Item | no | `[]` | What sits in this column. An empty column draws as a narrow gap — there is no separate gap marker. A column is as wide as its widest item: a seat column is narrower than one holding a facility block. |
 
 A column has no other fields — no `type`, no flags.
 
@@ -87,8 +88,8 @@ apart by field presence, not by a discriminator:
 | Field | Type | Required | Default | What it changes |
 |---|---|---|---|---|
 | `row` | integer ≥ 1 | yes | `1` | Top row the item occupies. |
-| `span.rows` | integer ≥ 1 | no | `1` | How many rows the item covers, downward from `row`. A WC two rows tall is `"span": { "rows": 2 }`. |
-| `span.cols` | integer ≥ 1 | no | `1` | Non-seat items only (spec D48). How many columns the item covers, rightward from its own. A baggage bay two seats long is `"span": { "rows": 2, "cols": 2 }` in one column, with the next column left empty. Ignored with a warning on seats, `separator`, `half_table`, `driver` and `chair`. |
+| `span.rows` | integer ≥ 1 | no | `1` | How many rows the item covers, downward from `row`. A WC two rows tall is `"span": { "rows": 2 }`. Facility blocks are at least 2 rows (spec D51); see **Facilities**. |
+| `span.cols` | integer ≥ 1 | no | `1` | Non-seat items only (spec D48). How many columns the item covers, rightward from its own. A baggage bay two seats long is `"span": { "rows": 2, "cols": 2 }` in one column, with the next column left empty. Ignored with a warning on seats and `separator`. |
 
 Two items may not share a cell — a wide item's covered cells count — `row + span.rows − 1` may
 not exceed the deck's `rows`, and a wide item may not run past the last column. A column
@@ -100,38 +101,39 @@ holding nothing but cells covered by a wide item is drawn seat-wide, not as a ga
 | Field | Type | Required | Default | What it changes |
 |---|---|---|---|---|
 | `seat` | string | yes | — | The label drawn on the seat and the id the availability payload and the selection use. **Opaque** — unique within a deck, nothing else. |
-| `kind` | `"sit"` \| `"sleep"` \| `"luxury"` | yes | — | How the seat is drawn — see the table below. Any other value: grey placeholder with "?", not selectable. |
+| `kind` | `"sit"` \| `"folding"` \| `"sleep"` \| `"luxury"` | yes | — | How the seat is drawn — see the table below. Any other value: grey placeholder with "?", not selectable. |
 | `berth` | `"lower"` \| `"middle"` \| `"upper"` | for `sleep` only | — | Berth bar: above the seat for `upper`, below for `lower`, none for `middle`. Required on every `sleep` seat — even `middle`, which draws nothing — and an error on any other kind. |
-| `facing` | `"left"` \| `"right"` \| `"top"` \| `"bottom"` | no, `sit` only | none | Seat-back bracket: a half-open outline on the side the back is against, at 50% opacity. Omitted → no bracket. |
-| `inclusive` | boolean | no | `false` | Accessibility seat: drawn as an outline (white fill, navy border) instead of solid. Usually placed next to a `handicapped` facility. |
+| `facing` | `"left"` \| `"right"` \| `"top"` \| `"bottom"` | no, `sit` and `folding` only | none | Seat-back bracket: a half-open outline in the seat's colour, on the side the back is against. Omitted → no bracket. |
 
 | `kind` | Drawn as | Typical span |
 |---|---|---|
 | `sit` | Solid seat block, optional seat-back bracket | 1 row |
+| `folding` | Folding seat: outlined block (white inside, border and number in the state colour), optional seat-back bracket | 1 row |
 | `sleep` | Solid seat block plus berth bar | 1 row |
 | `luxury` | Solid seat block, no indicator | 2 rows — write `"span": { "rows": 2 }`; there is no implicit span |
 
-Removed, do not write: `class` (fare class — that belongs to availability), `byAisle`, `tags`.
+Removed, do not write: `class` (fare class — that belongs to availability), `byAisle`, `tags`,
+`inclusive` (spec D52). A seat is never accessible as such: an accessible area is ordinary
+seats next to a `handicapped` block or a `handicapped_wheelchair` marker. The outlined seat
+that used to be `inclusive` is a folding seat, `kind: "folding"`.
 
 #### Typed item fields
 
 | Field | Type | Required | Default | What it changes |
 |---|---|---|---|---|
-| `type` | string | yes | — | What the item is: `table`, `half_table`, `separator`, `driver`, or a facility (see **Facilities**). Missing or unknown → grey placeholder block. |
-| `facing` | `"top"` \| `"bottom"` | `half_table` only | `"top"` | Which half of the row the half-table occupies. |
-| `facing` | `"left"` \| `"right"` \| `"top"` \| `"bottom"` | `chair` only | `"right"` | Which way the stool faces — its back arc is on the opposite side, as with a seat. |
+| `type` | string | yes | — | What the item is: `table`, `small_table`, `separator`, or a facility (see **Facilities**). Missing or unknown → grey placeholder block. |
+| `facing` | `"top"` \| `"bottom"` | `small_table` only | `"top"` | Which half of its rows the small table occupies. |
 
 | `type` | Drawn as | Sizing |
 |---|---|---|
-| `table` | Plain light block, no icon | Resizable: `span.rows` 1–3, `span.cols` as needed |
-| `half_table` | Light block of half a row's height, in the top or bottom half | Fixed: one row, no `span` |
-| `driver` | Light block with a steering-wheel icon (stand-in until the real asset exists) | Fixed: exactly one cell; a `span` is ignored with a warning. No `facing` |
-| `chair` | Free-standing bar stool — a round seat with a back arc, no block behind it | Fixed: exactly one cell, like `driver`; turned by `facing` |
-| `separator` | Thin vertical line, slightly taller than the rows it covers; its column is narrow | `span.rows` = the rows it divides — it can stop short of the aisle |
-| facility | Light block with the facility icon centred and scaled to fit | `span.rows` and `span.cols` as needed |
+| `table` | Light block with a thin outline, no icon | Resizable in rows and columns; at least 1 row |
+| `small_table` | The same block at half the height of its rows, in their top or bottom half | Resizable in rows and columns; at least 1 row |
+| `separator` | Thin vertical line, slightly taller than the rows it covers; its column is narrow | `span.rows` = the rows it divides — it can stop short of the aisle. Never wide: it grows in length only |
+| facility | Light block with the facility icon centred at its own size — icons never scale (spec D51) | At least the facility's minimum (see **Facilities**); `span.rows` and `span.cols` as needed |
 
 Removed, do not write: facility `label`; the old `"table": true` / `"separator": true` /
-`"facility": "wc"` shapes — every typed item uses `type`.
+`"facility": "wc"` shapes — every typed item uses `type`; `half_table` (now `small_table`) and
+`chair` (spec D50) — both render as the unknown-type placeholder.
 
 ## Seat kinds & states
 
@@ -150,38 +152,46 @@ In `select` mode:
 
 | State | Source | Drawn as |
 |---|---|---|
-| available | in `available` | Solid navy (inclusive: outline), tappable |
+| available | in `available` | Solid blue (folding: blue outline), tappable |
 | unavailable | not in `available` | Grey, not tappable |
-| selected | in `available` and `selected` | Selection colour, tappable (the app decides what a second tap means) |
+| selected | in `available` and `selected` | Orange, tappable (the app decides what a second tap means) |
 | unknown kind | scheme | Grey placeholder with "?", never tappable — in either mode |
 
 A seat in the availability payload that the scheme doesn't contain is ignored.
 
+The colours are the guidelines' Light and Dark palettes (spec D50). A consuming app passes
+its own colours as the theme (spec D34); sizes are not themeable.
+
 ## Facilities
 
-Every facility `type` with a known icon. An unrecognized `type` still renders — as a plain
-block marked "?" — it just won't have artwork yet.
+Every facility `type`, with the minimum size from the guidelines (spec D51). Any facility
+can be made larger in rows and columns; the icon stays the same size, centred. An
+unrecognized `type` still renders — as a plain block marked "?".
 
-| `type` | Meaning | Usual size |
+| `type` | Meaning | Minimum |
 |---|---|---|
 | `toilet` | Toilet | 2 rows |
-| `invalid_toilet` | Accessible toilet | 2 rows |
-| `baggage` | Luggage space | variable |
-| `bike` | Bicycle space | variable |
-| `kid` | Children's area | variable — icon is a stand-in |
-| `handicapped` | Wheelchair marker inside a compartment with inclusive seats | matches the compartment |
-| `handicapped_wheelchair` | Standalone wheelchair marker | variable |
-| `shield` | Electrical cabinet warning | variable |
-| `steps_up` / `steps_down` | Stairs to the other deck | variable |
-| `wardrobe` | Wardrobe / coat hanger | variable |
-| `cafe` | Buffet, bar or café area | variable |
-| `coffee_machine` | Vending or coffee machine | variable |
-| `chair` | Bar stool, see **Typed item fields** | one cell, always |
-| `driver` | Bus driver's place | one cell, always — icon is a stand-in |
+| `invalid_toilet` | Accessible toilet — two icons side by side | 2 rows; its column is a little wider |
+| `baggage` | Luggage space | 2 rows |
+| `bike` | Bicycle space | 2 rows |
+| `kid` | Children's area | 2 rows |
+| `handicapped` | Accessible area block | 2 rows |
+| `handicapped_wheelchair` | Standalone wheelchair marker, drawn without a block | 1 row |
+| `shield` | Electrical cabinet warning | 2 rows |
+| `steps_up` / `steps_down` | Stairs to the other deck, drawn without a block | 1 row |
+| `wardrobe` | Wardrobe / coat hanger | 2 rows |
+| `cafe` | Buffet, bar or café area | 2 rows |
+| `coffee_machine` | Vending or coffee machine | 2 rows |
+| `driver` | Bus driver's place | 1 row |
 
-Names follow the Android sales app's drawables (spec D47). Renamed, do not write: `wc`,
+A facility block reaches a little past its first and last row, into the gap beyond, unless
+something is drawn on the other side of that gap.
+
+The list and the art follow the guidelines file "Wagon components" (spec D50); names follow
+the Android sales app's drawables (spec D47). Renamed or removed, do not write: `wc`,
 `wc_accessible`, `luggage`, `bicycle`, `inclusive` (as a `type`), `inclusive_marker`,
-`electrical`, `stairs_up`, `stairs_down` — they now render as the unknown-type placeholder.
+`electrical`, `stairs_up`, `stairs_down`, `chair` — they render as the unknown-type
+placeholder.
 
 ## Validation
 
@@ -194,8 +204,9 @@ warnings still render.
 | Several decks and one has no `level`, or two share one | error |
 | Unknown `level` value | warning |
 | Unknown `vehicle` value | warning |
-| `span` on a `driver` | warning (ignored) |
-| `span.cols` on a seat, `separator` or `half_table` | warning (ignored) |
+| `span.cols` on a seat or `separator` | warning (ignored) |
+| Facility shorter than its minimum rows | warning |
+| `small_table` with a `facing` other than `top` / `bottom` | warning |
 | Item runs past the deck's `rows`, or past its last column | error |
 | Two items in one cell | error |
 | Duplicate seat number within a deck | error |

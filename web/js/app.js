@@ -72,7 +72,7 @@ function init(){
   }
   /* the catalogue plays the app: it owns `selected` and re-renders on each tap (D46) */
   var pstate={ scheme:SCHEMES[0].build(), mode:"select", available:null, selected:new Set(),
-    showGrid:false, showBack:true,
+    showGrid:false, showBack:true, theme:"light",
     onSeatClick:function(id){
       if (pstate.selected.has(id)) pstate.selected["delete"](id); else pstate.selected.add(id);
       drawPreview();
@@ -114,6 +114,7 @@ function init(){
     if (pstate.mode==="view") pstate.selected.clear();
     pstate.showGrid=$("showGrid").checked;
     pstate.showBack=$("showBack").checked;
+    pstate.theme=$("darkP").checked ? "dark" : "light";
     var s=pstate.scheme, deck=(s.decks||[])[0]||{};
     $("title").textContent=(s.key||"—")+" · rev "+(s.rev!=null?s.rev:"?");
     $("meta").innerHTML="<b>"+countSeats(s)+"</b> seats · <b>"+(deck.columns||[]).length
@@ -126,7 +127,7 @@ function init(){
     $("picked").textContent = pstate.selected.size
       ? "selected: "+Array.from(pstate.selected).join(", ") : "No seats selected.";
   }
-  ["viewOnly","showGrid","showBack"].forEach(function(id){
+  ["viewOnly","showGrid","showBack","darkP"].forEach(function(id){
     $(id).addEventListener("change", drawPreview);
   });
   bindJson($("jsonP"), function(parsed){
@@ -158,18 +159,22 @@ function init(){
     { label:"Upper",     make:function(n,r){ return { seat:n, kind:"sleep", berth:"upper", row:r }; } },
     { label:"Middle",    make:function(n,r){ return { seat:n, kind:"sleep", berth:"middle", row:r }; } },
     { label:"Lower",     make:function(n,r){ return { seat:n, kind:"sleep", berth:"lower", row:r }; } },
+    { label:"Folding ←", make:function(n,r){ return { seat:n, kind:"folding", facing:"left", row:r }; } },
+    { label:"Folding →", make:function(n,r){ return { seat:n, kind:"folding", facing:"right", row:r }; } },
+    { label:"Folding ↑", make:function(n,r){ return { seat:n, kind:"folding", facing:"top", row:r }; } },
+    { label:"Folding ↓", make:function(n,r){ return { seat:n, kind:"folding", facing:"bottom", row:r }; } },
     { label:"Luxury",    make:function(n,r){ return { seat:n, kind:"luxury", row:r, span:{rows:2} }; } },
-    { label:"Inclusive", make:function(n,r){ return { seat:n, kind:"sit", facing:"left", inclusive:true, row:r }; } },
     { label:"Table",     make:function(n,r){ return { type:"table", row:r }; } },
-    { label:"½ table ↑", make:function(n,r){ return { type:"half_table", facing:"top", row:r }; } },
-    { label:"½ table ↓", make:function(n,r){ return { type:"half_table", facing:"bottom", row:r }; } },
+    { label:"Small table ↑", make:function(n,r){ return { type:"small_table", facing:"top", row:r }; } },
+    { label:"Small table ↓", make:function(n,r){ return { type:"small_table", facing:"bottom", row:r }; } },
     { label:"Separator", make:function(n,r){ return { type:"separator", row:r, span:{rows:2} }; } }
   ].concat(FACILITIES.map(function(f){
-    return { label:FAC_LABEL[f], make:function(n,r){ return { type:f, row:r }; } };
+    return { label:FAC_LABEL[f], make:function(n,r){
+      var it={ type:f, row:r };
+      if (minRows(it)>1) it.span={ rows:minRows(it) };
+      return it;
+    } };
   }));
-
-  /* no row-span control: half-table (D29) and one-cell items such as driver */
-  function isFixedSize(it){ return it.type==="half_table" || ONE_CELL_TYPES.indexOf(it.type)!==-1; }
   var bstate={ scheme:{ key:"NEW-1", rev:1, vehicle:"train",
       decks:[{ rows:3, columns:[Col(),Col(),Col(),Col(),Col(),Col()] }] },
     tool:TOOLS[0], toolIndex:0, sel:null, deckIndex:0 };
@@ -208,6 +213,7 @@ function init(){
   $("bVehicle").addEventListener("change", function(){
     bstate.scheme.vehicle=$("bVehicle").value; drawBuilder();
   });
+  $("darkB").addEventListener("change", function(){ drawBuilder(); });
   $("bAddDeck").addEventListener("click", function(){
     var ds=bstate.scheme.decks;
     if (ds.length>=LEVELS.length) return;
@@ -433,7 +439,7 @@ function init(){
           } else {
             var label = it.seat!=null ? String(it.seat)
               : it.type==="separator" ? "│"
-              : it.type==="half_table" ? (it.facing==="bottom"?"▄":"▀")
+              : it.type==="small_table" ? (it.facing==="bottom"?"▄":"▀")
               : it.type==="table" ? "TBL"
               : (FAC_LABEL[it.type]||it.type||"?");
             var t=el("text",{ x:x+cellW/2, y:y+cellH/2, "text-anchor":"middle",
@@ -451,7 +457,7 @@ function init(){
             cellG.addEventListener("mouseleave", function(){ cross.setAttribute("opacity","0"); });
             cellG.appendChild(cross);
             attachMove(rect, ci, rr, it);
-            if (isSel && !isSeat(it) && !isFixedSize(it)){
+            if (isSel && !isSeat(it)){
               var handle=el("rect",{ x:x+cellW-6, y:y+cellH-6, width:12, height:12, rx:3,
                 fill:"var(--sel)", stroke:"#fff","stroke-width":1.5,
                 style:"cursor:"+(canSpanCols(it) ? "nwse-resize" : "ns-resize") });
@@ -508,18 +514,19 @@ function init(){
       });
     }
     /* drags rows, and columns too for items that may be wide (D48); a drag past
-       another item stops at the largest size that still fits */
+       another item stops at the largest size that still fits, and none goes below
+       the guidelines' minimum (D51) */
     function attachResize(handle, ci, it){
       handle.addEventListener("pointerdown", function(e){
         e.preventDefault(); e.stopPropagation();
         var sx=e.clientX, sy=e.clientY, start=itemSpan(it), row=it.row||1;
         var wide=canSpanCols(it);
         function move(ev){
-          var rows=Math.max(1, Math.min(d.rows-row+1, start.rows+Math.round((ev.clientY-sy)/(CELL+RGAP))));
+          var rows=Math.max(minRows(it), Math.min(d.rows-row+1, start.rows+Math.round((ev.clientY-sy)/(CELL+RGAP))));
           var cols=!wide ? 1 : Math.max(1, Math.min(d.columns.length-ci,
             start.cols+Math.round((ev.clientX-sx)/(CELL+8))));
           while (cols>1 && !fits(ci,row,rows,cols,it)) cols--;
-          while (rows>1 && !fits(ci,row,rows,cols,it)) rows--;
+          while (rows>minRows(it) && !fits(ci,row,rows,cols,it)) rows--;
           var now=itemSpan(it);
           if ((rows===now.rows && cols===now.cols) || !fits(ci,row,rows,cols,it)) return;
           setSpan(it, rows, cols);
@@ -592,7 +599,7 @@ function init(){
 
     $("bStage").innerHTML="";
     try { $("bStage").appendChild(render(bstate.scheme,
-      { mode:"view", showGrid:false, showBack:true })); }
+      { mode:"view", showGrid:false, showBack:true, theme:$("darkB").checked ? "dark" : "light" })); }
     catch(e){ $("bStage").textContent="Render failed: "+e.message; }
     if (bwstate.framework==="compose" && bwstate.loaded) sendToCompose();
     var bd=deck();
@@ -656,7 +663,7 @@ function init(){
       kind.addEventListener("change", function(){
         it.kind=kind.value;
         if (it.kind!=="sleep") delete it.berth; else if (!it.berth) it.berth="lower";
-        if (it.kind!=="sit") delete it.facing; else if (!it.facing) it.facing="left";
+        if (FACING_KINDS.indexOf(it.kind)===-1) delete it.facing; else if (!it.facing) it.facing="left";
         if (it.kind==="luxury") it.span={rows:2}; else delete it.span;
         clampSpanToFit(it, deck().rows);
         drawBuilder();
@@ -669,43 +676,38 @@ function init(){
         bs.addEventListener("change", function(){ it.berth=bs.value; drawBuilder(); });
         field("berth", bs);
       }
-      if (it.kind==="sit"){
+      if (FACING_KINDS.indexOf(it.kind)!==-1){
         var fs=document.createElement("select");
         FACING.forEach(function(v){ var o=document.createElement("option");
           o.value=v; o.textContent=v; if (it.facing===v) o.selected=true; fs.appendChild(o); });
         fs.addEventListener("change", function(){ it.facing=fs.value; drawBuilder(); });
         field("facing", fs);
       }
-      var incl=document.createElement("input"); incl.type="checkbox"; incl.checked=!!it.inclusive;
-      incl.addEventListener("change", function(){
-        if (incl.checked) it.inclusive=true; else delete it.inclusive; drawBuilder(); });
-      field("inclusive", incl);
     } else if (FACILITIES.indexOf(it.type)!==-1){
       var f2=document.createElement("select");
       FACILITIES.forEach(function(v){ var o=document.createElement("option");
         o.value=v; o.textContent=v; if (it.type===v) o.selected=true; f2.appendChild(o); });
       f2.addEventListener("change", function(){
-        it.type=f2.value; if (it.type!=="chair") delete it.facing; drawBuilder(); });
+        it.type=f2.value;
+        // a facility swapped for a taller one grows to its minimum where it can
+        var cur=itemSpan(it), want=Math.max(cur.rows, minRows(it));
+        if (want!==cur.rows && fits(bstate.sel.ci, it.row||1, want, cur.cols, it)) setSpan(it, want, cur.cols);
+        clampSpanToFit(it, deck().rows);
+        drawBuilder();
+      });
       field("facility", f2);
-      if (it.type==="chair"){
-        var cf=document.createElement("select");
-        FACING.forEach(function(v){ var o=document.createElement("option");
-          o.value=v; o.textContent=v; if ((it.facing||CHAIR_DEFAULT_FACING)===v) o.selected=true; cf.appendChild(o); });
-        cf.addEventListener("change", function(){ it.facing=cf.value; drawBuilder(); });
-        field("facing", cf);
-      }
-    } else if (it.type==="half_table"){
+    } else if (it.type==="small_table"){
       var hf=document.createElement("select");
       ["top","bottom"].forEach(function(v){ var o=document.createElement("option");
         o.value=v; o.textContent=v; if (it.facing===v) o.selected=true; hf.appendChild(o); });
       hf.addEventListener("change", function(){ it.facing=hf.value; drawBuilder(); });
       field("facing", hf);
     }
-    if (!isSeat(it) && !isFixedSize(it)){
+    if (!isSeat(it)){
       var sp=document.createElement("input");
-      sp.type="number"; sp.min="1"; sp.max="10"; sp.value=itemSpan(it).rows;
+      sp.type="number"; sp.min=String(minRows(it)); sp.max="10"; sp.value=itemSpan(it).rows;
       sp.addEventListener("change", function(){
-        var v=Math.max(1, parseInt(sp.value,10)||1);
+        var v=Math.max(minRows(it), parseInt(sp.value,10)||1);
         setSpan(it, v, itemSpan(it).cols);
         drawBuilder();
       });
@@ -723,7 +725,7 @@ function init(){
       });
       field("col span", cs);
     }
-    if (!isSeat(it) && !isFixedSize(it)){
+    if (!isSeat(it)){
       var h=document.createElement("div"); h.className="hint";
       h.style.marginBottom="10px"; h.textContent="Or drag the green handle on the canvas.";
       box.appendChild(h);

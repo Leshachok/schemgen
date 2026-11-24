@@ -3,27 +3,35 @@
 Scripts that regenerate the generated files under `web/js/`. None of these run
 automatically — run them by hand after the thing they read from changes.
 
-## extract_icons.py
+## figma_icons.py
 
-Turns individual facility SVGs (exported one-per-icon from Figma) into the
-`ICONS` data `web/js/icons.js` needs — inline SVG markup plus a computed content
-bounding box, so the renderer can crop each icon to its actual glyph before
-scaling. (Without this, icons on large mostly-empty artboards render at a
-fraction of their usable size — this was a real bug, see
-`docs/wagon-scheme-format.md`'s decision log.)
-
-Also fixes a real Figma export gotcha: Figma puts `fill="none"` on the root
-`<svg>`, and stroke-only child paths inherit it. Stripping the root to inline
-the paths drops that inheritance, so every shape without its own explicit
-`fill=` gets one added — otherwise it renders solid black.
+Rewrites the generated `ICONS` block of `web/js/icons.js` (between the
+`<generated:icons>` markers) from one SVG per element, exported from the guidelines
+file **"Wagon components"**, the source of truth for elements, colours and sizes
+(D50 in `docs/wagon-scheme-format.md`).
 
 ```
-python3 extract_icons.py toilet=WC.svg baggage=Baggage.svg invalid_toilet=Toilet.svg
+/usr/bin/python3 web/tools/figma_icons.py path/to/exported-svgs/
 ```
 
-Writes `icons.json` next to the script. You then need to fold that into
-`web/js/icons.js`'s `ICONS.<name> = {...}` assignments by hand for now — there's
-no automated injection step yet (worth adding if icons churn often).
+Export the **Light** variant of each element as SVG and name the file after its
+format `type` (`toilet.svg`, `baggage.svg`, `steps_up.svg`, …):
+
+- **facility blocks** (toilet, baggage, bike, …, driver): export only the icon layer
+  inside the block, not the background rectangle. The renderer draws the block itself
+  and centres the icon at its exported size; icons are never scaled (D51).
+- **steps and the wheelchair marker**: export the whole component. They are drawn
+  without a block.
+- **inclusive toilet** (`invalid_toilet`): two icons and a divider with no frame
+  around them. Export the three layers as one 53×24 SVG.
+
+The script swaps the guideline greys for `currentColor` so each theme can colour
+icons (D34), strips Figma's no-op clip paths, and stops if an unexpected colour is
+left. It also keeps a Figma export trap from coming back: Figma puts `fill="none"` on
+the root `<svg>`, and outline-only paths inherit it. Inlining the paths drops that root,
+so they fall back to SVG's default black fill and every icon turns into a dark shape.
+The script wraps the icon in a `<g>` carrying the root's fill. Without edit rights on the guidelines file, the Figma MCP server can't read it
+— duplicate it to your drafts and export from the copy.
 
 ## extract_schemes.py
 

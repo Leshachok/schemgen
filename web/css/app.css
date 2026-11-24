@@ -8,6 +8,19 @@
     --shadow: 0 1px 2px rgba(20,22,28,.05), 0 4px 14px rgba(20,22,28,.05);
     --r: 12px;
   }
+  /* Scheme colours, Light and Dark, from the guidelines file "Wagon components" (D50).
+     The body and unknown-kind colours aren't in the guidelines yet. */
+  .sch {
+    --s-avail:#213786; --s-sel:#EF9010; --s-off:#E3E5ED; --s-on-text:#FFFFFF; --s-off-text:#6C6E75;
+    --s-folding:#FFFFFF; --s-block:#F7F6F8; --s-icon:#B7BABC; --s-line:#D4D5D6; --s-marker:#D4D5D6;
+    --s-body:#FFFFFF; --s-body-line:#D4D5D6; --s-unknown:#E3E4E7;
+    --s-font:"UZ Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .sch-dark {
+    --s-avail:#3A5BCF; --s-off:#252931; --s-off-text:#B7BABC;
+    --s-block:#04060B; --s-icon:#686A6D; --s-line:#2C2E32; --s-marker:#686A6D;
+    --s-body:#15171C; --s-body-line:#2C2E32; --s-unknown:#3A3D44;
+  }
   * { box-sizing:border-box; }
   html, body { height:100%; }
   body { margin:0; background:var(--bg); color:var(--ink);

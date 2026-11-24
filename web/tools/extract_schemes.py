@@ -78,9 +78,9 @@ for ci,c in enumerate(cards):
         cc=colof[round(s['x'],2)]; rr=rowof[round(s['y'],2)]+1
         if (cc,rr) in occupied: continue
         occupied.add((cc,rr))
-        inclusive = s['fill']=='white'
-        item={'seat':str(num), 'kind':'sit', 'facing':'left', 'row':rr}
-        if inclusive: item['inclusive']=True
+        # the catalogue draws a folding seat as an outline: white fill, navy stroke (D52)
+        kind = 'folding' if s['fill']=='white' else 'sit'
+        item={'seat':str(num), 'kind':kind, 'facing':'left', 'row':rr}
         columns[cc]['items'].append(item)
         num+=1
     for b in bs:

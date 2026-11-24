@@ -38,15 +38,16 @@
           <label><input type="checkbox" id="viewOnly"> View only</label>
           <label><input type="checkbox" id="showGrid"> Grid</label>
           <label><input type="checkbox" id="showBack" checked> Seat backs</label>
+          <label><input type="checkbox" id="darkP"> Dark</label>
         </div>
       </div>
       <div class="card-b"><div class="meta" id="meta" style="margin-bottom:14px"></div><div id="stage"></div></div>
       <div class="legend">
-        <span><i style="background:var(--navy)"></i>available</span>
-        <span><i style="background:var(--off);border:1px solid var(--border-firm)"></i>unavailable</span>
-        <span><i style="background:#fff;border:2px solid var(--navy)"></i>inclusive</span>
-        <span><i style="background:var(--seat-selected)"></i>selected</span>
-        <span><i style="background:var(--fill);border:1px solid var(--border-firm)"></i>facility</span>
+        <span><i style="background:#213786"></i>available</span>
+        <span><i style="background:#E3E5ED"></i>unavailable</span>
+        <span><i style="background:#EF9010"></i>selected</span>
+        <span><i style="background:#fff;border:2px solid #213786"></i>folding</span>
+        <span><i style="background:#F7F6F8;border:1px solid #D4D5D6"></i>facility</span>
       </div>
     </div>
     <div class="card">
@@ -106,6 +107,7 @@
           <option value="web">Web (reference)</option>
           <option value="compose">Compose Multiplatform (Web)</option>
         </select>
+        <label class="meta"><input type="checkbox" id="darkB"> Dark</label>
         <div class="meta" id="bMeta"></div></div>
       <div class="card-b">
         <div id="bStage"></div>

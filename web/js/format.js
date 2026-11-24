@@ -3,40 +3,43 @@
    see /shared-fixtures and /docs/wagon-scheme-format.md. */
 "use strict";
 
-var KINDS = ["sit","sleep","luxury"];
+var KINDS = ["sit","folding","sleep","luxury"];
+/* kinds drawn as a seat body with a back bracket, turned by `facing` */
+var FACING_KINDS = ["sit","folding"];
 var BERTHS = ["lower","middle","upper"];
 var FACING = ["left","right","top","bottom"];
 var LEVELS = ["lower","upper"];
 var VEHICLES = ["train","bus"];
-/* facility names follow the Android sales app's drawables (D47) */
+/* the elements of the guidelines file "Wagon components" (D50), named after the
+   Android sales app's drawables (D47) */
 var FACILITIES = ["toilet","invalid_toilet","baggage","bike","handicapped","handicapped_wheelchair",
-                  "shield","steps_up","steps_down","wardrobe","cafe","coffee_machine","chair",
+                  "shield","steps_up","steps_down","wardrobe","cafe","coffee_machine",
                   "kid","driver"];
-var STRUCTURAL_TYPES = ["table","half_table","separator"];
+var STRUCTURAL_TYPES = ["table","small_table","separator"];
 var KNOWN_TYPES = FACILITIES.concat(STRUCTURAL_TYPES);
+/* drawn as their own art with no facility block behind it */
+var BARE_TYPES = ["steps_up","steps_down","handicapped_wheelchair"];
 var FAC_LABEL = { toilet:"Toilet", invalid_toilet:"Toilet+", baggage:"Baggage", bike:"Bike",
   handicapped:"Handicapped", handicapped_wheelchair:"Wheelchair", shield:"Shield",
   steps_up:"Steps up", steps_down:"Steps down", wardrobe:"Wardrobe", cafe:"Cafe",
-  coffee_machine:"Coffee machine", chair:"Chair", kid:"Kid", driver:"Driver" };
-/* items that always occupy exactly one cell, whatever span says */
-var ONE_CELL_TYPES = ["driver","chair"];
-/* chair's facing when omitted - it rotates like a seat back, see BACK_ANGLE (D47) */
-var CHAIR_DEFAULT_FACING = "right";
+  coffee_machine:"Coffee machine", kid:"Kid", driver:"Driver" };
+/* the guidelines' minimum heights in rows (D51): a facility block is 104 px, two
+   rows plus its overhang. Everything else may be a single row. */
+var MIN_ROWS = { toilet:2, invalid_toilet:2, baggage:2, bike:2, handicapped:2, shield:2,
+  wardrobe:2, cafe:2, coffee_machine:2, kid:2 };
 
 function rowY(deck,row){ return T.padY + (row-1)*T.rowPitch; }
-/* only these may be several columns wide (D48): seats, separators, half-tables and
-   one-cell items stay one column, whatever span.cols says */
+/* seats are one column wide (D48); a partition only grows in length (D51) */
 function canSpanCols(it){
-  return it.seat==null && it.type!=="separator" && it.type!=="half_table"
-    && ONE_CELL_TYPES.indexOf(it.type)===-1;
+  return it.seat==null && it.type!=="separator";
 }
+function minRows(it){ return it.seat==null && MIN_ROWS[it.type] || 1; }
 function itemSpan(it){
-  if (ONE_CELL_TYPES.indexOf(it.type)!==-1) return { rows:1, cols:1 };
   var s=it.span||{};
   return { rows:s.rows||1, cols:canSpanCols(it) ? s.cols||1 : 1 };
 }
 function itemWidth(it){
-  return it.type==="separator" ? T.sepW : T.seat;
+  return it.seat==null && ITEM_W[it.type] || T.seat;
 }
 /* a column holding nothing of its own but covered by a wide item is as wide as a
    seat, not a gap - otherwise the item would squash it */
@@ -48,10 +51,15 @@ function colWidth(col, covered){
   return w;
 }
 function layout(deck){
-  var x=T.padX, out=[], cols=deck.columns||[], covered={};
+  var x=T.padX, out=[], cols=deck.columns||[], covered={}, occupied={};
   cols.forEach(function(col,i){
     (col.items||[]).forEach(function(it){
-      for (var c=1;c<itemSpan(it).cols;c++) covered[i+c]=1; });
+      var sp=itemSpan(it), row=it.row||1;
+      for (var c=0;c<sp.cols;c++){
+        if (c>0) covered[i+c]=1;
+        for (var r=row;r<row+sp.rows;r++) occupied[(i+c)+":"+r]=1;
+      }
+    });
   });
   cols.forEach(function(col,i){
     var w=colWidth(col, covered[i]);
@@ -59,16 +67,29 @@ function layout(deck){
     x += w + T.colGap;
   });
   var rows=deck.rows||1;
-  return { cols:out, width:Math.max(x-T.colGap+T.padX,140),
-           height:rowY(deck,rows)+T.seat+T.padY };
+  return { cols:out, occupied:occupied, width:Math.max(x-T.colGap+T.padX,140),
+           height:rowY(deck,rows)+T.seatH+T.padY };
+}
+/* A facility reaches T.overhang past its first and last row, as the guidelines draw
+   it (two rows + 2 x 8 = the 104 px block), but only into a row gap with nothing
+   on the other side - two stacked blocks would otherwise overlap (D51). */
+function overhangs(L, ci, it){
+  if (it.seat!=null || FACILITIES.indexOf(it.type)===-1) return { top:0, bottom:0 };
+  var sp=itemSpan(it), row=it.row||1, top=T.overhang, bottom=T.overhang;
+  for (var c=ci;c<ci+sp.cols;c++){
+    if (L.occupied[c+":"+(row-1)]) top=0;
+    if (L.occupied[c+":"+(row+sp.rows)]) bottom=0;
+  }
+  return { top:top, bottom:bottom };
 }
 /* where an item placed in column pc lands; rows and columns past the deck's edge
    are clipped. Drawing and hit-testing both use this. */
 function itemBox(deck, L, pc, it){
-  var sp=itemSpan(it), row=it.row||1;
+  var sp=itemSpan(it), row=it.row||1, oh=overhangs(L, pc.index, it);
   var y=rowY(deck,row);
   var yEnd=rowY(deck, Math.min(row+sp.rows-1, deck.rows||1));
-  var h=yEnd+T.seat-y;
+  var h=yEnd+T.seatH-y+oh.top+oh.bottom;
+  y-=oh.top;
   if (sp.cols>1){
     var last=L.cols[Math.min(pc.index+sp.cols-1, L.cols.length-1)];
     return { x:pc.x, y:y, w:last.x+last.w-pc.x, h:h };
@@ -102,10 +123,12 @@ function validate(scheme){
           msgs.push({level:"e", text:"col "+ci+": item at row "+row+" spans "+sp.rows+" rows, past rows="+maxRow+"."});
         if (ci+sp.cols > maxCol)
           msgs.push({level:"e", text:"col "+ci+": item at row "+row+" spans "+sp.cols+" columns, past the last column."});
-        if (it.span && it.span.cols!=null && it.span.cols!==1 && !canSpanCols(it)
-            && ONE_CELL_TYPES.indexOf(it.type)===-1)
+        if (it.span && it.span.cols!=null && it.span.cols!==1 && !canSpanCols(it))
           msgs.push({level:"w", text:"col "+ci+": "+(it.seat!=null ? "seat "+it.seat : it.type)
             +" is always one column wide — span.cols ignored."});
+        if (sp.rows<minRows(it))
+          msgs.push({level:"w", text:"col "+ci+": "+it.type+" is at least "+minRows(it)
+            +" rows tall in the guidelines — it spans "+sp.rows+"."});
         for (var c=ci;c<Math.min(ci+sp.cols,maxCol);c++)
           for (var r=row;r<row+sp.rows;r++){
             var k=c+":"+r;
@@ -128,10 +151,8 @@ function validate(scheme){
           if (it.type==null) msgs.push({level:"w", text:"col "+ci+": item has no type — drawn as placeholder."});
           else if (KNOWN_TYPES.indexOf(it.type)===-1)
             msgs.push({level:"w", text:"unknown type \""+it.type+"\" — drawn as placeholder."});
-          if (it.type==="chair" && it.facing!=null && FACING.indexOf(it.facing)===-1)
-            msgs.push({level:"w", text:"col "+ci+": chair has unknown facing \""+it.facing+"\"."});
-          if (ONE_CELL_TYPES.indexOf(it.type)!==-1 && it.span!=null)
-            msgs.push({level:"w", text:"col "+ci+": "+it.type+" is always one cell — span ignored."});
+          if (it.type==="small_table" && it.facing!=null && it.facing!=="top" && it.facing!=="bottom")
+            msgs.push({level:"w", text:"col "+ci+": small_table facing must be top or bottom."});
         }
       });
     });

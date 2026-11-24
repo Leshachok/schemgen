@@ -34,8 +34,8 @@ function kupe(){
     cols.push(Col([ berth(up2,"upper",1), berth(lo2,"lower",2) ]));
     cols.push(Sep(2));
   }
-  cols.push(Col([ berth(33,"lower",1,{ inclusive:true, span:{rows:2} }) ]));
-  cols.push(Col([ berth(34,"lower",1,{ inclusive:true, span:{rows:2} }) ]));
+  cols.push(Col([ berth(33,"lower",1,{ span:{rows:2} }) ]));
+  cols.push(Col([ berth(34,"lower",1,{ span:{rows:2} }) ]));
   cols.push(F("handicapped",2)); cols.push(Sep(2)); cols.push(F("baggage",2));
   return { key:"KUP-34", rev:1,
     decks:[{ rows:3, columns:cols }] };
@@ -124,16 +124,16 @@ function skoda2(){
   return { key:"SKD-D2", rev:1,
     decks:[{ level:"upper", rows:5, columns:cols }] };
 }
-function halfTableDemo(){
+function smallTableDemo(){
   var cols=[F("toilet",2), Sep(2)], n=76;
   for (var b=0;b<5;b++){
     cols.push(Col([ sit(n,"left",1), sit(n+1,"left",2) ])); n+=2;
-    cols.push(Col([{ type:"half_table", facing:"top", row:1 },
-                   { type:"half_table", facing:"bottom", row:2 }]));
+    cols.push(Col([{ type:"small_table", facing:"top", row:1 },
+                   { type:"small_table", facing:"bottom", row:2 }]));
     cols.push(Col([ sit(n,"right",1), sit(n+1,"right",2) ])); n+=2;
     if (b<4) cols.push(Sep(2));
   }
-  return { key:"HALFTBL-20", rev:1,
+  return { key:"SMALLTBL-20", rev:1,
     decks:[{ rows:3, columns:cols }] };
 }
 /* 2+2 coach, front on the left. Facing left the bus's left side is the bottom
@@ -171,7 +171,8 @@ function broken(){
     Sep(2),
     Col([ { seat:"5", kind:"hammock", row:1 },
           { seat:"6", kind:"sit", facing:"top", row:2, span:{rows:4} } ]),
-    F("teleporter",2)
+    F("teleporter",2),
+    F("toilet",1)
   ];
   return { key:"TEST-BAD", rev:1,
     decks:[{ rows:2, columns:cols }] };
@@ -189,7 +190,7 @@ var SCHEMES = [
   { group:"Hand-written", id:"elektrichka",label:"Електричка",    build:elektrichka },
   { group:"Hand-written", id:"skoda1",     label:"Škoda deck 1",  build:skoda1 },
   { group:"Hand-written", id:"skoda2",     label:"Škoda deck 2",  build:skoda2 },
-  { group:"Hand-written", id:"halftable",  label:"Half-tables",   build:halfTableDemo },
+  { group:"Hand-written", id:"smalltable", label:"Small tables",  build:smallTableDemo },
   { group:"Hand-written", id:"bus53",      label:"Автобус 2+2",   build:bus53 },
   { group:"Hand-written", id:"wide",       label:"Wide items",    build:wideDemo },
   { group:"Hand-written", id:"broken",     label:"Broken (test)", build:broken }

@@ -33,6 +33,8 @@ function buildSeatGallery(){
   root.appendChild(kindsH);
   var kinds = docsGalleryRow();
   kinds.appendChild(docsSwatch("sit", {seat:"1",kind:"sit",facing:"top"}, SWATCH_SIZE));
+  kinds.appendChild(docsSwatch("folding", {seat:"1",kind:"folding",facing:"top"}, SWATCH_SIZE));
+  kinds.appendChild(docsSwatch("sleep · middle", {seat:"1",kind:"sleep",berth:"middle"}, SWATCH_SIZE));
   kinds.appendChild(docsSwatch("sleep · lower", {seat:"1",kind:"sleep",berth:"lower"}, SWATCH_SIZE));
   kinds.appendChild(docsSwatch("sleep · upper", {seat:"1",kind:"sleep",berth:"upper"}, SWATCH_SIZE));
   kinds.appendChild(docsSwatch("luxury", {seat:"1",kind:"luxury",span:{rows:2}}, SWATCH_SIZE));
@@ -40,15 +42,19 @@ function buildSeatGallery(){
 
   var statesH = document.createElement("h4"); statesH.textContent="States";
   root.appendChild(statesH);
-  var states = docsGalleryRow();
-  states.appendChild(docsSwatch("available", {seat:"1",kind:"sit",facing:"top"}, SWATCH_SIZE));
-  states.appendChild(docsSwatch("unavailable", {seat:"1",kind:"sit",facing:"top"}, SWATCH_SIZE,
-    {mode:"select", available:new Set()}));
-  states.appendChild(docsSwatch("selected", {seat:"1",kind:"sit",facing:"top"}, SWATCH_SIZE,
-    {mode:"select", available:new Set(["1"]), selected:new Set(["1"])}));
-  states.appendChild(docsSwatch("inclusive", {seat:"1",kind:"sleep",berth:"lower",inclusive:true}, SWATCH_SIZE));
-  states.appendChild(docsSwatch("unknown kind", {seat:"1",kind:"???"}, SWATCH_SIZE));
-  root.appendChild(states);
+  ["light","dark"].forEach(function(theme){
+    var states = docsGalleryRow();
+    [{seat:"1",kind:"sit",facing:"top"}, {seat:"1",kind:"folding",facing:"top"},
+     {seat:"1",kind:"sleep",berth:"lower"}].forEach(function(it){
+      states.appendChild(docsSwatch("available · "+theme, it, SWATCH_SIZE, {theme:theme}));
+      states.appendChild(docsSwatch("unavailable", it, SWATCH_SIZE,
+        {theme:theme, mode:"select", available:new Set()}));
+      states.appendChild(docsSwatch("selected", it, SWATCH_SIZE,
+        {theme:theme, mode:"select", available:new Set(["1"]), selected:new Set(["1"])}));
+    });
+    if (theme==="light") states.appendChild(docsSwatch("unknown kind", {seat:"1",kind:"???"}, SWATCH_SIZE));
+    root.appendChild(states);
+  });
 
   var sizesH = document.createElement("h4"); sizesH.textContent="Sizes";
   root.appendChild(sizesH);
@@ -63,10 +69,20 @@ function buildSeatGallery(){
 function buildFacilityGallery(){
   var root = document.createElement("div");
   var row = docsGalleryRow();
-  FACILITIES.forEach(function(type){
-    row.appendChild(docsSwatch(FAC_LABEL[type]||type, {type:type}, SWATCH_SIZE));
+  FACILITIES.concat(["table","small_table","separator"]).forEach(function(type){
+    var it={ type:type };
+    if (minRows(it)>1) it.span={ rows:minRows(it) };
+    if (type==="small_table") it.facing="top";
+    row.appendChild(docsSwatch(FAC_LABEL[type]||type.replace("_"," "), it, SWATCH_SIZE));
   });
   root.appendChild(row);
+  var dark = docsGalleryRow();
+  FACILITIES.concat(["table"]).forEach(function(type){
+    var it={ type:type };
+    if (minRows(it)>1) it.span={ rows:minRows(it) };
+    dark.appendChild(docsSwatch("dark", it, SWATCH_SIZE, {theme:"dark"}));
+  });
+  root.appendChild(dark);
   return root;
 }
 

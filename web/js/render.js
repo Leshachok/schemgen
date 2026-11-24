@@ -1,36 +1,32 @@
-/* SVG rendering: turns a scheme + item into DOM nodes. */
+/* SVG rendering: turns a scheme + item into DOM nodes. Colours are the --s-* custom
+   properties of the .sch / .sch-dark classes in css/app.css (D34, D50). */
 "use strict";
 
 var NS="http://www.w3.org/2000/svg";
 function el(n,a){ var e=document.createElementNS(NS,n);
   for (var k in a) if (a[k]!=null) e.setAttribute(k,a[k]); return e; }
+function themeClass(state){ return "sch"+(state && state.theme==="dark" ? " sch-dark" : ""); }
 
 function render(scheme, state){
   var frag=document.createDocumentFragment();
   (scheme.decks||[]).forEach(function(deck){
     var L=layout(deck);
-    var svg=el("svg",{ width:L.width, height:L.height,
+    var svg=el("svg",{ width:L.width, height:L.height, "class":themeClass(state),
       viewBox:"0 0 "+L.width+" "+L.height, role:"group",
       "aria-label":(scheme.vehicle==="bus"?"Bus ":"Wagon ")+(scheme.key||"")+(deck.level?", "+deck.level+" deck":"") });
     svg.appendChild(el("rect",{ x:2,y:2,width:L.width-4,height:L.height-4,
-      rx:12, fill:"#fff", stroke:"var(--border-firm)" }));
+      rx:12, fill:"var(--s-body)", stroke:"var(--s-body-line)" }));
     if (state.showGrid){
       for (var r=1;r<=(deck.rows||1);r++){
-        var gy=rowY(deck,r)+T.seat/2;
+        var gy=rowY(deck,r)+T.seatH/2;
         svg.appendChild(el("line",{ x1:6,x2:L.width-6,y1:gy,y2:gy,
-          stroke:"var(--border-firm)","stroke-dasharray":"2 4" }));
+          stroke:"var(--s-line)","stroke-dasharray":"2 4" }));
       }
     }
     L.cols.forEach(function(pc){
       (pc.col.items||[]).forEach(function(it){
-        var b=itemBox(deck, L, pc, it), x=b.x, y=b.y, w=b.w, h=b.h;
-        if (it.seat!=null) drawSeat(svg, scheme, it, x, y, w, h, state);
-        else if (it.type==="separator") drawSeparator(svg, x, y, w, h);
-        else if (it.type==="half_table") drawHalfTable(svg, x, y, w, h, it.facing);
-        else if (it.type==="table") drawBlock(svg, x, y, w, h);
-        else if (it.type==="chair") drawChair(svg, x, y, w, h, it.facing);
-        else if (it.type) drawFacility(svg, it.type, x, y, w, h);
-        else drawBlock(svg, x, y, w, h, "?");
+        var b=itemBox(deck, L, pc, it);
+        drawItem(svg, scheme, it, b.x, b.y, b.w, b.h, state);
       });
     });
     frag.appendChild(svg);
@@ -38,84 +34,98 @@ function render(scheme, state){
   return frag;
 }
 
+function drawItem(svg, scheme, it, x, y, w, h, state){
+  if (it.seat!=null) drawSeat(svg, scheme, it, x, y, w, h, state);
+  else if (it.type==="separator") drawSeparator(svg, x, y, w, h);
+  else if (it.type==="small_table") drawSmallTable(svg, x, y, w, h, it.facing);
+  else if (it.type==="table") drawTable(svg, x, y, w, h);
+  else if (it.type) drawFacility(svg, it.type, x, y, w, h);
+  else drawBlock(svg, x, y, w, h, "?");
+}
+
 function drawBlock(svg,x,y,w,h,label){
-  svg.appendChild(el("rect",{ x:x,y:y,width:w,height:h,rx:4,
-    fill:"var(--fill)", stroke:"var(--border-firm)" }));
+  svg.appendChild(el("rect",{ x:x,y:y,width:w,height:h,rx:T.radius, fill:"var(--s-block)" }));
   if (label){
     var t=el("text",{ x:x+w/2,y:y+h/2,"text-anchor":"middle",
-      "dominant-baseline":"central","font-size":9,fill:"var(--muted)" });
+      "dominant-baseline":"central","font-size":9,fill:"var(--s-icon)" });
     t.textContent=label; svg.appendChild(t);
   }
 }
-function drawSeparator(svg,x,y,w,h){
-  svg.appendChild(el("line",{ x1:x+w/2, x2:x+w/2, y1:y-8, y2:y+h+8,
-    stroke:"var(--border-firm)", "stroke-width":1 }));
+/* tables carry a 2px outline drawn inside their box, as in the guidelines */
+function drawTable(svg,x,y,w,h){
+  svg.appendChild(el("rect",{ x:x+1,y:y+1,width:w-2,height:h-2,rx:T.radius,
+    fill:"var(--s-block)", stroke:"var(--s-line)", "stroke-width":2 }));
 }
-function drawHalfTable(svg,x,y,w,h,facing){
+function drawSmallTable(svg,x,y,w,h,facing){
   var hh=h/2;
-  var hy = facing==="bottom" ? y+h-hh : y;
-  drawBlock(svg, x, hy, w, hh);
+  drawTable(svg, x, facing==="bottom" ? y+h-hh : y, w, hh);
+}
+/* a partition reaches T.overhang past its rows, like the guidelines' 55 px single-row one */
+function drawSeparator(svg,x,y,w,h){
+  svg.appendChild(el("rect",{ x:x+w/2-1, y:y-T.overhang, width:2, height:h+T.overhang*2,
+    rx:1, fill:"var(--s-line)" }));
+}
+/* icons are drawn at their own size and never scaled (D51) */
+function drawIcon(svg, ic, x, y, w, h, colour){
+  var g=el("g",{ transform:"translate("+(x+(w-ic.w)/2)+","+(y+(h-ic.h)/2)+")",
+    style:"color:"+colour });
+  g.innerHTML = ic.svg;
+  svg.appendChild(g);
 }
 function drawFacility(svg,type,x,y,w,h){
-  drawBlock(svg,x,y,w,h);
-  var ic=ICONS[type];
+  var ic=ICONS[type], bare=BARE_TYPES.indexOf(type)!==-1;
+  if (!bare) drawBlock(svg,x,y,w,h);
   if (!ic){
+    if (bare) drawBlock(svg,x,y,w,h);
     var t=el("text",{ x:x+w/2,y:y+h/2,"text-anchor":"middle",
-      "dominant-baseline":"central","font-size":8,fill:"var(--muted)" });
+      "dominant-baseline":"central","font-size":8,fill:"var(--s-icon)" });
     t.textContent = FAC_LABEL[type] || "?";
     svg.appendChild(t); return;
   }
-  var bx=ic.box?ic.box[0]:0, by=ic.box?ic.box[1]:0;
-  var bw=ic.box?ic.box[2]:ic.w, bh=ic.box?ic.box[3]:ic.h;
-  var pad=3, s=Math.min((w-pad*2)/bw, (h-pad*2)/bh);
-  var g=el("g",{ transform:"translate("+(x+(w-bw*s)/2-bx*s)+","+(y+(h-bh*s)/2-by*s)+") scale("+s+")" });
-  g.innerHTML = ic.svg;
-  svg.appendChild(g);
-}
-
-/* A free-standing stool - no facility block. The icon's back arc is on the left
-   (facing right at angle 0), so it turns by BACK_ANGLE like a seat back (D47). */
-function drawChair(svg,x,y,w,h,facing){
-  var ic=ICONS.chair, f=FACING.indexOf(facing)!==-1 ? facing : CHAIR_DEFAULT_FACING;
-  var s=Math.min(w/ic.w, h/ic.h), cx=x+w/2, cy=y+h/2;
-  var g=el("g",{ transform:"rotate("+BACK_ANGLE[f]+" "+cx+" "+cy+") translate("
-    +(cx-ic.w*s/2)+","+(cy-ic.h*s/2)+") scale("+s+")" });
-  g.innerHTML = ic.svg;
-  svg.appendChild(g);
+  drawIcon(svg, ic, x, y, w, h,
+    type==="handicapped_wheelchair" ? "var(--s-marker)" : bare ? "var(--s-line)" : "var(--s-icon)");
 }
 
 function drawSeat(svg, scheme, it, x, y, w, h, state){
   var id=String(it.seat);
   var known=KINDS.indexOf(it.kind)!==-1;
   var st=seatState(it, state), tappable=seatTappable(it, state);
-  var fill="var(--navy)", stroke="none", sw=0, tf="#fff", backFill="var(--navy)";
-  if (st==="unknown"){ fill="#E3E4E7"; stroke="#C7CAD1"; sw=1; tf="var(--off-text)"; backFill="#C7CAD1"; }
-  else if (st==="selected"){ fill="var(--seat-selected)"; backFill="var(--seat-selected)"; }
-  else if (st==="unavailable"){ fill="var(--off)"; stroke="var(--border-firm)"; sw=1; tf="var(--off-text)"; backFill="var(--border-firm)"; }
-  else if (it.inclusive){ fill="#fff"; stroke="var(--navy)"; sw=2; tf="var(--navy)"; }
+  var c = st==="unknown" ? "var(--s-unknown)" : st==="selected" ? "var(--s-sel)"
+        : st==="unavailable" ? "var(--s-off)" : "var(--s-avail)";
+  var tf = st==="unknown" || st==="unavailable" ? "var(--s-off-text)" : "var(--s-on-text)";
+  var folding = it.kind==="folding" && st!=="unknown";
 
   var refused = state.mode==="select" && !tappable;
   var g=el("g",{ "class":"seat"+(tappable?" tap":"")+(refused?" dis":"") });
-  if (state.showBack && it.kind==="sit" && FACING.indexOf(it.facing)!==-1){
-    var k=w/BACK.seatSize, cx=x+w/2, cy=y+h/2;
-    var tr="rotate("+BACK_ANGLE[it.facing]+" "+cx+" "+cy+") translate("
-      +(x-BACK.seatX*k)+","+(y-BACK.seatY*k)+") scale("+k+")";
-    g.appendChild(el("path",{ d:BACK.path, fill:backFill, opacity:0.5, transform:tr }));
+  var body={ x:x, y:y, w:w, h:h };
+  if (FACING_KINDS.indexOf(it.kind)!==-1){
+    body={ x:x+(w-T.square)/2, y:y+(h-T.square)/2, w:T.square, h:T.square };
+    if (state.showBack && FACING.indexOf(it.facing)!==-1){
+      var k=T.square/BACK.seatSize, cx=body.x+body.w/2, cy=body.y+body.h/2;
+      g.appendChild(el("path",{ d:BACK.path, fill:c, transform:"rotate("+BACK_ANGLE[it.facing]
+        +" "+cx+" "+cy+") translate("+(body.x-BACK.seatX*k)+","+(body.y-BACK.seatY*k)+") scale("+k+")" }));
+    }
+  } else if (it.kind==="sleep" && (it.berth==="upper"||it.berth==="lower")){
+    var bar=T.barH+T.barGap, upper=it.berth==="upper";
+    g.appendChild(el("rect",{ x:x, y:upper ? y : y+h-T.barH, width:w, height:T.barH,
+      rx:T.barH/2, fill:c }));
+    body={ x:x, y:upper ? y+bar : y, w:w, h:h-bar };
   }
-  if (it.kind==="sleep" && (it.berth==="upper"||it.berth==="lower")){
-    var by2 = it.berth==="upper" ? y-T.barGap-T.barH : y+h+T.barGap;
-    g.appendChild(el("rect",{ x:x+4,y:by2,width:w-8,height:T.barH,rx:1.5, fill:backFill }));
+  if (folding){
+    g.appendChild(el("rect",{ x:body.x+1,y:body.y+1,width:body.w-2,height:body.h-2,rx:T.radius,
+      fill:"var(--s-folding)", stroke:c, "stroke-width":2 }));
+    if (st!=="unavailable") tf=c;
+  } else {
+    g.appendChild(el("rect",{ x:body.x,y:body.y,width:body.w,height:body.h,rx:T.radius, fill:c }));
   }
-  g.appendChild(el("rect",{ x:x,y:y,width:w,height:h,rx:4,
-    fill:fill, stroke:stroke, "stroke-width":sw }));
-  var t=el("text",{ x:x+w/2,y:y+h/2,"text-anchor":"middle","dominant-baseline":"central",
-    "font-size":12,"font-weight":600,fill:tf });
+  var t=el("text",{ x:body.x+body.w/2,y:body.y+body.h/2,"text-anchor":"middle","dominant-baseline":"central",
+    "font-size":T.font,"font-weight":700,"font-family":"var(--s-font)",fill:tf });
   t.textContent = known ? id : "?";
   g.appendChild(t);
 
   var bits=[id];
   if (it.kind==="sleep") bits.push(it.berth);
-  if (it.inclusive) bits.push("inclusive");
+  if (it.kind==="folding") bits.push("folding");
   if (st!=="unknown") bits.push(st);
   g.setAttribute("aria-label", bits.join(", "));
 
@@ -126,20 +136,20 @@ function drawSeat(svg, scheme, it, x, y, w, h, state){
   svg.appendChild(g);
 }
 
+/* One item on its own, at its real proportions, scaled so a seat cell is `size` wide.
+   Facilities get their overhang on both sides, as nothing is drawn around them. */
 function previewItem(it, size, stateOverride){
-  var pad=9, sp=itemSpan(it);
-  var w = it.type==="separator" ? T.sepW*2 : size*sp.cols + (sp.cols-1)*T.colGap*(size/T.seat);
-  var h = size*sp.rows + (sp.rows-1)*(T.rowPitch-T.seat)*(size/T.seat);
-  var svg=el("svg",{ width:w+pad*2, height:h+pad*2, viewBox:"0 0 "+(w+pad*2)+" "+(h+pad*2) });
-  var scheme={ key:"preview" }, state={ mode:"view", showBack:true };
-  if (stateOverride) for (var k in stateOverride) state[k]=stateOverride[k];
-  if (it.seat!=null) drawSeat(svg, scheme, it, pad, pad, w, h, state);
-  else if (it.type==="separator") drawSeparator(svg, pad, pad, w, h);
-  else if (it.type==="half_table") drawHalfTable(svg, pad, pad, w, h, it.facing);
-  else if (it.type==="table") drawBlock(svg, pad, pad, w, h);
-  else if (it.type==="chair") drawChair(svg, pad, pad, w, h, it.facing);
-  else if (it.type) drawFacility(svg, it.type, pad, pad, w, h);
-  else drawBlock(svg, pad, pad, w, h, "?");
+  var pad=10, sp=itemSpan(it);
+  var w = sp.cols>1 ? sp.cols*T.seat+(sp.cols-1)*T.colGap : itemWidth(it);
+  var oh = it.seat==null && FACILITIES.indexOf(it.type)!==-1 ? T.overhang : 0;
+  var h = T.seatH+(sp.rows-1)*T.rowPitch+oh*2;
+  if (it.type==="separator") pad+=T.overhang;
+  var k=size/T.seat, vw=w+pad*2, vh=h+pad*2;
+  var state={ mode:"view", showBack:true };
+  if (stateOverride) for (var key in stateOverride) state[key]=stateOverride[key];
+  var svg=el("svg",{ width:vw*k, height:vh*k, viewBox:"0 0 "+vw+" "+vh, "class":themeClass(state) });
+  if (state.theme==="dark") svg.appendChild(el("rect",{ width:vw, height:vh, rx:6, fill:"var(--s-body)" }));
+  drawItem(svg, { key:"preview" }, it, pad, pad, w, h, state);
   return svg;
 }
 
@@ -149,14 +159,13 @@ function describeItem(it){
     if (it.kind==="sleep") bits.push((it.berth||"?")+" berth");
     else if (it.kind==="luxury") bits.push("luxury");
     else if (it.kind==="sit") bits.push(it.facing||"?");
+    else if (it.kind==="folding") bits.push("folding", it.facing||"?");
     else bits.push("unknown kind \""+it.kind+"\"");
-    if (it.inclusive) bits.push("inclusive");
     return bits.join(" · ");
   }
   if (it.type==="separator") return "Separator";
   if (it.type==="table") return "Table";
-  if (it.type==="half_table") return "Half-table · facing "+(it.facing||"?");
-  if (it.type==="chair") return "Chair · facing "+(it.facing||CHAIR_DEFAULT_FACING);
+  if (it.type==="small_table") return "Small table · facing "+(it.facing||"?");
   if (it.type) return FAC_LABEL[it.type] || ("Unknown type \""+it.type+"\"");
   return "Item with no type";
 }
@@ -167,4 +176,3 @@ function countSeats(s){
     (c.items||[]).forEach(function(i){ if (i.seat!=null) n++; }); }); });
   return n;
 }
-

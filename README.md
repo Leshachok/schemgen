@@ -18,13 +18,15 @@ Three renderers, each published as its own library for other teams' apps:
 
 | Renderer | Consumers |
 |---|---|
-| Compose Multiplatform (Android, iOS, wasm) | Android sales app, conductor app, wagon admin |
-| SwiftUI | iOS sales app |
-| Web (TS core + Vue component) | web sales, bus admin |
+| Compose Multiplatform (Android, iOS, wasm) | Android sales app (legacy Views, via `ComposeView`), wagon admin; conductor app later |
+| iOS (SwiftUI with a UIKit wrapper, or UIKit — open) | iOS sales app (UIKit) |
+| Web (TS core + Vue 3 component) | bus admin; web sales later (it draws schemes itself for now) |
 
-Only the Compose one exists so far. The builder is a separate, stateless tool:
-it exports scheme JSON to the admin panels, which store and publish schemes.
-See spec §1.3 and §9.
+Only the Compose one exists so far. The builder is a separate static page that
+stores nothing: it produces scheme JSON, which is pasted into the admin panels
+that store and publish schemes. Elements, colours, states and minimum sizes come
+from the design team's guidelines file "Wagon components". See spec §1.3, D49-D52
+and §9.
 
 ## Layout
 
@@ -77,7 +79,7 @@ Three files under `web/js/` are generated, not hand-edited:
 
 | File | Regenerate with | From |
 |---|---|---|
-| `icons.js` | `web/tools/extract_icons.py` | facility SVG exports from Figma |
+| `icons.js`'s `ICONS` block | `web/tools/figma_icons.py` | SVG exports from the guidelines file "Wagon components" |
 | `schemes.js`'s `AUTO` array | `web/tools/extract_schemes.py` | a full Figma catalogue SVG export |
 | `docs.js` | `web/tools/embed_docs.py` | `docs/wagon-scheme-format.md` |
 

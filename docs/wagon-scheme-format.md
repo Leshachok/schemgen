@@ -1,8 +1,8 @@
 # Seat scheme format — design notes
 
-**Status:** draft, in discussion
+**Status:** agreed with the consuming teams (D49); details still settling
 **Owner:** Oleksii, Mobile (UZ)
-**Last updated:** 2026-10-05
+**Last updated:** 2026-11-24
 **Covers:** train wagons and buses (D36). Most of this document was written when the
 format was train-only, so it says "wagon" throughout; read it as "vehicle" unless a section
 is explicitly train-specific.
@@ -44,28 +44,28 @@ the selected seats on purchase — which is the same shape as the train availabi
 ### 1.3 Consumers and renderers
 
 Schemes are shown in several products, built by different teams in different stacks. There
-is **one renderer per UI technology**, and technologies are never mixed — the SwiftUI app
-does not embed the Compose renderer (D31).
+is **one renderer per UI technology**, and technologies are never mixed (D31). The teams
+signed up in November 2026 (D49); the last column says when each one moves over.
 
-| Consumer | Stack | Renderer | Shows |
-|---|---|---|---|
-| Ticket-selling app, iOS | native SwiftUI | **SwiftUI** | trains, buses |
-| Ticket-selling app, Android | native Android, Compose hosted via `ComposeView` (or the fragment rewritten in Compose) | **Compose** (Android target) | trains, buses |
-| Conductor app | Compose Multiplatform, Android + iOS | **Compose** (Android + iOS targets) | trains |
-| Wagon admin panel | Compose Multiplatform, wasm | **Compose** (wasmJs target) | trains — scheme + preview per wagon type |
-| Bus admin panel | Vue / Nuxt | **Web** | buses — scheme + preview per bus |
-| Ticket-selling website | Vue / Nuxt | **Web** | trains, buses |
+| Consumer | Stack | Renderer | Shows | When |
+|---|---|---|---|---|
+| Ticket-selling app, Android | legacy Android Views; the renderer sits in a `ComposeView` | **Compose** (Android target) | trains, buses | now |
+| Ticket-selling app, iOS | UIKit | **iOS renderer** — SwiftUI behind a UIKit wrapper, or UIKit; open (§7) | trains, buses | now |
+| Wagon admin panel | Compose Multiplatform, wasm | **Compose** (wasmJs target) | trains — scheme + preview per wagon type | now |
+| Bus admin panel | Vue 3 | **Web** | buses — stores the bus schemes | now |
+| Conductor app | Compose Multiplatform, Android + iOS | **Compose** (Android + iOS targets) | trains | later |
+| Ticket-selling website | Vue 3 | its own drawing code for now; **Web** later | trains, buses | uses the JSON now, the renderer later |
 
 The admin panels are the **source of truth** for schemes: each already lists its vehicle
-types, and each type gets its scheme and a live preview there. The builder is a separate,
-stateless authoring tool that hands a scheme to an admin (D35).
+types, and each type gets its scheme there. The builder is a separate static page that
+stores nothing and only produces JSON, which an admin user pastes into the panel (D35, D49).
 
 ```
-Builder (own domain, stores nothing) ──JSON file / admin API──▶ Wagon admin (Compose wasm)
-                                                               Bus admin   (Vue/Nuxt)
-                                                                   │ publish immutable revisions (D5)
-                                                                   ▼
-                       Sales iOS (SwiftUI) · Sales Android (Compose) · Conductor (Compose) · Web sales (Web)
+Builder (static page, stores nothing) ──JSON, pasted──▶ Wagon admin (Compose wasm)
+                                                        Bus admin   (Vue 3)
+                                                            │ publish immutable revisions (D5)
+                                                            ▼
+     Sales Android (Compose in Views) · Sales iOS (UIKit) · Conductor (Compose, later) · Web sales (own drawing for now)
 ```
 
 ---
@@ -100,15 +100,15 @@ Builder (own domain, stores nothing) ──JSON file / admin API──▶ Wagon 
 | D24 | **Aisle is not a format concept at all — `aisleAfterRow` is removed** | Space is simply a row nothing is placed on. No field, no spacing constant, no special case in layout. A wagon that wants a corridor just leaves a row's items empty across every column. |
 | D27 | **Builder items are draggable within the canvas, not just from the palette** | Dropping onto an occupied cell is a no-op — this is deliberately a *move*, not a swap, to avoid silent data loss from an imprecise drop. |
 | D28 | **Non-seat items (facility, table, separator) get a drag handle to resize their row span** | Seats don't get one — `luxury`'s span is fixed by definition and other seat kinds don't span rows, so a resize handle on a seat would have nothing meaningful to do. |
-| D29 | **Half-table is its own item, not a small `table`** | Fixed size (never resizable — no resize handle, no row-span field), and it takes a `facing: top \| bottom` instead of a span, since its whole identity is which half of the row it occupies. |
+| D29 | **Half-table is its own item, not a small `table`** | Fixed size (never resizable — no resize handle, no row-span field), and it takes a `facing: top \| bottom` instead of a span, since its whole identity is which half of the row it occupies. **Superseded by D51:** it can be resized like any table now, and D50 renamed it `small_table`. |
 | D30 | **Every non-seat item uses one field, `type`, instead of a mix of named fields and boolean flags** | `facility: "wc"`, `table: true`, `separator: true`, `halfTable: true` was inconsistent — an accidental artifact of adding item kinds one at a time, not a deliberate distinction. `wc`, `table`, `half_table`, `separator` are now all just values of `type`. This also gives table/separator/half-table the same unknown-value fallback facilities already had — a typo in `type` renders as an inert placeholder instead of silently doing nothing. |
 | D25 | **`byAisle` removed** | Redundant with row position — a seat's row already says whether it's in the aisle pair. (Written when the aisle was `aisleAfterRow`; D24 makes it an empty row, the reasoning is unchanged.) |
 | D26 | **`tags` / `seatTags` removed entirely** | No behaviour depended on it; dropped rather than carried as unused surface area. |
-| D31 | **Three renderers, one per UI technology, never mixed: Compose, SwiftUI, Web** | Each consumer (§1.3) uses the renderer native to its own stack. Compose Multiplatform is used *because its consumers are already Compose apps* — the conductor app and wagon admin are CMP, and every Android app uses Compose — not as a cross-platform shortcut. The iOS sales app is SwiftUI and gets a SwiftUI renderer; the Vue sites get a web renderer. This settles the old "CMP vs SwiftUI for iOS" roadmap question: both exist, for different consumers. |
+| D31 | **Three renderers, one per UI technology, never mixed: Compose, SwiftUI, Web** | Each consumer (§1.3) uses the renderer native to its own stack. Compose Multiplatform is used *because its consumers are already Compose apps* — the conductor app and wagon admin are CMP, and every Android app uses Compose — not as a cross-platform shortcut. The iOS sales app is SwiftUI and gets a SwiftUI renderer; the Vue sites get a web renderer. This settles the old "CMP vs SwiftUI for iOS" roadmap question: both exist, for different consumers. **Corrected by D49 (2026-11-24):** the iOS sales app is UIKit, not SwiftUI, and the Android sales app is legacy Views, not Compose. The Android app still gets the Compose renderer, hosted in a `ComposeView`. The reason is no longer that the app is already Compose: the renderer exists, and one `ComposeView` costs a View-based app a few MB of Compose runtime. For the iOS app, SwiftUI behind a UIKit wrapper versus plain UIKit is open (§7 Q9). Compose stays rejected there for the reasons under Rejected, which a UIKit app doesn't change. |
 | D32 | **Every renderer is a separately published library** | The renderers are consumed by other teams in their own apps, on their own release schedules. So each needs a stable public API, its own semver and changelog, and platform-native packaging (Maven for Compose, SPM for SwiftUI, npm for web). A renderer that only works inside this repo has not shipped. |
 | D33 | **The renderer owns the look; the look is identical across renderers** | Colors, sizes, strokes and icon treatment are never in the scheme (consistent with §6, no pixel values). But three teams hand-copying a style guide will drift exactly the way per-platform assets drifted, so the style is defined once, as shared design tokens, and generated into each renderer. Web differs from mobile — at least in sizes — so tokens come as a `mobile` and a `web` preset. |
 | D34 | **Theme = colors only, passed in by the consumer** | Each consumer app has its own theming (light/dark, brand), so the renderer takes a theme argument (e.g. a parameter on the composable) with the shared tokens as the default. Only colors are themeable for now; sizes come from the preset, not the theme. Widening this later is additive; narrowing it after consumers depend on it is not. |
-| D35 | **The builder is a separate, stateless authoring tool** | Hosted on its own domain. It configures a scheme and exports it — as a JSON file or through an API into an admin panel. It stores no schemes and is not a catalogue: the admin panels are the source of truth (§1.3). Editing an existing scheme means loading its JSON in, not looking it up. |
+| D35 | **The builder is a separate, stateless authoring tool** | Hosted on its own domain. It configures a scheme and exports it — as a JSON file or through an API into an admin panel. It stores no schemes and is not a catalogue: the admin panels are the source of truth (§1.3). Editing an existing scheme means loading its JSON in, not looking it up. **Narrowed by D49:** a static page with JSON output only. An admin user pastes the JSON into the panel; there is no admin import API. |
 | D36 | **Buses use the same format** | A bus is rows and columns of seats with an empty row for the aisle, optional facilities, sometimes two decks — everything the format already expresses. Bus availability has the same shape as train availability (§1.2). A second format would mean a second set of three renderers. Train-specific fields must therefore become optional, and bus-only elements are new `type` values, not a new structure — see §4.7. |
 | D37 | **This project is the format, the renderers and the builder — nothing else** | Availability, booking, partner integration and scheme storage all live elsewhere (§1.1). Keeping the renderer's input/output this narrow is what lets five consumer apps embed it without inheriting anyone's backend. |
 | D38 | **Removed: `class`, `hull`, `artwork`, seat `class`, facility `label`** | Format review, 2026-10-05: none of them changed what a passenger sees. `class` was display-only (D12) and the admin already knows a wagon type's class. `hull` was `"plain"` in every scheme ever written — `nose_left` / `nose_right` never occurred and no renderer drew a nose, so its only effect was a corner radius. `artwork`, per-seat fare `class` and facility `label` were specified but never implemented anywhere; fare class already belongs to the availability payload (§4.6). Both `class` and `hull` were also train-only, which D36 rules out for required fields. Unused fields in a published format are not free — every renderer team has to wonder whether to support them. |
@@ -116,20 +116,24 @@ Builder (own domain, stores nothing) ──JSON file / admin API──▶ Wagon 
 | D40 | **No doors on any vehicle** | D9 extends to buses. Wagon schemes show only the aisle, and buses follow the same convention. The driver's place is the one bus-only item (§4.7). |
 | D41 | **`span.cols` removed — every item is one column wide** | Implemented in layout but never set by any scheme, sample, import or builder action. Horizontal size is already expressed by columns; a second way to make an item wide would be a second source of truth for the same thing. If a wide item is ever needed, adding an optional field back is additive. **Superseded by D48.** |
 | D42 | **Top-level `vehicle`: `train` \| `bus`, absent means `train`** | Chosen over a separate bus key space: one explicit field says what a scheme describes, so an exported file is self-describing and a key can never be read in the wrong namespace. **It changes nothing visual** — a bus is drawn by exactly the rules a wagon is, and the driver's place is its own item (D43). Its only rendered effect is the accessibility label ("Bus BUS-53" vs "Wagon …"). It also leaves a switch in place should a vehicle ever need different rendering. Kept deliberately (2026-10-05) although the admins already know the vehicle type: dropping it later would cost more than carrying it. Defaulting to `train` keeps every scheme written before buses valid without touching a published revision (D5). An unknown value warns and renders as a train. |
-| D43 | **`driver` is a typed item, always exactly one cell, no `facing`** | The one bus-only element (no doors, D40). A fixed size means no span to author and no resize handle in the builder, like `half_table` (D29); a `span` on it is ignored with a warning rather than an error, so a stray field cannot break a published scheme. No `facing`: the wheel reads the same whichever way the vehicle is drawn. No icon exists yet — the steering-wheel glyph is a stand-in, like `kid` and the stairs. |
+| D43 | **`driver` is a typed item, always exactly one cell, no `facing`** | The one bus-only element (no doors, D40). A fixed size means no span to author and no resize handle in the builder, like `half_table` (D29); a `span` on it is ignored with a warning rather than an error, so a stray field cannot break a published scheme. No `facing`: the wheel reads the same whichever way the vehicle is drawn. No icon exists yet — the steering-wheel glyph is a stand-in, like `kid` and the stairs. **Partly reversed by D51:** one cell is now the driver's minimum, and it can be resized like any facility. The real icon comes from the guidelines (D50). |
 | D44 | **Builder edits vehicle and decks: at most two decks, levels kept valid by construction** | Two decks is the most `level` can name. Adding a second deck fills in `lower` / `upper` on both, and picking the other deck's level swaps the two, so the builder never produces a duplicate or missing level (D39) — the validator still catches hand-edited JSON. Removing a deck that has items takes a second click, the same no-silent-data-loss rule as D27. The builder writes `vehicle` explicitly, including `"train"`, so an exported file always says what it is. |
 | D45 | **Two interaction modes, a renderer input: `view` and `select`** | Different consumers need different behaviour — an admin preview shows a scheme, a sales app sells seats from it. `view`: every known seat looks available, nothing is tappable, no availability needed. `select`: the app passes the available seat numbers; those are blue and tappable, every other seat grey and inert (the §4.6 rule). A mode is runtime input like availability (D4), never a scheme field. A highlight in `view` mode and separate `occupied` / `held` looks are deliberately left out until a consumer needs them — both are additive. |
 | D46 | **The app owns the selection; the renderer only reports taps** | The renderer calls back with the tapped seat number and never changes `selected` itself; the app updates its set and passes it back in. Selection rules — a maximum, one seat per passenger, deselect-on-tap — differ per product and belong to the app. It also keeps every renderer stateless and identical: same inputs, same picture. |
-| D47 | **Facility names and art come from the Android sales app** | The sales apps already ship every facility a real wagon has, drawn from one design system (iOS uses the same glyphs as PNGs). Their names are the Android drawable names with the `ic_` prefix, the class prefix (`ps_`, `ks_`) and the size suffix dropped: `wc`→`toilet`, `wc_accessible`→`invalid_toilet`, `luggage`→`baggage`, `bicycle`→`bike`, `inclusive`→`handicapped`, `electrical`→`shield` (`ic_is_shield`). Two are adjusted where the literal name would mislead: the standalone marker is `handicapped_wheelchair`, not `invalid` (reads as "not valid" next to validator messages), and stairs are `steps_up` / `steps_down` (Android's down drawable is plain `ic_ps_steps`). New from the apps: `wardrobe`, `cafe`, `coffee_machine`, and `chair` — a bar stool, one cell, with an optional `facing` that turns its back arc like a seat back (default `right`), drawn without a facility block. `baggage`, `steps_up` and `steps_down` replace mislabelled or stand-in art. `kid` and `driver` have no counterpart in either app and keep their names. A clean rename, no aliases: nothing is published yet, and old names now render as the unknown-type placeholder. |
-| D48 | **`span.cols` is back, for non-seat items only — reverses D41** | A baggage bay, a shared table or a toilet block can be longer than one seat, and the catalogue already draws them so: the importer emits such a block as two neighbouring one-column items with nothing tying them together, so a builder edit can move or delete half of it. A wide item covers the next `cols − 1` columns the way `span.rows` covers rows downward; it does not widen its own column, which is how the D41-era field worked and why reverting that commit was not the fix. A column covered by a wide item is drawn seat-wide even when empty, or it would collapse to a gap and squash the item. Seats stay one column: a wide seat raises questions about the back bracket, berth bars and what a passenger reads it as, and no real layout needs one. `separator`, `half_table`, `driver` and `chair` stay one column too. `cols` on any of those is ignored with a warning, not an error, like D43's span on the driver. In the builder, inserting a column inside a wide item widens it and deleting one narrows it, so the item keeps its neighbours. |
+| D47 | **Facility names and art come from the Android sales app** | The sales apps already ship every facility a real wagon has, drawn from one design system (iOS uses the same glyphs as PNGs). Their names are the Android drawable names with the `ic_` prefix, the class prefix (`ps_`, `ks_`) and the size suffix dropped: `wc`→`toilet`, `wc_accessible`→`invalid_toilet`, `luggage`→`baggage`, `bicycle`→`bike`, `inclusive`→`handicapped`, `electrical`→`shield` (`ic_is_shield`). Two are adjusted where the literal name would mislead: the standalone marker is `handicapped_wheelchair`, not `invalid` (reads as "not valid" next to validator messages), and stairs are `steps_up` / `steps_down` (Android's down drawable is plain `ic_ps_steps`). New from the apps: `wardrobe`, `cafe`, `coffee_machine`, and `chair` — a bar stool, one cell, with an optional `facing` that turns its back arc like a seat back (default `right`), drawn without a facility block. `baggage`, `steps_up` and `steps_down` replace mislabelled or stand-in art. `kid` and `driver` have no counterpart in either app and keep their names. A clean rename, no aliases: nothing is published yet, and old names now render as the unknown-type placeholder. **Superseded as the source by D50:** the names stay, but the art, the colours and the list of elements now come from the guidelines file. `chair` was dropped because the guidelines don't have it. |
+| D48 | **`span.cols` is back, for non-seat items only — reverses D41** | A baggage bay, a shared table or a toilet block can be longer than one seat, and the catalogue already draws them so: the importer emits such a block as two neighbouring one-column items with nothing tying them together, so a builder edit can move or delete half of it. A wide item covers the next `cols − 1` columns the way `span.rows` covers rows downward; it does not widen its own column, which is how the D41-era field worked and why reverting that commit was not the fix. A column covered by a wide item is drawn seat-wide even when empty, or it would collapse to a gap and squash the item. Seats stay one column: a wide seat raises questions about the back bracket, berth bars and what a passenger reads it as, and no real layout needs one. `separator`, `half_table`, `driver` and `chair` stay one column too. `cols` on any of those is ignored with a warning, not an error, like D43's span on the driver. In the builder, inserting a column inside a wide item widens it and deleting one narrows it, so the item keeps its neighbours. **Extended by D51:** `small_table` and `driver` can be wide now too. Only seats and `separator` stay one column. |
+| D49 | **Consumers signed up: both sales apps and both admins now, the conductor app later, web sales on the JSON but drawing its own** | The format was presented to the internal and external teams in November 2026. Moving now: the Android sales app (legacy Views, Compose renderer in a `ComposeView`), the iOS sales app (UIKit), both with buses; the bus admin (Vue 3), which stores the bus schemes; and the wagon admin (Compose wasm). Later: the conductor app. The web sales site (Vue 3) adopted the JSON format but will draw schemes with its own code for now, so it sits outside the shared look (D33), and only the golden fixtures (§9 phase 3) can hold its drawing to the format. The builder ships as a static page whose JSON an admin user pastes in, which narrows D35. This also corrected the stacks D31 assumed for the sales apps. |
+| D50 | **The guidelines file "Wagon components" is the source of truth for elements, colours, states and sizes** | A Figma file finalised with the design team, with every element in a Light and a Dark variant and seats in three states. It replaces the Android drawables as the source of art (D47). Names stay as they were, with two changes: `half_table` becomes `small_table` (the guidelines' "Table / Small"), and `chair` is dropped because the guidelines don't have it. The guidelines decide which elements exist. Seat states are exactly D45's three (`available`, `unavailable`, `selected`), so no runtime state is added. The colours become two default palettes, which a consumer can still replace (D34). `kid` and `driver` now have real icons. The values as read from the file are in `web/css/app.css` (`.sch`, `.sch-dark`) and `web/js/icons.js`. |
+| D51 | **Guideline sizes are minimums; every non-seat element resizes; icons never scale** | The guidelines draw tables in three sizes, partitions in three lengths and facility blocks at 56×104, which looked like a fixed set of sizes. They are minimums: an element can be drawn at any larger size, so `span` stays the only size field and nothing new enters the scheme. Every non-seat element can span rows and columns, which reverses D29's fixed half-table, D43's one-cell driver and D48's one-column list. The exception is `separator`, which stays vertical and only grows in length. Minimums in rows: 2 for facility blocks, 1 for everything else. The 104 px block is two 38 px rows, the 12 px gap between them and an 8 px overhang at each end, exactly as the guideline wagons draw it. The builder stops a resize at the minimum and the validator warns below it. A column is as wide as its widest item: 40 for seats, 56 for a facility block, 61 for the inclusive toilet. Icons are drawn at their own size, centred: 24×24 for most, 24×56 for `kid`. A bigger block gets more space around the icon, not a bigger icon. That retires the old "crop icons before scaling" guardrail. The overhang is drawn only into a row gap with nothing on its other side, so two stacked blocks never overlap. |
+| D52 | **No inclusive seats: the outlined seat is a folding seat, `kind: "folding"`** | The catalogue's 73 outlined seats (white fill, navy border, §3) were read as accessible seats, and the format grew a seat flag `inclusive: true` for them. The design team corrected this: they are folding seats, and a seat is never accessible as such. Accessibility belongs only to the `handicapped` block and the `handicapped_wheelchair` marker. `inclusive` is removed with no alias, and `folding` joins `sit`, `sleep` and `luxury`. It is a kind rather than a flag because the guidelines only have folding *sitting* seats, in the same four directions as `sit`. A flag would need an "only on `sit`" rule, and one field per variation is the rule `type` already follows. KUP-34's berths 33–34 become plain lower berths. |
 
 ### Rejected
 
 - **Compose Multiplatform as the one renderer for every product.** ~10–20 MB of Skia +
   Kotlin runtime added to the iOS sales binary for a seat grid, plus a UIKit bridging seam
   for touch, scroll and accessibility. On web, canvas-based Wasm output does not fit an HTML
-  frontend and is invisible to screen readers. Still rejected for the SwiftUI and Vue
-  consumers. Compose *is* used where the consumer is already a Compose app (D31) — there
+  frontend and is invisible to screen readers. Still rejected for the iOS sales app (UIKit,
+  D49) and the Vue consumers. Compose *is* used where the consumer is already a Compose app (D31) — there
   none of these costs apply.
 - **Absolute pixel coordinates in the format.** The design files contain up to 6px of
   hand-placement drift that carries no information.
@@ -162,7 +166,7 @@ difference. The renderer owns pixel size; the format does not encode it.
 | `27×25` navy + `23×2` bar | 952 pairs | berth level: bar above = upper, below = lower, absent = middle |
 | `32×32` navy filled | 713 | same seat, other design scale |
 | `27×66` navy | 170 | seat spanning **exactly 2 rows** (66 = 2×25 + 16) → люкс berth |
-| `24×24` / `30×30` white fill, navy stroke | 73 | **inclusive seat** — outlined instead of filled |
+| `24×24` / `30×30` white fill, navy stroke | 73 | **folding seat** — outlined instead of filled (first read as an inclusive seat, D52) |
 | `25×25` grey `#D4D5D6` | 10 | unavailable — runtime state, not layout |
 
 ### How attributes are drawn
@@ -170,8 +174,8 @@ difference. The renderer owns pixel size; the format does not encode it.
 | Attribute | Rendering |
 |---|---|
 | `berth` | Bar **above** = upper, bar **below** = lower, **nothing drawn** = middle. |
-| `facing` (sit) | A half-open rounded bracket drawn around the seat at 50% opacity, on the side the back is against. Reference asset: 37×41 artboard, 32×32 seat inset at (4.5, 4.5); rotate 0/90/180/270 for left/top/right/bottom. |
-| `inclusive` | Seat drawn as outline (white fill, navy border) instead of solid. Accompanied by a wheelchair marker item nearby. |
+| `facing` (sit, folding) | A half-open rounded bracket drawn around the seat in the seat's own colour, on the side the back is against. Reference asset: 37×41 artboard, 32×32 seat inset at (4.5, 4.5); rotate 0/90/180/270 for left/top/right/bottom. |
+| `kind: folding` | Seat drawn as an outline (white fill, 2 px border in the state colour) instead of solid (D52). |
 | `luxury` | No indicator — the seat is simply 2 rows tall. |
 | aisle-side seat | No indicator — position relative to the empty aisle row is the only cue (D25). |
 
@@ -218,18 +222,18 @@ them apart is what lets the layout file be cached forever.
 Reference only — **none of this is enforced** (D12). Capacities vary and wagons of the same
 class routinely differ by a few elements. RIC is the reason `middle` exists in the enum.
 
-Any wagon class may contain inclusive seats: an inclusive compartment in sleeping stock
-(commonly numbered 33–34), or its seated analogue.
+Any wagon class may have an accessible area: ordinary seats or berths next to a `handicapped`
+block or a `handicapped_wheelchair` marker. In sleeping stock it is commonly the compartment
+numbered 33–34. The seats themselves carry nothing (D52).
 
 ### 4.2 Seat
 
 | Field | Values | Notes |
 |---|---|---|
 | `number` | **opaque string** | No conventions. May start at any value. **Nothing may be derived from it** (D10). |
-| `kind` | `sit` \| `sleep` \| `luxury` | Closed enum, three values. |
+| `kind` | `sit` \| `folding` \| `sleep` \| `luxury` | Closed enum, four values. `folding` is a folding seat, drawn as an outline (D52). |
 | `berth` | `lower` \| `middle` \| `upper` | Required when `kind = sleep`. **Always write explicitly** — see below. |
-| `inclusive` | bool, default `false` | Renders as an outlined seat. |
-| `facing` | `left` \| `right` \| `top` \| `bottom` | Optional, only when `kind = sit`. Draws the seat-back bracket. |
+| `facing` | `left` \| `right` \| `top` \| `bottom` | Optional, only when `kind` is `sit` or `folding`. Draws the seat-back bracket. |
 | `span` | `{rows}`, default `{1}` | `luxury` observed at `{rows: 2}`. Seats have no `cols` — always one column (D48). |
 
 
@@ -239,7 +243,7 @@ an unfinished scheme, and a writer predating berth support all look identical, a
 validator can separate them. Render absence; store presence.
 
 **`facing` is optional.** It was once marked deferred because the backend could not supply
-it; in practice the builder writes it on every `sit` seat and both renderers draw it. A seat
+it; in practice the builder writes it on every `sit` and `folding` seat and both renderers draw it. A seat
 without it simply has no bracket.
 
 **`byAisle` was removed (D25).** It duplicated information already carried by the seat's
@@ -248,31 +252,30 @@ separate flag added a second, potentially-inconsistent source of truth for the s
 
 ### 4.3 Facility (non-selectable)
 
-Names and art from the Android sales app's drawables (D47), which is every facility the
-production sales apps draw today.
+The elements of the guidelines file (D50), named after the Android sales app's drawables
+(D47). The minimum sizes are the guidelines' (D51); every facility can be made larger, in
+rows and in columns.
 
-| Type | Size behaviour |
-|---|---|
-| `toilet` | 2 rows × 1 column |
-| `invalid_toilet` | accessible toilet |
-| `table` | 1, 2 or 3 rows |
-| `baggage` | variable height |
-| `bike` | same sizing as baggage |
-| `kid` | variable height; stand-in icon, no app has one |
-| `handicapped` | placed in a compartment containing inclusive seats |
-| `handicapped_wheelchair` | standalone wheelchair marker |
-| `shield` | electrical cabinet warning |
-| `steps_up` / `steps_down` | Škoda only |
-| `wardrobe` | coat hanger / wardrobe |
-| `cafe` | buffet, bar or café area |
-| `coffee_machine` | vending / coffee machine |
-| `chair` | bar stool, always one cell, optional `facing`, no block (D47) |
-| `driver` | Bus driver's place. Always one cell (D43); stand-in icon |
+| Type | What it is | Minimum |
+|---|---|---|
+| `toilet` | toilet | 2 rows |
+| `invalid_toilet` | accessible toilet, two icons | 2 rows, 61 px wide |
+| `baggage` | baggage area | 2 rows |
+| `bike` | bicycle place | 2 rows |
+| `kid` | children's area | 2 rows; the only tall icon (24×56) |
+| `handicapped` | accessible area block | 2 rows |
+| `handicapped_wheelchair` | standalone wheelchair marker, no block | 1 row |
+| `shield` | electrical cabinet warning | 2 rows |
+| `steps_up` / `steps_down` | stairs on double-deck stock, no block | 1 row |
+| `wardrobe` | coat hanger / wardrobe | 2 rows |
+| `cafe` | buffet, bar or café area | 2 rows |
+| `coffee_machine` | vending / coffee machine | 2 rows |
+| `driver` | bus driver's place (D43) | 1 row |
 
 | Field | Values |
 |---|---|
 | `type` | one of the above, or unknown → inert placeholder |
-| `span` | `{rows, cols}` — `rows` required, these vary a lot (§3); `cols` optional, default 1 (D48) |
+| `span` | `{rows, cols}` — `rows` at least the type's minimum (D51); `cols` optional, default 1 (D48) |
 
 ### 4.4 Structural
 
@@ -287,10 +290,10 @@ renderer, no special case anywhere in layout.
 | content column | `items`, each with its own `row` and optional `span` |
 | gap (horizontal space) | a column with `items: []` |
 | corridor / aisle (vertical space) | **not a field.** A row that no column places an item on. Every row uses the same pitch; an "aisle" row is just a row that happens to be empty. |
-| separator | `{ type: "separator", row, span }` — placed exactly like a table, in whichever column and row range it needs. Rendered as a thin line, positioned with full control: it can cover only a bay, stop short of open space, or run the full deck. |
+| separator | `{ type: "separator", row, span }` — placed exactly like a table, in whichever column and row range it needs. Rendered as a thin line, positioned with full control: it can cover only a bay, stop short of open space, or run the full deck. Vertical only — it grows in length (`span.rows`), never in width (D51). |
 | table | `{ type: "table", row, span }` — resizable in both directions, full row height by default. |
-| wide item | `span.cols` > 1 on a facility or table: it covers that many columns from its own rightward, which must be free in those rows. Usually the covered columns are empty (`items: []`); they are drawn seat-wide, not as gaps (D48). |
-| half-table | `{ type: "half_table", row, facing: "top" \| "bottom" }` — fixed at half the row's height, occupying only the top or bottom half. Not resizable; carries no `span`. |
+| wide item | `span.cols` > 1 on any non-seat item except `separator`: it covers that many columns from its own rightward, which must be free in those rows. Usually the covered columns are empty (`items: []`); they are drawn seat-wide, not as gaps (D48). |
+| small table | `{ type: "small_table", row, facing: "top" \| "bottom" }` — the guidelines' "Table / Small": half the height of the rows it covers, in their top or bottom half. Resizable like a table (D51). |
 
 Every non-seat item — facility or structural — shares this one shape: `type` names what it
 is, everything else is that type's own fields. A seat is the only item with a second
@@ -301,7 +304,7 @@ This removes the last deck-level field that wasn't a plain count. `rows` is now 
 thing a deck says about itself besides its columns.
 
 The **aisle is not a column, not an item and not a field** (D24) — it is a row nothing is
-placed on. `table`, `half_table` and `separator` are content items inside a column, not
+placed on. `table`, `small_table` and `separator` are content items inside a column, not
 column types.
 
 ### 4.5 Scheme and deck level
@@ -368,7 +371,8 @@ row, two more seat columns.
 The two train-only top-level fields, `class` and `hull`, were removed (D38). What a bus adds:
 
 - **`"vehicle": "bus"`** at the top level (D42).
-- **`driver`** — the one bus-only item: a typed item, always one cell, no `facing` (D43).
+- **`driver`** — the one bus-only item: a typed item, one cell at minimum and resizable like
+  any facility, no `facing` (D43, D51).
   Older renderers draw it as an inert placeholder (D6).
 - **No doors** (D40).
 
@@ -420,9 +424,10 @@ list was settled in favour of columns (D14).
   conformance suite as a test, not just into the spec.
 - **Runtime state never enters the layout file.** If a field changes between two trains of
   the same wagon type, it does not belong here.
-- **Crop facility icons to their content box before scaling.** The supplied assets sit on
-  large mostly-empty artboards (a 23×25 glyph on a 56×104 board). Scaling the artboard to
-  fit a block leaves the icon roughly a third of the size it should be.
+- **Never scale facility icons.** An icon is drawn at its own size, centred in its block
+  (D51): a two-row toilet and a five-row toilet show the same 24 px glyph. The guidelines'
+  blocks are minimums, so an icon scaled with its block would come out a different size in
+  every wagon.
 
 ### Validation the builder should still do
 
@@ -433,6 +438,7 @@ real authoring mistakes:
 - two items occupying the same grid cell
 - an item whose `span` runs off the edge of the deck
 - `berth` missing on a `kind: sleep` seat, or present on any other kind
+- an element shorter than its minimum rows (D51) — a warning, not an error
 
 ---
 
@@ -440,21 +446,35 @@ real authoring mistakes:
 
 1. ~~Two supplied icons are unlabelled~~ — settled: checked against the sales apps' own
    art, `Group_31` is the bike and `Group_34` the wheelchair (`handicapped`) (D47).
-2. **No assets yet** for `kid` and `driver` — neither sales app has them; still stand-ins.
-   The stairs now use the apps' art (D47).
-3. **Is the facility list final?** It now covers everything both sales apps draw (D47).
-   The Android app's empty "shelf" blocks are tables (`table` / `half_table`); iOS's
-   connection and spacer cells are empty space. iOS's train-head cell ("Голова потягу")
-   has no equivalent yet.
+2. ~~No assets for `kid` and `driver`~~ — settled: both are in the guidelines file (D50).
+3. ~~Is the facility list final?~~ — settled: the guidelines file decides which elements
+   exist (D50). iOS's train-head cell ("Голова потягу") isn't in it, so it stays out.
 4. **Web vs mobile layout behaviour.** Sizes differ (D33). Whether layout behaviour also
    differs — scroll direction, rotating the vehicle on narrow screens — is undecided.
 5. ~~Bus top level~~ — settled: `vehicle` field (D42).
 6. ~~Driver's place~~ — settled: one cell, no `facing` (D43). Real icon still pending.
-7. **Two admins, one builder.** The builder pushes to the wagon admin (Compose) and the bus
-   admin (Vue/Nuxt). One shared import API, or one per admin? Owned by the admin teams.
+7. ~~Two admins, one builder~~ — settled: no import API. The builder only produces JSON and an
+   admin user pastes it into either panel (D49).
 8. **Naming.** "Wagon scheme" is baked into the spec title, file names and code. Rename to
    something vehicle-neutral, and when — the generated files and the Pages deploy depend
    on current paths.
+9. **iOS renderer technology.** The iOS sales app is UIKit (D49). Either a SwiftUI renderer
+   with a UIKit wrapper in the same package, or a UIKit renderer. Deferred until the builder
+   and the Compose renderer are done. It needs the app's minimum iOS version and the iOS
+   team's preference.
+10. **Gaps in the guidelines file, to raise with the designers.** Only three colours are bound
+   to Figma variables (`bg`, `light grey`, `lighter grey`); the rest are hard-coded. The Dark
+   variants of Table, Partition and Inclusive are named `Variant4`–`Variant8` and
+   `Property 1=Variant2` instead of `Theme=Dark`. Some values look like slips:
+   - Cafe's Dark icon is `#B7BABC`, where every other facility uses `#686A6D`.
+   - Driver's Light icon has a near-duplicate grey, `#BBBCB7`.
+   - Kid has a stray `#8A8D8F` stroke.
+   - The folding seat stays white inside in Dark, and its number is set in SF Pro Text
+     instead of UZ Sans.
+   - The inclusive toilet has no background block.
+
+   The vehicle body colour and the unknown-kind placeholder aren't specified at all; the
+   builder uses stand-ins (`web/css/app.css`).
 
 ### Settled
 
@@ -477,7 +497,7 @@ real authoring mistakes:
 | Separators between bays? | A positioned item, like a table (D23). |
 | Aisle? | Not a format concept — an empty row (D24). |
 | Škoda: one scheme or two? | Two (D20). |
-| iOS: Compose Multiplatform or SwiftUI? | Both, for different consumers — SwiftUI for the iOS sales app, Compose for the CMP conductor app (D31). |
+| iOS: Compose Multiplatform or SwiftUI? | Not Compose for the sales app. It is UIKit; SwiftUI behind a wrapper versus UIKit is open (D31, D49, §7 Q9). Compose for the CMP conductor app. |
 | How do renderers ship? | As separately published libraries (D32). |
 | What can a theme change? | Colors only, for now (D34). |
 | Does the builder store schemes? | No — admins are the source of truth (D35). |
@@ -486,11 +506,17 @@ real authoring mistakes:
 | Doors on buses? | No — no doors on any vehicle (D40). |
 | Wagon class, hull shape? | Removed from the format (D38). |
 | How is a double-deck vehicle's deck named? | `deck.level`, `lower` / `upper` (D39). |
-| Wide items (`span.cols`)? | Back for non-seat items only (D48, reverses D41). |
+| Wide items (`span.cols`)? | Back for non-seat items only (D48, reverses D41); every non-seat item except `separator` (D51). |
 | Bus vs train? | Top-level `vehicle`, default `train` (D42). |
-| Driver's place? | `driver` item, one cell, no `facing` (D43). |
+| Driver's place? | `driver` item, one cell at minimum, no `facing` (D43, D51). |
 | `inclusive` vs `inclusive_marker`? | Both kept — now `handicapped` and `handicapped_wheelchair` (D47). |
-| Facility names? | The Android sales app's drawable names (D47). |
+| Facility names? | The Android sales app's drawable names (D47); the list and the art come from the guidelines file (D50). |
+| Who moves to the format, and when? | Both sales apps and both admins now, the conductor app later, web sales on the JSON with its own drawing (D49). |
+| Where do colours, states and sizes come from? | The guidelines file "Wagon components" (D50). |
+| Fixed small/medium/large element sizes? | No — the guidelines' sizes are minimums (D51). |
+| Inclusive seats? | None. The outlined seat is a folding seat, `kind: "folding"` (D52). |
+| Half-table? | Renamed `small_table`, resizable (D50, D51). |
+| Bar stool (`chair`)? | Dropped — not in the guidelines (D50). |
 
 ---
 
@@ -507,7 +533,8 @@ schemgen/
     js/
       format.js             canonical vocabulary + layout math + validator — every other
                              renderer must agree with this file
-      icons.js               generated icon assets + seat-back geometry
+      icons.js               renderer tokens, seat-back geometry, icon art generated
+                             from the guidelines file (D50)
       schemes.js              hand-written reference schemes + auto-converted catalogue
       docs.js                 generated — embedded copy of this doc for the Docs tab
       render.js                SVG rendering
@@ -519,8 +546,8 @@ schemgen/
   shared-fixtures/          scheme JSON used to check every renderer agrees with format.js
 ```
 
-Not yet created: the SwiftUI renderer, the production web renderer, and the shared style
-tokens (§9). Each renderer subfolder is a sibling of `web/`, not nested inside it — `web/`
+Not yet created: the iOS renderer, the production web renderer, and the shared style
+tokens generated for every platform (§9). Each renderer subfolder is a sibling of `web/`, not nested inside it — `web/`
 is the reference implementation and UI shell, not the parent project.
 
 `compose-renderer/` is split along D32's lines: `schemgen-renderer-compose` is the library other
@@ -534,71 +561,72 @@ the product catalogue is the admin panels.
 
 ## 9. Expansion roadmap
 
-Ordered by dependency, not by calendar. Each phase should end with something a
-non-engineer can look at — a running preview, a report, a comparison — not just code.
-Rewritten 2026-10-05 for D31–D37; the previous version assumed one Compose renderer
-growing platform by platform, an undecided iOS stack, and train-only schemes.
+Ordered by dependency and by when the consumers move (D49), not by calendar. Each phase
+should end with something a non-engineer can look at — a running preview, a report, a
+comparison — not just code. Rewritten 2026-11-24 for D49–D52; the 2026-10-05 version
+assumed a SwiftUI iOS app, a Compose Android app and an admin import API.
 
 1. **Compose Multiplatform Web compiles — done 2026-10-05.** Shared Kotlin model, parser,
    layout math and validator, ported line-for-line from `format.js`. Builds, tests pass,
    and a scheme sent by postMessage renders — see §11.
 
-2. **Golden fixture parity** — extend `/shared-fixtures` with expected output per seat
-   (`{seat: row, col, span, hit-box}`), and a test in each renderer checking its own
-   layout against that, not just that the JSON parses. With three renderers owned by
-   different teams' consumers, the fixtures *are* the contract a release is judged by
-   (D32). Do this before the second renderer exists, not after.
+2. **Builder matches the guidelines — done 2026-11-24.** `format.js` and the builder follow
+   the guidelines file (D50–D52): every element with its real art, the three seat states in
+   Light and Dark, `folding` seats, `small_table`, sizes as minimums with resizing in both
+   directions, column widths from the widest item, fixed-size icons. The builder ships as a
+   static page with JSON output only (D49). Since `format.js` is canonical, this phase is
+   what defines the next one.
 
-3. **Vehicle-agnostic format + bus items** — resolve §7 questions 5–6 against two or three
-   real bus layouts; make train-only fields optional; add bus `type` values; add bus
-   fixtures. Before the SwiftUI and web renderers start, so they are born bus-aware.
+3. **Golden fixture parity** — extend `/shared-fixtures` with the expected box of every item
+   (`{x, y, w, h}` from `itemBox`), plus tap-resolution cases, generated from `format.js`,
+   and a test in each renderer checking its own layout against them. It is cheap now, and it
+   turns phase 4's "does Compose match?" into a test instead of a screenshot comparison.
+   The fixtures are also the only way to hold the web sales site's own drawing to the
+   format (D49).
 
-4. **Shared style tokens** — one token source (colors, sizes, strokes, icon sizes) with a
-   `mobile` and a `web` preset, generated into Kotlin, Swift and TS (D33). Define the theme
-   shape: colors only, defaulting to the tokens (D34). Fixtures check layout; tokens are
-   what keeps appearance identical.
+4. **Compose renderer to the guidelines, tried in a demo app.** Port D50–D52: `folding`
+   seats, `small_table`, the removal of `inclusive` and `chair`, resizing driver and small
+   table, minimum sizes, the facility overhang, per-type column widths, fixed-size icons
+   from the new art, and Light/Dark default `SchemeColors` from the guidelines. Then run it
+   in a demo Android app hosted in a `ComposeView`, the way the sales app will host it.
 
-5. **Compose renderer as a published library** — split `compose-renderer/` into a library
-   module plus the preview harness; add `androidTarget()` and iOS targets next to
-   `wasmJs`; public API along the lines of
-   `SeatScheme(scheme, availability, theme, onSeatClick)`; touch handling, accessibility
-   semantics (seat number and state spoken by TalkBack / VoiceOver) and the reconciliation
-   rule from §4.6; publish to Maven. Consumers: Android sales app (via `ComposeView`),
-   conductor app (Android + iOS), wagon admin (wasm).
+   History of the library itself, started 2026-10-06: the library/harness split, all four
+   targets, the `ua.gov.uz` package, internals hidden, `SchemeView(scheme, modifier, mode,
+   available, selected, colors, onSeatClick)` with a colors-only `SchemeColors` (D34), and
+   Azure Artifacts publishing set up the same way as `uz-compose-ui-kit`. The first
+   consumer is the miv admin panel, which draws a read-only preview on its Mockups screens
+   (`compose-renderer/INTEGRATION.md`). Still open from then: accessibility semantics per
+   seat (today there's one label per deck), the §4.6 reconciliation rule, and a run on real
+   Android and iOS devices. The API is 0.x until the fixtures and tokens have settled it.
 
-   **Started 2026-10-06.** Done: the library/harness split, all four targets, the
-   `ua.gov.uz` package, internals hidden, `SchemeView(scheme, modifier, mode, available,
-   selected, colors, onSeatClick)` with a colors-only `SchemeColors` (D34), and Azure
-   Artifacts publishing set up the same way as `uz-compose-ui-kit`. The first consumer is
-   the miv admin panel, which draws a read-only preview on its Mockups screens
-   (`compose-renderer/INTEGRATION.md`). It goes first because it's wasm, the target
-   that's already verified, and only needs VIEW mode. Still open: accessibility semantics
-   per seat (today there's one label per deck), the §4.6 reconciliation rule, and a run
-   on real Android and iOS devices. The API is 0.x until phase 4's tokens and phase 2's
-   fixtures have settled it.
+5. **Android sales app, with its team.** Legacy Views, so the renderer goes in through a
+   `ComposeView` (D31, D49). Trains and buses.
 
-6. **Visual fidelity in Compose** — seat-back bracket, berth bars and real icons are
-   already ported from `render.js` (§11); what's left is checking them against the web
-   reference once layout is fixture-verified, and fixing whatever differs.
+6. **Wagon admin (Compose wasm).** Already the first consumer of the read-only preview; it
+   needs the phase-4 renderer and a paste-JSON field for the builder's output.
 
-7. **SwiftUI renderer** — for the iOS sales app. Port of `format.js` logic, same fixtures,
-   same tokens, same theme shape; published as a Swift package.
+7. **Web renderer, for the bus admin first** — Vue 3. A framework-free TS core (port of
+   `format.js`: parse, validate, layout) plus a Vue 3 component on top, rendering SVG so it
+   stays SSR-safe and visible to screen readers; published to npm. The web sales site can
+   take the TS core and the fixtures before it takes the component (D49). The builder's own
+   preview should move onto the same core.
 
-8. **Web renderer** — for web sales and the bus admin, both Vue/Nuxt. A framework-free TS
-   core (port of `format.js`: parse, validate, layout) plus a Vue 3 component on top,
-   rendering SVG so it is Nuxt-SSR-safe and screen-reader visible; published to npm. The
-   builder's own preview should move onto the same core.
+8. **iOS renderer for the UIKit sales app.** Technology open (§7 Q9). Port of `format.js`
+   logic, same fixtures, same tokens, same theme shape; published as a Swift package.
 
-9. **Builder as a standalone product** (D35) — own domain; JSON file export and import;
-   push to the admin APIs once their contract exists (§7 Q7); Preview tab showing all
-   three renderers so a designer can check a scheme everywhere before exporting.
+9. **Shared style tokens.** The values now exist (D50); what's missing is one token source
+   generated into Kotlin, Swift and TS, with a `mobile` and a `web` preset (D33). Ideally
+   it is read straight from the guidelines file once its colours are bound to variables
+   (§7 Q10).
 
-10. **Figma importer, productionized** — `web/tools/extract_schemes.py` proves the
+10. **Conductor app** (Compose, Android + iOS) — later (D49).
+
+11. **Figma importer, productionized** — `web/tools/extract_schemes.py` proves the
     geometry-clustering approach on the real catalogue; turn it into an importer against
     the Figma REST API (keeps layer names, so seat numbers and kinds come through) feeding
     the builder as "review this auto-generated scheme".
 
-11. **CI fixture gate** — run phase 2's suite in CI on every PR to every renderer. A
+12. **CI fixture gate** — run phase 3's suite in CI on every PR to every renderer. A
     renderer disagreeing with the fixtures fails the build, rather than being caught by
     someone eyeballing a screenshot.
 
@@ -609,16 +637,21 @@ schemes, live JSON editing, structural validator, and a drag-and-drop visual bui
 
 **Twelve of the sample schemes were auto-converted from the real Figma catalogue export**
 by a script that clusters seat/block rects into rows and columns and emits scheme JSON.
-That is the importer path (§9 phase 10), proven on real data: 133 of the ~135 wagon
+That is the importer path (§9 phase 11), proven on real data: 133 of the ~135 wagon
 cards in `uz_web__master_.svg` converted without manual work, covering seat counts from 12
 to 70+. Seat *numbers* are sequential rather than real, because the SVG export outlines all
 text — recovering the real numbers needs the Figma REST API, which keeps layer names.
 
 Known gaps:
 
-- Facility art now comes from the Android sales app (D47). The old Figma `luggage` export,
-  which drew a face and a monitor, is replaced by the app's briefcase; `kid` and `driver`
-  are still stand-ins.
+- Every element's art and both colour themes come from the guidelines file (D50). The
+  vehicle body and the unknown-kind placeholder have stand-in colours until the guidelines
+  define them (§7 Q10).
+- The builder's canvas is an abstract grid (every cell one size); only the live preview
+  shows real sizes, column widths and overhangs.
+- Placing an item by clicking a cell leaves it unselected: the click bubbles on to the
+  page-level "click outside deselects" handler after the canvas has been redrawn. Click the
+  item again to edit it. Found 2026-11-24, older than the guidelines work.
 - The Figma importer predates wide items (D48): a block two seats long still comes out as
   two neighbouring one-column items (several `CAT-*` samples have such baggage pairs).
   Merging them into one wide item is importer work, not done yet.
@@ -663,11 +696,10 @@ but only in two of four headless runs; the failing runs registered no taps at al
 points at the test harness's timing rather than the renderer. Confirm on a real device.
 
 Still unverified: pixel parity with `web/js/render.js` (no fixture comparison exists —
-phase 2), and anything on Android or iOS targets, which aren't configured yet.
+phase 3), and anything on Android or iOS targets, which aren't configured yet.
 
-The seat-back bracket, berth bars and real facility icons, previously listed as deferred
-(§9 phase 6), are already implemented in `SchemeCanvas.kt` / `Icons.kt`. What remains of
-phase 6 is confirming they match the web reference.
+The seat-back bracket, berth bars and facility icons are implemented in `SchemeCanvas.kt` /
+`Icons.kt`, but to the pre-guidelines look; see below.
 
 **Library split, 2026-10-06.** `compose-renderer/` is now `schemgen-renderer-compose` (library)
 plus `composeApp` (harness), see §8. Checked:
@@ -690,22 +722,26 @@ itself: a vertical scroll inside a consumer's scrolling screen crashes Compose, 
 consumer adds `horizontalScroll` and padding instead. And every colour now comes from
 `SchemeColors`, whose defaults are the old hard-coded values.
 
+**Behind the format since 2026-11-24.** D50–D52 are in `format.js` and the builder only.
+The Kotlin model still has `inclusive`, `half_table`, `chair`, a one-cell `driver`, scaled
+icons with the old art, and the old colours. Until §9 phase 4 ports them, it draws
+`folding` seats and `small_table` as unknown placeholders, and the builder's Compose
+preview shows exactly that.
+
 ## 12. Next steps
 
 Immediate actions, in order. The longer view is §9.
 
 1. ~~Run the Compose build and record the outcome in §11~~ — done 2026-10-05.
-2. Pull one wagon per class through the Figma REST API (`GET /v1/files/{key}/nodes`) to
-   recover layer names, and collect two or three real bus layouts. Together they feed the
-   fixture suite and the bus format questions (§7 Q5–6).
-3. Build the golden fixture suite: scheme JSON → expected `{seat → row, col, span}` plus
-   tap-resolution cases, covering купе, плацкарт, люкс, a seated car with an inclusive
-   block, and at least one bus.
-4. Draft the style token file and theme shape, and agree them with the consuming teams
-   before any renderer depends on them.
-5. Sketch each renderer's public API and get sign-off from its consumer teams — once
-   published (D32), changing it costs every consumer a migration. Compose has a first
-   cut (§9 phase 5); review it with the Android sales and conductor app teams before 1.0.
-6. Publish `schemgen-renderer-compose` 0.1.0 to the Azure feed, and wire the read-only preview into
-   the miv admin panel's Mockups screens (`compose-renderer/INTEGRATION.md`). Try it on a
-   few real schemes there.
+2. ~~Bring the builder to the guidelines file~~ — done 2026-11-24 (D50–D52, §9 phase 2).
+3. Send §7 Q10 to the designers, so the next export from the guidelines needs no fixes.
+4. Build the golden fixture suite from `format.js`: scheme JSON → the expected box of every
+   item plus tap-resolution cases. Cover купе, плацкарт, люкс, a seated car with folding
+   seats and an accessible area, a wide item, and a bus.
+5. Port D50–D52 to the Compose renderer, check it against the fixtures, and try it in a
+   demo Android app inside a `ComposeView` (§9 phase 4).
+6. Review the Compose public API with the Android sales app team before 1.0 — once
+   published (D32), changing it costs every consumer a migration. Then integrate (§9
+   phase 5).
+7. Publish the next `schemgen-renderer-compose` to the Azure feed, and add a paste-JSON field
+   next to the miv admin panel's read-only preview (`compose-renderer/INTEGRATION.md`).

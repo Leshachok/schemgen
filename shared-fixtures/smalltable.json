@@ -1,5 +1,5 @@
 {
-  "key": "HALFTBL-20",
+  "key": "SMALLTBL-20",
   "rev": 1,
   "decks": [
     {
@@ -46,12 +46,12 @@
         {
           "items": [
             {
-              "type": "half_table",
+              "type": "small_table",
               "facing": "top",
               "row": 1
             },
             {
-              "type": "half_table",
+              "type": "small_table",
               "facing": "bottom",
               "row": 2
             }
@@ -103,12 +103,12 @@
         {
           "items": [
             {
-              "type": "half_table",
+              "type": "small_table",
               "facing": "top",
               "row": 1
             },
             {
-              "type": "half_table",
+              "type": "small_table",
               "facing": "bottom",
               "row": 2
             }
@@ -160,12 +160,12 @@
         {
           "items": [
             {
-              "type": "half_table",
+              "type": "small_table",
               "facing": "top",
               "row": 1
             },
             {
-              "type": "half_table",
+              "type": "small_table",
               "facing": "bottom",
               "row": 2
             }
@@ -217,12 +217,12 @@
         {
           "items": [
             {
-              "type": "half_table",
+              "type": "small_table",
               "facing": "top",
               "row": 1
             },
             {
-              "type": "half_table",
+              "type": "small_table",
               "facing": "bottom",
               "row": 2
             }
@@ -274,12 +274,12 @@
         {
           "items": [
             {
-              "type": "half_table",
+              "type": "small_table",
               "facing": "top",
               "row": 1
             },
             {
-              "type": "half_table",
+              "type": "small_table",
               "facing": "bottom",
               "row": 2
             }

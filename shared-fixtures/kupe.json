@@ -378,7 +378,6 @@
               "kind": "sleep",
               "berth": "lower",
               "row": 1,
-              "inclusive": true,
               "span": {
                 "rows": 2
               }
@@ -392,7 +391,6 @@
               "kind": "sleep",
               "berth": "lower",
               "row": 1,
-              "inclusive": true,
               "span": {
                 "rows": 2
               }
