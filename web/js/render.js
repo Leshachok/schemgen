@@ -106,7 +106,7 @@ function drawSeat(svg, scheme, it, x, y, w, h, state){
     body={ x:x+(w-T.square)/2, y:y+(h-T.square)/2, w:T.square, h:T.square };
     if (state.showBack && FACING.indexOf(it.facing)!==-1){
       var k=T.square/BACK.seatSize, cx=body.x+body.w/2, cy=body.y+body.h/2;
-      g.appendChild(el("path",{ d:BACK.path, fill:c, transform:"rotate("+BACK_ANGLE[it.facing]
+      g.appendChild(el("path",{ d:BACK.path, fill:c, opacity:T.backOpacity, transform:"rotate("+BACK_ANGLE[it.facing]
         +" "+cx+" "+cy+") translate("+(body.x-BACK.seatX*k)+","+(body.y-BACK.seatY*k)+") scale("+k+")" }));
     }
   } else if (it.kind==="sleep" && (it.berth==="upper"||it.berth==="lower")){

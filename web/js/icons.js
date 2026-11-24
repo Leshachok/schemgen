@@ -5,10 +5,12 @@
 "use strict";
 
 /* seat: cell width; seatH: cell height; square: a sitting seat's body inside the cell;
+   backOpacity: the seat-back bracket, in the seat's colour, in every state and theme;
    overhang: how far a facility block on the deck's first or last row reaches into
    the deck padding (D51) */
 var T = { seat:40, seatH:38, square:32, rowPitch:50, colGap:12, sepW:10,
-          padX:16, padY:16, barH:4, barGap:2, gapW:18, overhang:8, radius:4, font:15 };
+          padX:16, padY:16, barH:4, barGap:2, gapW:18, overhang:8, radius:4, font:15,
+          backOpacity:0.5 };
 /* the narrowest each element may be drawn, which sets its column's width (D51);
    anything not listed is one seat wide */
 var ITEM_W = { toilet:56, invalid_toilet:61, baggage:56, bike:56, handicapped:56, shield:56,

@@ -178,7 +178,7 @@ difference. The renderer owns pixel size; the format does not encode it.
 | Attribute | Rendering |
 |---|---|
 | \`berth\` | Bar **above** = upper, bar **below** = lower, **nothing drawn** = middle. |
-| \`facing\` (sit, folding) | A half-open rounded bracket drawn around the seat in the seat's own colour, on the side the back is against. Reference asset: 37×41 artboard, 32×32 seat inset at (4.5, 4.5); rotate 0/90/180/270 for left/top/right/bottom. |
+| \`facing\` (sit, folding) | A half-open rounded bracket drawn around the seat in the seat's own colour at 50% opacity, on the side the back is against. Reference asset: 37×41 artboard, 32×32 seat inset at (4.5, 4.5); rotate 0/90/180/270 for left/top/right/bottom. |
 | \`kind: folding\` | Seat drawn as an outline (white fill, 2 px border in the state colour) instead of solid (D52). |
 | \`luxury\` | No indicator — the seat is simply 2 rows tall. |
 | aisle-side seat | No indicator — position relative to the empty aisle row is the only cue (D25). |
@@ -852,7 +852,7 @@ holding nothing but cells covered by a wide item is drawn seat-wide, not as a ga
 | \`seat\` | string | yes | — | The label drawn on the seat and the id the availability payload and the selection use. **Opaque** — unique within a deck, nothing else. |
 | \`kind\` | \`"sit"\` \\| \`"folding"\` \\| \`"sleep"\` \\| \`"luxury"\` | yes | — | How the seat is drawn — see the table below. Any other value: grey placeholder with "?", not selectable. |
 | \`berth\` | \`"lower"\` \\| \`"middle"\` \\| \`"upper"\` | for \`sleep\` only | — | Berth bar: above the seat for \`upper\`, below for \`lower\`, none for \`middle\`. Required on every \`sleep\` seat — even \`middle\`, which draws nothing — and an error on any other kind. |
-| \`facing\` | \`"left"\` \\| \`"right"\` \\| \`"top"\` \\| \`"bottom"\` | no, \`sit\` and \`folding\` only | none | Seat-back bracket: a half-open outline in the seat's colour, on the side the back is against. Omitted → no bracket. |
+| \`facing\` | \`"left"\` \\| \`"right"\` \\| \`"top"\` \\| \`"bottom"\` | no, \`sit\` and \`folding\` only | none | Seat-back bracket: a half-open outline in the seat's colour at 50% opacity, on the side the back is against. Omitted → no bracket. |
 
 | \`kind\` | Drawn as | Typical span |
 |---|---|---|

@@ -103,7 +103,7 @@ holding nothing but cells covered by a wide item is drawn seat-wide, not as a ga
 | `seat` | string | yes | — | The label drawn on the seat and the id the availability payload and the selection use. **Opaque** — unique within a deck, nothing else. |
 | `kind` | `"sit"` \| `"folding"` \| `"sleep"` \| `"luxury"` | yes | — | How the seat is drawn — see the table below. Any other value: grey placeholder with "?", not selectable. |
 | `berth` | `"lower"` \| `"middle"` \| `"upper"` | for `sleep` only | — | Berth bar: above the seat for `upper`, below for `lower`, none for `middle`. Required on every `sleep` seat — even `middle`, which draws nothing — and an error on any other kind. |
-| `facing` | `"left"` \| `"right"` \| `"top"` \| `"bottom"` | no, `sit` and `folding` only | none | Seat-back bracket: a half-open outline in the seat's colour, on the side the back is against. Omitted → no bracket. |
+| `facing` | `"left"` \| `"right"` \| `"top"` \| `"bottom"` | no, `sit` and `folding` only | none | Seat-back bracket: a half-open outline in the seat's colour at 50% opacity, on the side the back is against. Omitted → no bracket. |
 
 | `kind` | Drawn as | Typical span |
 |---|---|---|

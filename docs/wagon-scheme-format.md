@@ -174,7 +174,7 @@ difference. The renderer owns pixel size; the format does not encode it.
 | Attribute | Rendering |
 |---|---|
 | `berth` | Bar **above** = upper, bar **below** = lower, **nothing drawn** = middle. |
-| `facing` (sit, folding) | A half-open rounded bracket drawn around the seat in the seat's own colour, on the side the back is against. Reference asset: 37×41 artboard, 32×32 seat inset at (4.5, 4.5); rotate 0/90/180/270 for left/top/right/bottom. |
+| `facing` (sit, folding) | A half-open rounded bracket drawn around the seat in the seat's own colour at 50% opacity, on the side the back is against. Reference asset: 37×41 artboard, 32×32 seat inset at (4.5, 4.5); rotate 0/90/180/270 for left/top/right/bottom. |
 | `kind: folding` | Seat drawn as an outline (white fill, 2 px border in the state colour) instead of solid (D52). |
 | `luxury` | No indicator — the seat is simply 2 rows tall. |
 | aisle-side seat | No indicator — position relative to the empty aisle row is the only cue (D25). |
