@@ -36,6 +36,15 @@ jobs:
           mkdir -p _site/compose-preview
           cp -r compose-renderer/composeApp/build/dist/wasmJs/productionExecutable/. _site/compose-preview/
 
+      # Pages lets browsers cache web/'s scripts under fixed names, so a deploy could pair a
+      # new index.html with an old app.js and crash init. Every deploy gets new asset URLs.
+      - name: Stamp asset URLs with the commit
+        run: |
+          v=${GITHUB_SHA::8}
+          sed -E -i "s#(src=\"js/[A-Za-z0-9_-]+\.js)\"#\1?v=$v\"#g; s#(href=\"css/[A-Za-z0-9_-]+\.css)\"#\1?v=$v\"#g" _site/index.html
+          sed -E -i "s#(src=\"schemgenPreview\.js)\"#\1?v=$v\"#" _site/compose-preview/index.html
+          grep -c "?v=$v" _site/index.html _site/compose-preview/index.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

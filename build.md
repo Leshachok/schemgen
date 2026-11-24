@@ -110,6 +110,11 @@ git diff --exit-code web/js/docs.js
 mkdir -p _site/compose-preview
 cp -r web/. _site/
 cp -r compose-renderer/composeApp/build/dist/wasmJs/productionExecutable/. _site/compose-preview/
+
+# new asset URLs on every deploy - see the serving notes
+v=$(git rev-parse --short=8 HEAD)
+sed -E -i "s#(src=\"js/[A-Za-z0-9_-]+\.js)\"#\1?v=$v\"#g; s#(href=\"css/[A-Za-z0-9_-]+\.css)\"#\1?v=$v\"#g" _site/index.html
+sed -E -i "s#(src=\"schemgenPreview\.js)\"#\1?v=$v\"#" _site/compose-preview/index.html
 ```
 
 `_site/` is the deployable artifact (Docker image with nginx, or whatever the Azure
@@ -119,8 +124,11 @@ Serving notes:
 
 - `.wasm` must be served as `application/wasm` (nginx's default `mime.types` has it).
 - The `.wasm` file names are content-hashed and can be cached long-term. `index.html`,
-  `schemgenPreview.js` and everything in `web/` are not hashed: serve them with
-  revalidation, or a deploy leaves users with a stale page.
+  `schemgenPreview.js` and everything in `web/` are not hashed. The assembly step stamps
+  their URLs in both `index.html` files with the commit (`js/app.js?v=2790cfd4`), so a
+  deploy can't pair a new page with a cached old script. That happened on GitHub Pages on
+  2026-11-24: a cached `app.js` looked for a checkbox the new page no longer had, and
+  `init` crashed. Still serve the two `index.html` files with revalidation.
 - Both parts must be same-origin; Preview talks to the Compose iframe via
   `postMessage`.
 
