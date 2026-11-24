@@ -294,7 +294,7 @@ renderer, no special case anywhere in layout.
 | content column | \`items\`, each with its own \`row\` and optional \`span\` |
 | gap (horizontal space) | a column with \`items: []\` |
 | corridor / aisle (vertical space) | **not a field.** A row that no column places an item on. Every row uses the same pitch; an "aisle" row is just a row that happens to be empty. |
-| separator | \`{ type: "separator", row, span }\` — placed exactly like a table, in whichever column and row range it needs. Rendered as a thin line, positioned with full control: it can cover only a bay, stop short of open space, or run the full deck. Vertical only — it grows in length (\`span.rows\`), never in width (D51). |
+| separator | \`{ type: "separator", row, span }\` — placed exactly like a table, in whichever column and row range it needs. Rendered as a thin line, positioned with full control: it can cover only a bay, stop short of open space, or run the full deck. Vertical only — it grows in length (\`span.rows\`), never in width (D51). It is fixed to the vehicle wall: an end on the deck's first or last row runs to the outline; an end inside the deck stops 8 px past its row. |
 | table | \`{ type: "table", row, span }\` — resizable in both directions, full row height by default. |
 | wide item | \`span.cols\` > 1 on any non-seat item except \`separator\`: it covers that many columns from its own rightward, which must be free in those rows. Usually the covered columns are empty (\`items: []\`); they are drawn seat-wide, not as gaps (D48). |
 | small table | \`{ type: "small_table", row, facing: "top" \\| "bottom" }\` — the guidelines' "Table / Small": half the height of the rows it covers, in their top or bottom half. Resizable like a table (D51). |
@@ -877,7 +877,7 @@ that used to be \`inclusive\` is a folding seat, \`kind: "folding"\`.
 |---|---|---|
 | \`table\` | Light block with a thin outline, no icon | Resizable in rows and columns; at least 1 row |
 | \`small_table\` | The same block at half the height of its rows, in their top or bottom half | Resizable in rows and columns; at least 1 row |
-| \`separator\` | Thin vertical line, slightly taller than the rows it covers; its column is narrow | \`span.rows\` = the rows it divides — it can stop short of the aisle. Never wide: it grows in length only |
+| \`separator\` | Thin vertical line, fixed to the vehicle wall: an end on the deck's first or last row runs to the outline, an end inside the deck stops a little past its row. Its column is narrow | \`span.rows\` = the rows it divides — it can stop short of the aisle. Never wide: it grows in length only |
 | facility | Light block with the facility icon centred at its own size — icons never scale (spec D51) | At least the facility's minimum (see **Facilities**); \`span.rows\` and \`span.cols\` as needed |
 
 Removed, do not write: facility \`label\`; the old \`"table": true\` / \`"separator": true\` /

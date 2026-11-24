@@ -70,9 +70,14 @@ function layout(deck){
    + 2 x 8 = 104 px. Never into a gap between rows, and never depending on what's
    next to it, so blocks on the same rows always line up and can't overlap (D51). */
 function overhangs(deck, it){
+  var row=it.row||1, last=row+itemSpan(it).rows-1, rows=deck.rows||1;
+  /* a partition is fixed to the vehicle wall: an end on the first or last row runs to
+     the outline, an end inside the deck reaches T.overhang past its row */
+  if (it.type==="separator")
+    return { top: row===1 ? T.padY-T.wall : T.overhang,
+             bottom: last>=rows ? T.padY-T.wall : T.overhang };
   if (it.seat!=null || FACILITIES.indexOf(it.type)===-1) return { top:0, bottom:0 };
-  var row=it.row||1, last=row+itemSpan(it).rows-1;
-  return { top: row===1 ? T.overhang : 0, bottom: last>=(deck.rows||1) ? T.overhang : 0 };
+  return { top: row===1 ? T.overhang : 0, bottom: last>=rows ? T.overhang : 0 };
 }
 /* where an item placed in column pc lands; rows and columns past the deck's edge
    are clipped. Drawing and hit-testing both use this. */

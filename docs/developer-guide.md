@@ -128,7 +128,7 @@ that used to be `inclusive` is a folding seat, `kind: "folding"`.
 |---|---|---|
 | `table` | Light block with a thin outline, no icon | Resizable in rows and columns; at least 1 row |
 | `small_table` | The same block at half the height of its rows, in their top or bottom half | Resizable in rows and columns; at least 1 row |
-| `separator` | Thin vertical line, slightly taller than the rows it covers; its column is narrow | `span.rows` = the rows it divides — it can stop short of the aisle. Never wide: it grows in length only |
+| `separator` | Thin vertical line, fixed to the vehicle wall: an end on the deck's first or last row runs to the outline, an end inside the deck stops a little past its row. Its column is narrow | `span.rows` = the rows it divides — it can stop short of the aisle. Never wide: it grows in length only |
 | facility | Light block with the facility icon centred at its own size — icons never scale (spec D51) | At least the facility's minimum (see **Facilities**); `span.rows` and `span.cols` as needed |
 
 Removed, do not write: facility `label`; the old `"table": true` / `"separator": true` /

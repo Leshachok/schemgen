@@ -18,7 +18,7 @@ function render(scheme, state){
     var svg=el("svg",{ width:L.width, height:L.height, "class":themeClass(state),
       viewBox:"0 0 "+L.width+" "+L.height, role:"group",
       "aria-label":(scheme.vehicle==="bus"?"Bus ":"Wagon ")+(scheme.key||"")+(deck.level?", "+deck.level+" deck":"") });
-    svg.appendChild(el("rect",{ x:2,y:2,width:L.width-4,height:L.height-4,
+    svg.appendChild(el("rect",{ x:T.wall,y:T.wall,width:L.width-T.wall*2,height:L.height-T.wall*2,
       rx:12, fill:"var(--s-body)", stroke:"var(--s-body-line)" }));
     if (state.showGrid){
       for (var r=1;r<=(deck.rows||1);r++){
@@ -64,10 +64,9 @@ function drawSmallTable(svg,x,y,w,h,facing){
   var hh=h/2;
   drawTable(svg, x, facing==="bottom" ? y+h-hh : y, w, hh);
 }
-/* a partition reaches T.overhang past its rows, like the guidelines' 55 px single-row one */
+/* the box already runs to the wall or past its rows (overhangs() in format.js) */
 function drawSeparator(svg,x,y,w,h){
-  svg.appendChild(el("rect",{ x:x+w/2-1, y:y-T.overhang, width:2, height:h+T.overhang*2,
-    rx:1, fill:"var(--s-line)" }));
+  svg.appendChild(el("rect",{ x:x+w/2-1, y:y, width:2, height:h, rx:1, fill:"var(--s-line)" }));
 }
 /* icons are drawn at their own size and never scaled (D51) */
 function drawIcon(svg, ic, x, y, w, h, colour){
@@ -141,13 +140,12 @@ function drawSeat(svg, scheme, it, x, y, w, h, state){
 }
 
 /* One item on its own, at its real proportions, scaled so a seat cell is `size` wide.
-   Facilities get their overhang on both sides, as nothing is drawn around them. */
+   Facilities and partitions get their overhang on both sides, as nothing is around them. */
 function previewItem(it, size, stateOverride){
   var pad=10, sp=itemSpan(it);
   var w = sp.cols>1 ? sp.cols*T.seat+(sp.cols-1)*T.colGap : itemWidth(it);
-  var oh = it.seat==null && FACILITIES.indexOf(it.type)!==-1 ? T.overhang : 0;
+  var oh = it.seat==null && (FACILITIES.indexOf(it.type)!==-1 || it.type==="separator") ? T.overhang : 0;
   var h = T.seatH+(sp.rows-1)*T.rowPitch+oh*2;
-  if (it.type==="separator") pad+=T.overhang;
   var k=size/T.seat, vw=w+pad*2, vh=h+pad*2;
   var state={ mode:"view", showBack:true };
   if (stateOverride) for (var key in stateOverride) state[key]=stateOverride[key];
