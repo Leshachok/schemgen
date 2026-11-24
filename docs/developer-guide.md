@@ -184,8 +184,8 @@ unrecognized `type` still renders — as a plain block marked "?".
 | `coffee_machine` | Vending or coffee machine | 2 rows |
 | `driver` | Bus driver's place | 1 row |
 
-A facility block reaches a little past its first and last row, into the gap beyond, unless
-something is drawn on the other side of that gap.
+A facility block on the deck's first or last row reaches a little past it, into the deck's
+edge. Its size depends only on its own rows, so blocks on the same rows always line up.
 
 The list and the art follow the guidelines file "Wagon components" (spec D50); names follow
 the Android sales app's drawables (spec D47). Renamed or removed, do not write: `wc`,

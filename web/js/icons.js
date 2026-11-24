@@ -5,8 +5,8 @@
 "use strict";
 
 /* seat: cell width; seatH: cell height; square: a sitting seat's body inside the cell;
-   facW: narrowest facility block; overhang: how far a facility block reaches past
-   its first and last row when nothing is drawn there (D51) */
+   overhang: how far a facility block on the deck's first or last row reaches into
+   the deck padding (D51) */
 var T = { seat:40, seatH:38, square:32, rowPitch:50, colGap:12, sepW:10,
           padX:16, padY:16, barH:4, barGap:2, gapW:18, overhang:8, radius:4, font:15 };
 /* the narrowest each element may be drawn, which sets its column's width (D51);

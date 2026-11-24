@@ -51,15 +51,10 @@ function colWidth(col, covered){
   return w;
 }
 function layout(deck){
-  var x=T.padX, out=[], cols=deck.columns||[], covered={}, occupied={};
+  var x=T.padX, out=[], cols=deck.columns||[], covered={};
   cols.forEach(function(col,i){
     (col.items||[]).forEach(function(it){
-      var sp=itemSpan(it), row=it.row||1;
-      for (var c=0;c<sp.cols;c++){
-        if (c>0) covered[i+c]=1;
-        for (var r=row;r<row+sp.rows;r++) occupied[(i+c)+":"+r]=1;
-      }
-    });
+      for (var c=1;c<itemSpan(it).cols;c++) covered[i+c]=1; });
   });
   cols.forEach(function(col,i){
     var w=colWidth(col, covered[i]);
@@ -67,25 +62,22 @@ function layout(deck){
     x += w + T.colGap;
   });
   var rows=deck.rows||1;
-  return { cols:out, occupied:occupied, width:Math.max(x-T.colGap+T.padX,140),
+  return { cols:out, width:Math.max(x-T.colGap+T.padX,140),
            height:rowY(deck,rows)+T.seatH+T.padY };
 }
-/* A facility reaches T.overhang past its first and last row, as the guidelines draw
-   it (two rows + 2 x 8 = the 104 px block), but only into a row gap with nothing
-   on the other side - two stacked blocks would otherwise overlap (D51). */
-function overhangs(L, ci, it){
+/* A facility on the deck's first or last row reaches T.overhang past it into the
+   deck padding, as the guidelines draw it: a block spanning the deck is two rows
+   + 2 x 8 = 104 px. Never into a gap between rows, and never depending on what's
+   next to it, so blocks on the same rows always line up and can't overlap (D51). */
+function overhangs(deck, it){
   if (it.seat!=null || FACILITIES.indexOf(it.type)===-1) return { top:0, bottom:0 };
-  var sp=itemSpan(it), row=it.row||1, top=T.overhang, bottom=T.overhang;
-  for (var c=ci;c<ci+sp.cols;c++){
-    if (L.occupied[c+":"+(row-1)]) top=0;
-    if (L.occupied[c+":"+(row+sp.rows)]) bottom=0;
-  }
-  return { top:top, bottom:bottom };
+  var row=it.row||1, last=row+itemSpan(it).rows-1;
+  return { top: row===1 ? T.overhang : 0, bottom: last>=(deck.rows||1) ? T.overhang : 0 };
 }
 /* where an item placed in column pc lands; rows and columns past the deck's edge
    are clipped. Drawing and hit-testing both use this. */
 function itemBox(deck, L, pc, it){
-  var sp=itemSpan(it), row=it.row||1, oh=overhangs(L, pc.index, it);
+  var sp=itemSpan(it), row=it.row||1, oh=overhangs(deck, it);
   var y=rowY(deck,row);
   var yEnd=rowY(deck, Math.min(row+sp.rows-1, deck.rows||1));
   var h=yEnd+T.seatH-y+oh.top+oh.bottom;
