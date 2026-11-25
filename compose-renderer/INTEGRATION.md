@@ -52,6 +52,10 @@ UZmivPublicPassword=<the PAT>
 The library's own dependencies (Compose, kotlinx-serialization) come from `google()` and
 `mavenCentral()`; nothing else is needed from UZmiv.
 
+Teams without access to `UZmiv` (the external team behind the sales apps) will get a
+read-only feed of their own instead. It's planned, not set up yet: see "Access for teams
+outside UZmiv" in `build.md`.
+
 ### Public API (0.2.0)
 
 ```kotlin
