@@ -81,7 +81,7 @@ aren't configured yet.
 The Vue module builds and its tests pass, among them one that runs `format.js` itself and
 compares every item box, validation message and seat state on all shared fixtures. In the
 browser it matches the web reference on five fixtures, side by side (verified 2026-11-25,
-see `docs/wagon-scheme-format.md` §12).
+see `docs/wagon-scheme-format.md` §12). 0.1.0 is published to the `UZmiv` npm feed.
 
 ## Building and CI
 

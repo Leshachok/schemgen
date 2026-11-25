@@ -146,6 +146,10 @@ that Enter and Space toggle.
 `@uz/schemgen-renderer-vue` goes to the same two Azure Artifacts feeds as the Compose library,
 `UZmiv` and `UZmiv-public` (`build.md`). A feed holds npm packages next to Maven ones.
 
+| Version | `UZmiv` | `UZmiv-public` |
+|---|---|---|
+| 0.1.0 | 2026-11-25 | not yet |
+
 ```
 cd vue-renderer/schemgen-renderer-vue
 # bump "version" in package.json first - a feed refuses a version twice

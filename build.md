@@ -87,7 +87,8 @@ Output: `vue-renderer/previewApp/dist/`: `index.html` and one hashed script unde
 ## Publishing the Vue library
 
 `vue-renderer/schemgen-renderer-vue` is published as `@uz/schemgen-renderer-vue` to the same
-two feeds as the Compose library, by hand for now. Commands, credentials and how consumers
+two feeds as the Compose library, by hand for now (0.1.0 on `UZmiv` since 2026-11-25, not yet
+on `UZmiv-public`). Commands, credentials and how consumers
 point npm at the feed are in `vue-renderer/README.md`.
 
 ## Publishing the Compose library
