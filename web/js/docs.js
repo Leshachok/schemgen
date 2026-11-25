@@ -561,7 +561,7 @@ is the reference implementation and UI shell, not the parent project.
 
 \`compose-renderer/\` is split along D32's lines: \`schemgen-renderer-compose\` is the library other
 teams depend on (Android, iOS, wasm targets, published to the \`UZmiv-internal\` Azure Artifacts feed,
-where \`uz-compose-ui-kit\` is moving too, and to \`UZmiv-public\`, the feed external teams can read), and \`composeApp\` is the thin wasm harness the web Preview tab
+where \`uz-compose-ui-kit\` moved too, and to \`UZmiv-public\`, the feed external teams can read), and \`composeApp\` is the thin wasm harness the web Preview tab
 drives by \`postMessage\`. Consumers are documented in \`compose-renderer/INTEGRATION.md\`.
 
 \`vue-renderer/\` has the same split (D53): \`schemgen-renderer-vue\` is the npm library, mirroring

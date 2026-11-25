@@ -9,7 +9,7 @@ an agent working in that repo can follow it without reading this one.
 | | |
 |---|---|
 | Coordinates | `ua.gov.uz:schemgen-renderer-compose` |
-| Feed | Azure Artifacts. Internal: `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv-internal/maven/v1`, which replaces the `UZmiv` feed (`.../_packaging/UZmiv/maven/v1`) as of 2026-11-25; `ua.gov.uz:compose-ui-kit` is moving there too. External teams: `https://pkgs.dev.azure.com/UZmiv/uz-schemgen/_packaging/UZmiv-public/maven/v1`, see below |
+| Feed | Azure Artifacts. Internal: `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv-internal/maven/v1`, which replaces the `UZmiv` feed (`.../_packaging/UZmiv/maven/v1`) as of 2026-11-25; `ua.gov.uz:compose-ui-kit` moved there too, 0.3.1 only. External teams: `https://pkgs.dev.azure.com/UZmiv/uz-schemgen/_packaging/UZmiv-public/maven/v1`, see below |
 | Targets | Android, iosArm64, iosSimulatorArm64, wasmJs |
 | Built with | Kotlin 2.4.10, Compose Multiplatform 1.11.1. Consumers on these or newer are fine |
 | Transitive API | `kotlinx-serialization-json`, because `SchemeParser.parse(JsonObject)` is public |
@@ -149,9 +149,9 @@ clicked through in a running panel yet. That's step 6.
   running the web target).
 - Check that `ua.gov.uz:schemgen-renderer-compose:0.2.0` is on the feed (or in `~/.m2`, see above).
   `settings.gradle.kts` points at the old `UZmiv` feed. Change the URL to
-  `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv-internal/maven/v1` (keep the UI kit
-  resolving: until it has moved, keep the `UZmiv` repository next to the new one). The
-  credentials stay as they are. If resolution fails with 401, the credentials are missing,
+  `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv-internal/maven/v1`. The UI kit is
+  there only as 0.3.1, so if miv depends on an older one, raise it to 0.3.1 in the same
+  change. The credentials stay as they are. If resolution fails with 401, the credentials are missing,
   not the repo.
 - miv is on Kotlin 2.4.20 / Compose 1.12.0. That's newer than the library, which is the
   safe direction. Don't downgrade anything in miv for this.

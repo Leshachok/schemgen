@@ -100,7 +100,7 @@ Reader on `UZmiv-public` and nothing else, so it sees this library and not the i
 packages; feed permissions can't be narrowed per package, hence a second feed rather than a
 role on the first. `UZmiv-public` is scoped to the `uz-schemgen` project, which is why its
 URL has the project in it. `UZmiv-internal` replaced the `UZmiv` feed on 2026-11-25 (see
-"Access for teams outside UZmiv" for why); `uz-compose-ui-kit` is moving there too. It's set
+"Access for teams outside UZmiv" for why); `uz-compose-ui-kit` moved there too. It's set
 up and released the same way as `uz-compose-ui-kit`, by hand from a developer machine for now:
 
 ```
@@ -159,9 +159,12 @@ with visibility "Specific people", so Project Collection Valid Users has no role
 renderers moved there on 2026-11-25: `@uz/schemgen-renderer-vue` 0.1.0 published again,
 `schemgen-renderer-compose` 0.1.0 and 0.2.0 copied file for file from `UZmiv` (the copy
 compared byte for byte), so `UZmiv-internal` and `UZmiv-public` hold the same build. The old
-name `schemgen-compose` wasn't copied. Once the UI kit and its consumers have moved, a
-Project Collection Administrator deletes `UZmiv`, recycle bin included; only then is the
-external account added. Deleting the feed needs Feed Owner, which a publisher doesn't have.
+name `schemgen-compose` wasn't copied. The UI kit followed with 0.3.1 only, its latest: the
+copy of its history was stopped, the missing wasm-js part was published from its repo, and
+the incomplete older versions were deleted from `UZmiv-internal` again. Everything else on
+`UZmiv` (older UI kit versions, its earlier name `kit`, `compose-wagon-kit`) goes with that
+feed. A Project Collection Administrator deletes `UZmiv`, recycle bin included; only then
+is the external account added. Deleting the feed needs Feed Owner, which a publisher doesn't have.
 
 Pipelines that read `UZmiv-internal` need their build identity on it: Project Collection
 Build Service is there as Collaborator, a project's own build service has to be added, and
