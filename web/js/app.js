@@ -38,7 +38,7 @@ function init(){
     var t=document.documentElement.getAttribute("data-theme")==="dark" ? "light" : "dark";
     applyTheme(t);
     try { localStorage.setItem("schemgen-theme", t); } catch(e){}
-    if (bwstate.framework==="compose" && bwstate.loaded) sendToCompose();
+    if (bwstate.framework!=="web" && bwstate.loaded) sendToFrame();
   });
   if (window.matchMedia){
     var sys=window.matchMedia("(prefers-color-scheme: dark)");
@@ -622,7 +622,7 @@ function init(){
     try { $("bStage").appendChild(render(bstate.scheme,
       { mode:"view", showGrid:false, showBack:true })); }
     catch(e){ $("bStage").textContent="Render failed: "+e.message; }
-    if (bwstate.framework==="compose" && bwstate.loaded) sendToCompose();
+    if (bwstate.framework!=="web" && bwstate.loaded) sendToFrame();
     var bd=deck();
     $("bMeta").innerHTML="<b>"+countSeats(bstate.scheme)+"</b> seats · <b>"
       +bd.columns.length+"</b> cols · <b>"+bd.rows+"</b> rows"
@@ -785,19 +785,22 @@ function init(){
   $("mBuilder").addEventListener("click", function(){ setMode("builder"); });
   $("mDocs").addEventListener("click", function(){ setMode("docs"); });
 
-  /* ---------- builder live preview: web vs Compose Multiplatform ---------- */
-  function defaultComposeUrl(){
-    // Local dev: the Compose module's own dev server. Deployed (GitHub Pages,
-    // any real host): a same-origin "compose-preview/" build sits next to this
-    // page - see .github/workflows/pages.yml.
+  /* ---------- builder live preview: web vs a native renderer ---------- */
+  /* Each native renderer has a harness page that draws whatever scheme it's sent by
+     postMessage. Local dev: the harness's own dev server. Deployed (GitHub Pages, any
+     real host): a same-origin build sits next to this page under `path` - see
+     .github/workflows/pages.yml. */
+  var HARNESS = { compose:{ dev:"http://localhost:8080", path:"compose-preview/" },
+                  vue:{ dev:"http://localhost:5173", path:"vue-preview/" } };
+  function defaultHarnessUrl(fw){
     if (location.hostname && location.hostname!=="localhost" && location.hostname!=="127.0.0.1"){
-      return new URL("compose-preview/", location.href).href;
+      return new URL(HARNESS[fw].path, location.href).href;
     }
-    return "http://localhost:8080";
+    return HARNESS[fw].dev;
   }
-  $("bwUrl").value = defaultComposeUrl();
-  var bwstate = { framework:"web", url:$("bwUrl").value, loaded:false };
-  function sendToCompose(){
+  // urls: the last URL loaded per framework, so a hand-typed one survives switching away
+  var bwstate = { framework:"web", shown:null, urls:{}, loaded:false };
+  function sendToFrame(){
     var frame = $("bwFrame");
     if (!frame.src) return;
     try {
@@ -809,27 +812,27 @@ function init(){
       $("bwStatus").textContent = "Could not reach the preview frame: "+e.message;
     }
   }
-  function updateBwVisibility(){
-    var isCompose = bwstate.framework==="compose";
-    $("bStage").hidden = isCompose;
-    $("bwCompose").hidden = !isCompose;
-    if (isCompose && !bwstate.loaded){
-      bwstate.url = $("bwUrl").value.trim() || bwstate.url;
-      $("bwFrame").src = bwstate.url;
-      bwstate.loaded = true;
-      $("bwStatus").textContent = "Loading "+bwstate.url+" ...";
-    }
+  function loadFrame(url){
+    bwstate.urls[bwstate.framework] = url;
+    bwstate.shown = bwstate.framework;
+    bwstate.loaded = true;
+    $("bwUrl").value = url;
+    $("bwFrame").src = url;
+    $("bwStatus").textContent = "Loading "+url+" ...";
   }
-  $("bwFrame").addEventListener("load", function(){ setTimeout(sendToCompose, 300); });
+  function updateBwVisibility(){
+    var fw = bwstate.framework, isNative = fw!=="web";
+    $("bStage").hidden = isNative;
+    $("bwNative").hidden = !isNative;
+    if (isNative && bwstate.shown!==fw) loadFrame(bwstate.urls[fw] || defaultHarnessUrl(fw));
+  }
+  $("bwFrame").addEventListener("load", function(){ setTimeout(sendToFrame, 300); });
   $("bwFramework").addEventListener("change", function(){
     bwstate.framework = $("bwFramework").value;
     updateBwVisibility();
   });
   $("bwLoad").addEventListener("click", function(){
-    bwstate.url = $("bwUrl").value.trim() || bwstate.url;
-    bwstate.loaded = true;
-    $("bwFrame").src = bwstate.url;
-    $("bwStatus").textContent = "Loading "+bwstate.url+" ...";
+    loadFrame($("bwUrl").value.trim() || bwstate.urls[bwstate.framework] || defaultHarnessUrl(bwstate.framework));
   });
 
   setMode("builder");

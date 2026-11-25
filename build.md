@@ -7,17 +7,18 @@ the working example to port from.
 
 ## What gets built
 
-One static site, two parts:
+One static site, three parts:
 
 | Part | Source | Build step | Ends up at |
 |---|---|---|---|
 | Web app (catalogue, builder, preview, docs) | `web/` | none, copied as-is | `/` |
 | Compose Multiplatform preview (wasmJs) | `compose-renderer/` | Gradle | `/compose-preview/` |
+| Vue preview | `vue-renderer/` | npm | `/vue-preview/` |
 
-The `compose-preview/` path is not arbitrary: the Preview tab in `web/js/app.js`
-(`defaultComposeUrl`) loads the Compose build from `compose-preview/` next to
-`index.html` whenever the page isn't served from `localhost`. Put it anywhere else and
-the Compose option in Preview stops working without a manual URL.
+The two preview paths are not arbitrary: the Preview tab in `web/js/app.js` (`HARNESS`)
+loads each build from that folder next to `index.html` whenever the page isn't served from
+`localhost`. Put one anywhere else and its option in Preview stops working without a
+manual URL.
 
 Neither part needs a backend. Any static file server (nginx, a storage bucket) works.
 
@@ -33,7 +34,9 @@ Neither part needs a backend. Any static file server (nginx, a storage bucket) w
   `compose-renderer/local.properties`) with platform 37. The library module has an
   Android target, and Gradle won't configure the build without the SDK, even for a
   wasm-only task. GitHub's Ubuntu runners have one; an Azure agent may not.
-- No Node.js setup on the agent: Gradle fetches its own.
+- Node.js 22.12 or newer (Vitest 5 requires it; CI uses 24) and npm, for the Vue part. Gradle fetches its own Node
+  for the Compose part; that one isn't on the PATH and can't be reused. Dependencies come
+  from the npm registry, so behind a proxy npm needs a proxying feed too.
 - Python 3 only if CI checks generated files (see below).
 
 ## Compose preview
@@ -66,6 +69,26 @@ Tests (`commonTest`, run in headless Chrome, so the agent needs Chrome/Chromium)
 
 Caching: `~/.gradle` is worth caching between runs (dependencies, wrapper, Node/Yarn,
 Binaryen); `gradle.properties` already turns on the build cache.
+
+## Vue preview
+
+```
+cd vue-renderer
+npm ci
+npm test               # typecheck + Vitest, including the parity check against web/js/format.js
+npm run build:preview
+```
+
+Output: `vue-renderer/previewApp/dist/`: `index.html` and one hashed script under
+`assets/`, ~100 kB. Copy the whole directory's contents. `npm test` reads `web/js/` and
+`shared-fixtures/`, so it needs the whole checkout, not just `vue-renderer/`. Verified
+2026-11-25: a few seconds on a warm npm cache.
+
+## Publishing the Vue library
+
+`vue-renderer/schemgen-renderer-vue` is published as `@uz/schemgen-renderer-vue` to the same
+two feeds as the Compose library, by hand for now. Commands, credentials and how consumers
+point npm at the feed are in `vue-renderer/README.md`.
 
 ## Publishing the Compose library
 
@@ -118,9 +141,10 @@ git diff --exit-code web/js/docs.js
 ## Assembling the site
 
 ```
-mkdir -p _site/compose-preview
+mkdir -p _site/compose-preview _site/vue-preview
 cp -r web/. _site/
 cp -r compose-renderer/composeApp/build/dist/wasmJs/productionExecutable/. _site/compose-preview/
+cp -r vue-renderer/previewApp/dist/. _site/vue-preview/
 
 # new asset URLs on every deploy - see the serving notes
 v=$(git rev-parse --short=8 HEAD)
@@ -140,8 +164,9 @@ Serving notes:
   deploy can't pair a new page with a cached old script. That happened on GitHub Pages on
   2026-11-24: a cached `app.js` looked for a checkbox the new page no longer had, and
   `init` crashed. Still serve the two `index.html` files with revalidation.
-- Both parts must be same-origin; Preview talks to the Compose iframe via
-  `postMessage`.
+- The Vue preview's script name is content-hashed by Vite, so only its `index.html` needs
+  revalidation; no stamping step.
+- All parts must be same-origin; Preview talks to the preview iframes via `postMessage`.
 
 ## ci-pipeline-test.yml
 
@@ -153,3 +178,8 @@ repo as-is: it calls a `:shared` module (here the site build is `:composeApp`, u
 output from `shared/build/dist/...`, and expects a `Dockerfile`, `charts/` and
 `deploy/modules/` that this repo doesn't have. Its `MavenAuthenticate` step is only
 needed if dependencies go through an Azure Artifacts feed.
+
+Its Vue step is this repo's own: Node 24, `npm ci`, `npm test` and `npm run build:preview` in
+`vue-renderer/`, with the npm cache kept between runs. It runs before Gradle and doesn't
+depend on it. Its output, `vue-renderer/previewApp/dist/`, still has to reach the image as
+`vue-preview/` next to `index.html`, which is the Dockerfile's job.

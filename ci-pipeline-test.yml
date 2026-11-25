@@ -17,6 +17,8 @@ variables:
     value: miv-kmp-web
   - name: CONTAINERREGISTRYNAMESPACE
     value: creg-dev.pas.uz.gov.ua/miv-kmp-web
+  - name: npm_config_cache
+    value: $(Pipeline.Workspace)/.npm
 
 steps:
   - checkout: self
@@ -41,8 +43,25 @@ steps:
 
   - task: NodeTool@0
     inputs:
-      versionSpec: "20.x"
+      versionSpec: "24.x" # vue-renderer: Vitest 5 needs Node 22.12+
     displayName: Install Node.js
+
+  - task: Cache@2
+    inputs:
+      key: 'npm | "$(Agent.OS)" | vue-renderer/package-lock.json'
+      restoreKeys: |
+        npm | "$(Agent.OS)"
+      path: $(npm_config_cache)
+    displayName: Cache npm
+
+  # Vue renderer: typecheck + tests (incl. parity with web/js/format.js), then the preview
+  # harness the builder's Preview tab loads from vue-preview/ (see build.md)
+  - script: |
+      npm ci
+      npm test
+      npm run build:preview
+    workingDirectory: vue-renderer
+    displayName: Build Vue preview (npm)
 
   - script: |
       echo "Token length: ${#SYSTEM_ACCESSTOKEN}"

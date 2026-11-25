@@ -11,7 +11,7 @@ spec with rationale, not just notes.
 2. `docs/wagon-scheme-format.md` — the spec. §1.1-1.3 are scope, vehicles and who
    consumes which renderer. §2 Decisions and §6 Guardrails matter most if you're
    touching the format itself. §8-9 are repo layout + roadmap.
-   §11 is the honest verification status of `compose-renderer/`.
+   §11 is the honest verification status of `compose-renderer/`, §12 of `vue-renderer/`.
 3. `web/index.html` — open directly in a browser, no server needed. Four tabs:
    Catalogue (view/copy), Builder (edit), Preview (cross-framework), Docs (renders
    the spec above).
@@ -21,6 +21,12 @@ spec with rationale, not just notes.
 - **Scope is format + renderers + builder, nothing else.** A renderer takes scheme
   JSON + availability + theme and emits a seat selection. No fetching, booking,
   partner integration or storage in it (D37).
+- **The Vue renderer is a file-for-file port of the Compose renderer** (D53):
+  `vue-renderer/schemgen-renderer-vue/src/` has the same files, function names, constants,
+  comments and public/internal split as `schemgen-renderer-compose`. A change to one
+  renderer's model, layout, validation or drawing goes into the other in the same file and
+  function, in the same change. Keep the port mechanical (translation table in
+  `vue-renderer/README.md`); don't restructure one side on its own.
 - **Three renderers, one per UI tech, never mixed** (D31, corrected by D49):
   Compose (Android, iOS and wasm targets — Android sales app, which is legacy
   Views and hosts it in a `ComposeView`; wagon admin; conductor app later), an
@@ -37,7 +43,9 @@ spec with rationale, not just notes.
   `compose-renderer/schemgen-renderer-compose` (`ua.gov.uz:schemgen-renderer-compose` on the UZmiv
   Azure feed, set up like `../uz-compose-ui-kit`). `composeApp` next to it is only
   the wasm preview harness. Consumers and the miv-multiplatform hand-off:
-  `compose-renderer/INTEGRATION.md`.
+  `compose-renderer/INTEGRATION.md`. The Vue one is `@uz/schemgen-renderer-vue` (npm, same
+  two feeds), for Vue 3.4+ and Nuxt 4 with SSR; `previewApp` is its harness, and
+  `vue-renderer/README.md` covers consumers and publishing.
 - **Style lives in the renderer, identical across all three** (D33), from shared
   tokens with `mobile` and `web` presets. **Theme is colors only**, passed in by
   the consumer (D34). Never put colors or sizes in the scheme.
@@ -50,9 +58,11 @@ spec with rationale, not just notes.
   elements are new `type` values, train-only fields (`class`, `hull`) must not
   become required. "Wagon" in names is historical.
 - **`format.js` is canonical.** `compose-renderer`'s Kotlin layout/validate code is
-  a port of it, not an independent implementation. If they diverge, `format.js` is
-  right until a golden-fixture test says otherwise (roadmap phase 3, not built yet).
-  Icon art for both is generated from one set of exports (`web/tools/figma_icons.py`).
+  a port of it, not an independent implementation, and `vue-renderer` ports the Kotlin. If
+  they diverge, `format.js` is right until a golden-fixture test says otherwise (roadmap
+  phase 3, not built yet). `vue-renderer/schemgen-renderer-vue/test/formatJs.test.ts` already
+  runs `format.js` on every shared fixture and compares the TS port with it.
+  Icon art for all three is generated from one set of exports (`web/tools/figma_icons.py`).
 - **No aisle field.** Removed from the format entirely — a wagon with space just
   leaves a row unoccupied. Don't reintroduce `aisleAfterRow`.
 - **Removed fields stay removed** (D38, D39, D50, D52): `class`, `hull`, `artwork`, seat
@@ -67,9 +77,9 @@ spec with rationale, not just notes.
 - **Renderers take `mode` (`view` | `select`), `available`, `selected` and an
   `onSeatClick` callback** (D45). The app owns the selection — a renderer only reports
   taps and never mutates `selected` (D46). `seatState()` in `format.js` is the rule;
-  Kotlin mirrors it in `layout/SeatState.kt`.
+  Kotlin and TS mirror it in `layout/SeatState.kt` / `layout/SeatState.ts`.
 - **`docs/developer-guide.md` is the field reference.** Any format change updates
-  it alongside the spec, `format.js`, the Kotlin model and the fixtures.
+  it alongside the spec, `format.js`, the Kotlin and TS models and the fixtures.
 - **Every non-seat item uses one field, `type`** (`toilet`, `table`, `small_table`,
   `separator`, ...) — not per-kind boolean flags. This was a real inconsistency
   that got fixed once; don't reintroduce `table: true` style shapes.
@@ -85,6 +95,10 @@ spec with rationale, not just notes.
   needs an Android SDK (`local.properties`, untracked). For headless screenshots, Chrome needs
   `--use-angle=swiftshader --enable-unsafe-swiftshader`, and host pages must be served
   over http, not `file://`.
+- **`vue-renderer/` builds and runs** (verified 2026-11-25, spec §12). From `vue-renderer/`:
+  `npm install`, `npm test` (typecheck + Vitest), `npm run dev` (harness on
+  `localhost:5173`, which the Preview tab's "Vue 3 (Web)" loads), `npm run build`. Imports in
+  `src/` carry `.js` extensions (NodeNext), so the built ESM loads in Node and Nuxt's server.
 
 ## Before changing web/js/*.js
 

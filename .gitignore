@@ -4,6 +4,7 @@ build/
 *.iml
 .idea/
 node_modules/
+vue-renderer/*/dist/
 .DS_Store
 .claude/settings.local.json
 local.properties

@@ -126,6 +126,7 @@ Builder (static page, stores nothing) ──JSON, pasted──▶ Wagon admin (C
 | D50 | **The guidelines file "Wagon components" is the source of truth for elements, colours, states and sizes** | A Figma file finalised with the design team, with every element in a Light and a Dark variant and seats in three states. It replaces the Android drawables as the source of art (D47). Names stay as they were, with two changes: `half_table` becomes `small_table` (the guidelines' "Table / Small"), and `chair` is dropped because the guidelines don't have it. The guidelines decide which elements exist. Seat states are exactly D45's three (`available`, `unavailable`, `selected`), so no runtime state is added. The colours become two default palettes, which a consumer can still replace (D34). `kid` and `driver` now have real icons. The values as read from the file are in `web/css/app.css` (`.sch`, `.sch-dark`) and `web/js/icons.js`. |
 | D51 | **Guideline sizes are minimums; every non-seat element resizes; icons never scale** | The guidelines draw tables in three sizes, partitions in three lengths and facility blocks at 56×104, which looked like a fixed set of sizes. They are minimums: an element can be drawn at any larger size, so `span` stays the only size field and nothing new enters the scheme. Every non-seat element can span rows and columns, which reverses D29's fixed half-table, D43's one-cell driver and D48's one-column list. The exception is `separator`, which stays vertical and only grows in length. Minimums in rows: 2 for facility blocks, 1 for everything else. The 104 px block is two 38 px rows, the 12 px gap between them and an 8 px overhang at each end, exactly as the guideline wagons draw it. The builder stops a resize at the minimum and the validator warns below it. A column is as wide as its widest item: 40 for seats, 56 for a facility block, 61 for the inclusive toilet. Icons are drawn at their own size, centred: 24×24 for most, 24×56 for `kid`. A bigger block gets more space around the icon, not a bigger icon. That retires the old "crop icons before scaling" guardrail. The overhang reaches only past the deck's first and last row, into the deck padding, never into a gap between rows. A block's size then depends only on its own rows: blocks on the same rows line up, and stacked blocks can't overlap. The first version looked at what was drawn across each gap, and two toilets side by side came out at different heights. |
 | D52 | **No inclusive seats: the outlined seat is a folding seat, `kind: "folding"`** | The catalogue's 73 outlined seats (white fill, navy border, §3) were read as accessible seats, and the format grew a seat flag `inclusive: true` for them. The design team corrected this: they are folding seats, and a seat is never accessible as such. Accessibility belongs only to the `handicapped` block and the `handicapped_wheelchair` marker. `inclusive` is removed with no alias, and `folding` joins `sit`, `sleep` and `luxury`. It is a kind rather than a flag because the guidelines only have folding *sitting* seats, in the same four directions as `sit`. A flag would need an "only on `sit`" rule, and one field per variation is the rule `type` already follows. KUP-34's berths 33–34 become plain lower berths. |
+| D53 | **The web renderer is a file-for-file port of the Compose renderer, published as `@uz/schemgen-renderer-vue`** | Phase 7 (§9) planned a TS core ported from `format.js` plus a Vue component. It is built the other way round, from `schemgen-renderer-compose`: the same files (`model/Scheme`, `model/SchemeParser`, `layout/Layout`, `layout/SeatState`, `layout/Validate`, `render/SchemeCanvas`, `render/SchemeColors`, `render/Icons`), the same function names, constants and comments, and the same public API (`SchemeParser.parse`, `validate`, `SchemeView` with `mode`, `available`, `selected`, `colors` and a seat-click callback). The reason is maintenance across native renderers: a change made in one has an obvious place in the other, function for function, and a reviewer can read the two side by side. `format.js` stays canonical (CLAUDE.md), and the port is held to it by a test that runs `format.js` itself on every shared fixture, which is cheaper than the golden fixtures of phase 3 and does the same job until they exist. Two differences are forced by the platform: it draws SVG instead of a Canvas, so it renders on the server (the bus admin is Nuxt 4) and every seat gets its own accessibility label and keyboard focus, which Compose still lacks (§9 phase 4); and the theme takes CSS colours. Taps are still hit-tested on the deck with `seatAt`, as in Compose. The framework-free half (model, parser, validation, modes) is also published alone as `@uz/schemgen-renderer-vue/core` for the web sales site (D49). The layout stays internal in both renderers until the fixtures have settled it. |
 
 ### Rejected
 
@@ -543,10 +544,13 @@ schemgen/
   compose-renderer/         Compose Multiplatform renderer (see compose-renderer/README.md)
     schemgen-renderer-compose/       the published library, ua.gov.uz:schemgen-renderer-compose
     composeApp/             wasm preview harness for the web Preview tab
+  vue-renderer/             Vue 3 renderer, a port of compose-renderer (see vue-renderer/README.md)
+    schemgen-renderer-vue/  the published library, @uz/schemgen-renderer-vue
+    previewApp/             Vite preview harness for the web Preview tab
   shared-fixtures/          scheme JSON used to check every renderer agrees with format.js
 ```
 
-Not yet created: the iOS renderer, the production web renderer, and the shared style
+Not yet created: the iOS renderer and the shared style
 tokens generated for every platform (§9). Each renderer subfolder is a sibling of `web/`, not nested inside it — `web/`
 is the reference implementation and UI shell, not the parent project.
 
@@ -554,6 +558,11 @@ is the reference implementation and UI shell, not the parent project.
 teams depend on (Android, iOS, wasm targets, published to the UZmiv Azure Artifacts feed
 next to `uz-compose-ui-kit`, and to `UZmiv-public`, the feed external teams can read), and `composeApp` is the thin wasm harness the web Preview tab
 drives by `postMessage`. Consumers are documented in `compose-renderer/INTEGRATION.md`.
+
+`vue-renderer/` has the same split (D53): `schemgen-renderer-vue` is the npm library, mirroring
+`schemgen-renderer-compose` file for file, and `previewApp` is a Vite page that answers the
+same `postMessage` envelope as `composeApp`, so the Preview tab drives both the same way.
+Consumers are documented in `vue-renderer/README.md`.
 
 `web/` is a prototype of the builder (D35) plus dev tooling. Its Catalogue tab and the
 bundled `AUTO` schemes are sample data for exercising renderers, not a product feature —
@@ -606,11 +615,13 @@ assumed a SwiftUI iOS app, a Compose Android app and an admin import API.
 6. **Wagon admin (Compose wasm).** Already the first consumer of the read-only preview; it
    needs the phase-4 renderer and a paste-JSON field for the builder's output.
 
-7. **Web renderer, for the bus admin first** — Vue 3. A framework-free TS core (port of
-   `format.js`: parse, validate, layout) plus a Vue 3 component on top, rendering SVG so it
-   stays SSR-safe and visible to screen readers; published to npm. The web sales site can
-   take the TS core and the fixtures before it takes the component (D49). The builder's own
-   preview should move onto the same core.
+7. **Web renderer, for the bus admin first** — Vue 3. Port done 2026-11-25 (§12), not yet
+   published. Built as a file-for-file port of the Compose renderer rather than of
+   `format.js` (D53), rendering SVG so it stays SSR-safe (the bus admin is Nuxt 4) and visible
+   to screen readers. The framework-free half is published as
+   `@uz/schemgen-renderer-vue/core`, which the web sales site can take, with the fixtures,
+   before it takes the component (D49). Next: publish it to the Azure npm feed and try it in
+   the bus admin. The builder's own preview could later move onto the same core.
 
 8. **iOS renderer for the UIKit sales app.** Technology open (§7 Q9). Port of `format.js`
    logic, same fixtures, same tokens, same theme shape; published as a Swift package.
@@ -736,7 +747,42 @@ art is no longer hand-copied: `web/tools/figma_icons.py` writes the same exports
 - Not checked: how the canvas looks next to the web builder, and anything on a device.
   The public API changed (listed in `compose-renderer/INTEGRATION.md`), hence 0.2.0.
 
-## 12. Next steps
+## 12. Vue renderer verification status
+
+**Ported from the Compose renderer, 2026-11-25 (0.1.0, not yet published).** Node 26.13,
+Vue 3.5, TypeScript 5.9, Vitest 5.1, Vite 8, Windows 11. `vue-renderer/schemgen-renderer-vue`
+mirrors `schemgen-renderer-compose` file for file (D53). Checked:
+
+- `tsc` typechecks in strict mode and builds `dist/` (ESM plus `.d.ts`). The built package
+  imports under plain Node ESM, both entry points (`.` and `/core`), and server-renders a bus
+  with `vue/server-renderer`, which is what Nuxt does with it.
+- 51 Vitest tests pass. Every `commonTest` test of the Compose renderer is ported one for
+  one. On top of those, a parity test runs `web/js/format.js` itself (with `icons.js` and
+  `render.js` for its tokens and `countSeats`) in a Node `vm` and compares, on all eight
+  shared fixtures, every deck size, column, item box, validation message and seat state in
+  view and select mode. It caught a deliberate one-pixel change to `T.OVERHANG` in ten tests,
+  so it does bite. Component tests cover server rendering, one SVG per deck, colours,
+  view mode ignoring taps, select mode reporting only available seats, the renderer never
+  changing the selection, and the keyboard.
+- In Chrome, through the builder's Preview tab ("Vue 3 (Web)", harness on `localhost:5173`):
+  `ric`, `bus`, `smalltable`, `wide` and `lux` render with the same deck sizes as the web
+  reference and the same accessibility label on every seat, in the same order. The pictures
+  match side by side. The theme toggle re-sends and the harness switches to the dark
+  palette. Switching to Compose and back swaps the iframe URL. On the harness alone,
+  in select mode, clicks select and deselect available seats, ignore an unavailable one,
+  and Enter on a focused seat toggles it.
+
+Icon art is generated, not copied: `web/tools/figma_icons.py` now writes `Icons.ts` as well,
+from the same parsed shapes as `Icons.kt`. The SVG exports aren't in the repo, so the first
+`Icons.ts` was produced by reading the shapes back out of `Icons.kt` and running them
+through the generator. The Kotlin block came out byte for byte identical, which checked the
+refactor of the generator too.
+
+Not checked: the published package inside the real bus admin, or any Nuxt app, and the
+seat-number font. Compose uses the platform default font, and this renderer inherits the
+page's.
+
+## 13. Next steps
 
 Immediate actions, in order. The longer view is §9.
 
@@ -753,3 +799,6 @@ Immediate actions, in order. The longer view is §9.
    phase 5).
 7. Publish the next `schemgen-renderer-compose` to the Azure feed, and add a paste-JSON field
    next to the miv admin panel's read-only preview (`compose-renderer/INTEGRATION.md`).
+8. Publish `@uz/schemgen-renderer-vue` 0.1.0 to the Azure npm feeds and wire it into the bus
+   admin (Nuxt 4), with a paste-JSON field like the wagon admin's (§9 phase 7,
+   `vue-renderer/README.md`).

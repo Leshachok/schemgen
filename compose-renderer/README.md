@@ -65,3 +65,8 @@ convenience.
 implementations — if `web/js/format.js` changes, these should change with it.
 There's no automated check for that yet (roadmap phase 2, golden fixture
 parity); until then it's a manual discipline.
+
+`vue-renderer/schemgen-renderer-vue` is in turn a file-for-file port of this module (D53):
+the same files, functions and public API. A change here goes into the file of the same
+name there, in the same change. Its tests run `format.js` itself on every shared fixture,
+so the Vue side is checked against the reference even though this side isn't yet.

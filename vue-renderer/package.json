@@ -1,0 +1,14 @@
+{
+  "name": "schemgen-vue-renderer",
+  "private": true,
+  "workspaces": [
+    "schemgen-renderer-vue",
+    "previewApp"
+  ],
+  "scripts": {
+    "test": "npm run typecheck -w @uz/schemgen-renderer-vue && npm test -w @uz/schemgen-renderer-vue",
+    "build": "npm run build -w @uz/schemgen-renderer-vue",
+    "dev": "npm run dev -w schemgen-preview-vue",
+    "build:preview": "npm run build -w schemgen-preview-vue"
+  }
+}

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-figma_icons.py - rewrite the generated icon blocks of web/js/icons.js and of the Compose
-renderer's Icons.kt from one SVG per element, exported from the guidelines file
-"Wagon components" (D50). Both renderers get the same art from the same files.
+figma_icons.py - rewrite the generated icon blocks of web/js/icons.js, of the Compose
+renderer's Icons.kt and of the Vue renderer's Icons.ts from one SVG per element, exported
+from the guidelines file "Wagon components" (D50). Every renderer gets the same art from
+the same files.
 
     /usr/bin/python3 web/tools/figma_icons.py <dir-of-svgs>
 
@@ -11,7 +12,7 @@ variant: the icon layer of a facility block, or the whole component for the
 elements drawn without a block (steps, the wheelchair marker). Icons are drawn at
 their exported size and never scaled (D51), so the SVG's own width/height is kept.
 
-The guideline greys are replaced with currentColor (web) or a paint flag (Kotlin) so
+The guideline greys are replaced with currentColor (web) or a paint flag (Kotlin, TS) so
 the renderer's theme picks the icon colour. #BBBCB7 is a near-duplicate grey on one
 path of the driver icon.
 """
@@ -27,6 +28,7 @@ START, END = "/* <generated:icons> */", "/* </generated:icons> */"
 KT_TARGET = os.path.join(os.path.dirname(ROOT), "compose-renderer", "schemgen-renderer-compose", "src",
                          "commonMain", "kotlin", "ua", "gov", "uz", "schemgen", "render", "Icons.kt")
 KT_START, KT_END = "// <generated:icons>", "// </generated:icons>"
+TS_TARGET = os.path.join(os.path.dirname(ROOT), "vue-renderer", "schemgen-renderer-vue", "src", "render", "Icons.ts")
 SVG_NS = "{http://www.w3.org/2000/svg}"
 
 
@@ -70,10 +72,11 @@ def rect_path(x, y, w, h, rx):
             + "V%s" % num(y + rx) + a + "%s %sZ" % (num(x + rx), num(y)))
 
 
-def kotlin_icon(path):
-    """One `"type" to Icon(...)` entry. Compose has no SVG parser in commonMain, and SVG
+def icon_shapes(path):
+    """(type, w, h, shapes) for one export. Compose has no SVG parser in commonMain, and SVG
     resources can't be drawn on Android (KB ADR-0020), so every shape becomes path data
-    plus its paint flags; the colour comes from the theme at draw time."""
+    plus its paint flags; the colour comes from the theme at draw time. The Vue renderer
+    draws the same shapes, so both native renderers stay one-to-one."""
     root = ET.parse(path).getroot()
     out = []
 
@@ -95,27 +98,72 @@ def kotlin_icon(path):
                 cx, cy, r = (float(el.get(k)) for k in ("cx", "cy", "r"))
                 d = "M%s %sa%s %s 0 1 0 %s 0a%s %s 0 1 0 %s 0Z" % (
                     num(cx - r), num(cy), num(r), num(r), num(2 * r), num(r), num(r), num(-2 * r))
-            args = ['"%s"' % d]
-            if fill not in (None, "none"):
-                args.append("fill = true")
-            if el.get("stroke") not in (None, "none"):
-                args.append("stroke = %sf" % num(float(el.get("stroke-width", 1))))
-                if el.get("stroke-linecap") == "round":
-                    args.append("roundCap = true")
-                if el.get("stroke-linejoin") == "round":
-                    args.append("roundJoin = true")
-            if el.get("fill-rule") == "evenodd":
-                args.append("evenOdd = true")
-            if tx or ty:
-                args.append("tx = %sf, ty = %sf" % (num(tx), num(ty)))
-            out.append("        IconPath(%s)" % ", ".join(args))
+            stroked = el.get("stroke") not in (None, "none")
+            out.append({
+                "d": d,
+                "fill": fill not in (None, "none"),
+                "stroke": float(el.get("stroke-width", 1)) if stroked else None,
+                "roundCap": stroked and el.get("stroke-linecap") == "round",
+                "roundJoin": stroked and el.get("stroke-linejoin") == "round",
+                "evenOdd": el.get("fill-rule") == "evenodd",
+                "tx": tx, "ty": ty,
+            })
         for child in el:
             walk(child, fill, tx, ty)
 
     walk(root, None, 0.0, 0.0)
     name = os.path.splitext(os.path.basename(path))[0]
-    return '    "%s" to Icon(%sf, %sf, listOf(\n%s\n    ))' % (
-        name, num(float(root.get("width"))), num(float(root.get("height"))), ",\n".join(out))
+    return name, float(root.get("width")), float(root.get("height")), out
+
+
+def kotlin_icon(icon):
+    """One `"type" to Icon(...)` entry of Icons.kt."""
+    name, w, h, shapes = icon
+    out = []
+    for s in shapes:
+        args = ['"%s"' % s["d"]]
+        if s["fill"]:
+            args.append("fill = true")
+        if s["stroke"] is not None:
+            args.append("stroke = %sf" % num(s["stroke"]))
+            if s["roundCap"]:
+                args.append("roundCap = true")
+            if s["roundJoin"]:
+                args.append("roundJoin = true")
+        if s["evenOdd"]:
+            args.append("evenOdd = true")
+        if s["tx"] or s["ty"]:
+            args.append("tx = %sf, ty = %sf" % (num(s["tx"]), num(s["ty"])))
+        out.append("        IconPath(%s)" % ", ".join(args))
+    return '    "%s" to Icon(%sf, %sf, listOf(\n%s\n    ))' % (name, num(w), num(h), ",\n".join(out))
+
+
+def ts_icon(icon):
+    """One `["type", new Icon(...)]` entry of the Vue renderer's Icons.ts, the same shapes
+    and flags as kotlin_icon()."""
+    name, w, h, shapes = icon
+    out = []
+    for s in shapes:
+        opts = []
+        if s["fill"]:
+            opts.append("fill: true")
+        if s["stroke"] is not None:
+            opts.append("stroke: %s" % num(s["stroke"]))
+            if s["roundCap"]:
+                opts.append("roundCap: true")
+            if s["roundJoin"]:
+                opts.append("roundJoin: true")
+        if s["evenOdd"]:
+            opts.append("evenOdd: true")
+        if s["tx"] or s["ty"]:
+            opts.append("tx: %s, ty: %s" % (num(s["tx"]), num(s["ty"])))
+        out.append('        new IconPath("%s"%s)' % (s["d"], ", { %s }" % ", ".join(opts) if opts else ""))
+    return '    ["%s", new Icon(%s, %s, [\n%s\n    ])]' % (name, num(w), num(h), ",\n".join(out))
+
+
+def ts_block(icons):
+    return ("\nexport const ICONS: ReadonlyMap<string, Icon> = new Map([\n"
+            + ",\n".join(ts_icon(i) for i in icons) + "\n])\n")
 
 
 def replace_block(target, start, end, body):
@@ -131,8 +179,10 @@ def main():
     d = sys.argv[1]
     files = [os.path.join(d, f) for f in sorted(os.listdir(d)) if f.endswith(".svg")]
     replace_block(TARGET, START, END, "\n" + "\n".join(convert(f) for f in files) + "\n")
+    icons = [icon_shapes(f) for f in files]
     replace_block(KT_TARGET, KT_START, KT_END,
-                  "\ninternal val ICONS: Map<String, Icon> = mapOf(\n" + ",\n".join(kotlin_icon(f) for f in files) + "\n)\n")
+                  "\ninternal val ICONS: Map<String, Icon> = mapOf(\n" + ",\n".join(kotlin_icon(i) for i in icons) + "\n)\n")
+    replace_block(TS_TARGET, KT_START, KT_END, ts_block(icons))
     print("%d icons" % len(files))
 
 

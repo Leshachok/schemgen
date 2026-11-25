@@ -29,12 +29,26 @@ jobs:
         working-directory: compose-renderer
         run: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: vue-renderer/package-lock.json
+
+      - name: Test the Vue renderer and build its preview
+        working-directory: vue-renderer
+        run: |
+          npm ci
+          npm test
+          npm run build:preview
+
       - name: Assemble site
         run: |
           mkdir -p _site
           cp -r web/. _site/
-          mkdir -p _site/compose-preview
+          mkdir -p _site/compose-preview _site/vue-preview
           cp -r compose-renderer/composeApp/build/dist/wasmJs/productionExecutable/. _site/compose-preview/
+          cp -r vue-renderer/previewApp/dist/. _site/vue-preview/
 
       # Pages lets browsers cache web/'s scripts under fixed names, so a deploy could pair a
       # new index.html with an old app.js and crash init. Every deploy gets new asset URLs.
