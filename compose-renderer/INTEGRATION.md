@@ -21,6 +21,10 @@ It's published the same way as `uz-compose-ui-kit`: the vanniktech plugin, the s
 the same credential lookup (`azureUser`/`azureToken` Gradle properties or
 `AZURE_ARTIFACTS_USER`/`SYSTEM_ACCESSTOKEN` env vars). See `build.md` for how to release.
 
+Teams without access to `UZmiv` (the external team behind the sales apps) will get a
+read-only feed of their own instead. It's planned, not set up yet: see "Access for teams
+outside UZmiv" in `build.md`.
+
 ### Public API (0.2.0)
 
 ```kotlin

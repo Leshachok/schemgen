@@ -89,6 +89,43 @@ To try a build in a consumer before releasing, use `publishToMavenLocal`. How co
 depend on it, and the miv-multiplatform integration, are in
 `compose-renderer/INTEGRATION.md`.
 
+### Access for teams outside UZmiv
+
+Planned, not set up yet (2026-11-25). Teams outside Azure DevOps, such as the external
+team behind the sales apps, need to read the renderer, but a personal access token can't
+be limited to one package or feed. Its scopes are per area (**Packaging (Read)**) and per
+organization, and it can read whatever its owner can. So the limit has to come from the
+token's owner, not the token:
+
+1. A separate feed, e.g. `schemgen`, holding only `schemgen-renderer-compose`. The renderer
+   depends on nothing from the `UZmiv` feed (serialization and Compose come from Maven
+   Central and Google), so this feed is complete on its own, and nothing else on `UZmiv`,
+   such as the UI kit, is exposed.
+2. A dedicated account (`schemgen-reader`, owned by UZ mobile) that is **Feed Reader** on
+   `schemgen` and has no other permissions. Check that its access level can read feeds;
+   Stakeholder is free, and Basic is free for the first 5 users.
+3. A PAT created as that account: Packaging (Read), organization `UZmiv`, longest expiry
+   allowed (at most a year). The external team keeps it in their CI secrets and adds the
+   feed as a credentialed `maven {}` repository. If it leaks, all it reads is the renderer,
+   and revoking it takes one click.
+4. Publishing to both feeds: a second repository named `Schemgen` next to `UZmiv` in
+   `schemgen-renderer-compose/build.gradle.kts`, released with
+   `publishAllPublicationsToSchemgenRepository` as well.
+
+The cost is owning that account and renewing the token before it expires; their builds
+break on the day it does. Organization policy can block guest accounts or PAT creation, so
+check with the `UZmiv` administrator first.
+
+Rejected alternatives:
+
+- **A feed view on `UZmiv`** (restrict `@Release` to that account, promote only schemgen
+  into it). It avoids a second feed, but it fails open: give the account Reader on the feed
+  itself, even by mistake, and it reads all of `UZmiv`.
+- **A public feed.** It needs no token, but only a public project can have one, which
+  publishes the renderer to everyone.
+- **A zipped file-based Maven repository per release.** It needs no account or token, and
+  it's a fallback if the account can't be created. But every update is a manual hand-over.
+
 ## Web app
 
 No build. `web/` is plain HTML/CSS/JS, opened via `file://` during development and served
