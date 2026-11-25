@@ -58,14 +58,22 @@ kotlin {
 
 publishing {
     repositories {
-        maven {
-            url = uri("https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv/maven/v1")
+        // UZmiv (organization-scoped): internal consumers, next to compose-ui-kit.
+        // UZmiv-public (scoped to the uz-schemgen project): the feed external teams get
+        // Reader on, so they see this library and nothing else. Release to both.
+        mapOf(
+            "UZmiv" to "UZmiv/_packaging/UZmiv",
+            "UZmivPublic" to "UZmiv/uz-schemgen/_packaging/UZmiv-public",
+        ).forEach { (repoName, feed) ->
+            maven {
+                url = uri("https://pkgs.dev.azure.com/$feed/maven/v1")
 
-            name = "UZmiv"
+                name = repoName
 
-            credentials {
-                username = System.getenv("AZURE_ARTIFACTS_USER") ?: findProperty("azureUser") as String? ?: ""
-                password = System.getenv("SYSTEM_ACCESSTOKEN") ?: findProperty("azureToken") as String? ?: ""
+                credentials {
+                    username = System.getenv("AZURE_ARTIFACTS_USER") ?: findProperty("azureUser") as String? ?: ""
+                    password = System.getenv("SYSTEM_ACCESSTOKEN") ?: findProperty("azureToken") as String? ?: ""
+                }
             }
         }
     }

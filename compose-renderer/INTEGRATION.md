@@ -9,7 +9,7 @@ an agent working in that repo can follow it without reading this one.
 | | |
 |---|---|
 | Coordinates | `ua.gov.uz:schemgen-renderer-compose` |
-| Feed | Azure Artifacts `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv/maven/v1`, the same one `ua.gov.uz:compose-ui-kit` comes from |
+| Feed | Azure Artifacts. Internal: `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv/maven/v1`, the same one `ua.gov.uz:compose-ui-kit` comes from. External teams: `https://pkgs.dev.azure.com/UZmiv/uz-schemgen/_packaging/UZmiv-public/maven/v1`, see below |
 | Targets | Android, iosArm64, iosSimulatorArm64, wasmJs |
 | Built with | Kotlin 2.4.10, Compose Multiplatform 1.11.1. Consumers on these or newer are fine |
 | Transitive API | `kotlinx-serialization-json`, because `SchemeParser.parse(JsonObject)` is public |
@@ -19,7 +19,38 @@ earlier name. Don't depend on it; it gets no further versions.
 
 It's published the same way as `uz-compose-ui-kit`: the vanniktech plugin, the same feed,
 the same credential lookup (`azureUser`/`azureToken` Gradle properties or
-`AZURE_ARTIFACTS_USER`/`SYSTEM_ACCESSTOKEN` env vars). See `build.md` for how to release.
+`AZURE_ARTIFACTS_USER`/`SYSTEM_ACCESSTOKEN` env vars). Every version also goes to
+`UZmiv-public`. See `build.md` for how to release.
+
+### Outside the UZmiv teams
+
+You get an Azure DevOps account with read access to the `UZmiv-public` feed only. Create a
+Personal Access Token with the **Packaging (Read)** scope, then:
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            name = "UZmivPublic"
+            url = uri("https://pkgs.dev.azure.com/UZmiv/uz-schemgen/_packaging/UZmiv-public/maven/v1")
+            credentials(PasswordCredentials::class)  // UZmivPublicUsername / UZmivPublicPassword
+        }
+    }
+}
+```
+
+and in `~/.gradle/gradle.properties` (not in the project):
+
+```properties
+UZmivPublicUsername=any-non-empty-string
+UZmivPublicPassword=<the PAT>
+```
+
+The library's own dependencies (Compose, kotlinx-serialization) come from `google()` and
+`mavenCentral()`; nothing else is needed from UZmiv.
 
 ### Public API (0.2.0)
 

@@ -556,7 +556,7 @@ is the reference implementation and UI shell, not the parent project.
 
 \`compose-renderer/\` is split along D32's lines: \`schemgen-renderer-compose\` is the library other
 teams depend on (Android, iOS, wasm targets, published to the UZmiv Azure Artifacts feed
-next to \`uz-compose-ui-kit\`), and \`composeApp\` is the thin wasm harness the web Preview tab
+next to \`uz-compose-ui-kit\`, and to \`UZmiv-public\`, the feed external teams can read), and \`composeApp\` is the thin wasm harness the web Preview tab
 drives by \`postMessage\`. Consumers are documented in \`compose-renderer/INTEGRATION.md\`.
 
 \`web/\` is a prototype of the builder (D35) plus dev tooling. Its Catalogue tab and the

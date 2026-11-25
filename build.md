@@ -70,19 +70,30 @@ Binaryen); `gradle.properties` already turns on the build cache.
 ## Publishing the Compose library
 
 `compose-renderer/schemgen-renderer-compose` is the published renderer (D32),
-`ua.gov.uz:schemgen-renderer-compose` on the UZmiv Azure Artifacts feed. It's set up the same way
-as `uz-compose-ui-kit` and released the same way, by hand from a developer machine for now:
+`ua.gov.uz:schemgen-renderer-compose` on two Azure Artifacts feeds: `UZmiv`, next to
+`uz-compose-ui-kit`, for internal consumers, and `UZmiv-public`, for external teams. An
+external team's account gets Reader on `UZmiv-public` and nothing else, so it sees this
+library and not the rest of `UZmiv`; feed permissions can't be narrowed per package, hence a
+second feed rather than a role on the first. `UZmiv-public` is scoped to the `uz-schemgen`
+project, which is why its URL has the project in it. It's set up and released the same way as `uz-compose-ui-kit`,
+by hand from a developer machine for now:
 
 ```
 cd compose-renderer
-# bump `version` in schemgen-renderer-compose/build.gradle.kts first - the feed refuses a version twice
+# bump `version` in schemgen-renderer-compose/build.gradle.kts first - a feed refuses a version twice
 ./gradlew :schemgen-renderer-compose:wasmJsBrowserTest :schemgen-renderer-compose:iosSimulatorArm64Test
-./gradlew :schemgen-renderer-compose:publishAllPublicationsToUZmivRepository
+./gradlew :schemgen-renderer-compose:publish        # both feeds
 ```
+
+`publishAllPublicationsToUZmivRepository` and `publishAllPublicationsToUZmivPublicRepository`
+publish to one feed each. If one of them fails halfway, rerun only that one: the feed that
+succeeded already holds the version and would refuse it again.
 
 Credentials: `azureUser`/`azureToken` in `~/.gradle/gradle.properties`, or
 `AZURE_ARTIFACTS_USER`/`SYSTEM_ACCESSTOKEN` in the environment (what an Azure pipeline
-provides). The iOS publications need a Mac with Xcode, so a pipeline that publishes
+provides). The same credentials serve both feeds; the account needs Contributor on each.
+A pipeline publishing from another project needs its build identity added to
+`UZmiv-public` as Contributor. The iOS publications need a Mac with Xcode, so a pipeline that publishes
 needs a macOS agent. The site build above doesn't publish and doesn't need one.
 
 To try a build in a consumer before releasing, use `publishToMavenLocal`. How consumers
