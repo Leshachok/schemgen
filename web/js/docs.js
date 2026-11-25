@@ -551,6 +551,7 @@ schemgen/
   vue-renderer/             Vue 3 renderer, a port of compose-renderer (see vue-renderer/README.md)
     schemgen-renderer-vue/  the published library, @uz/schemgen-renderer-vue
     previewApp/             Vite preview harness for the web Preview tab
+    sampleApp/              sample consumer app: JSON field, theme switch, view/select
   shared-fixtures/          scheme JSON used to check every renderer agrees with format.js
 \`\`\`
 
@@ -566,6 +567,9 @@ drives by \`postMessage\`. Consumers are documented in \`compose-renderer/INTEGR
 \`vue-renderer/\` has the same split (D53): \`schemgen-renderer-vue\` is the npm library, mirroring
 \`schemgen-renderer-compose\` file for file, and \`previewApp\` is a Vite page that answers the
 same \`postMessage\` envelope as \`composeApp\`, so the Preview tab drives both the same way.
+\`sampleApp\` is neither: it's what a consuming team writes, in plain Vue single-file
+components, with its own JSON field instead of the builder, so the library's API can be
+tried without the rest of the repo's tooling.
 Consumers are documented in \`vue-renderer/README.md\`.
 
 \`web/\` is a prototype of the builder (D35) plus dev tooling. Its Catalogue tab and the

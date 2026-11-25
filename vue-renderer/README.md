@@ -8,6 +8,10 @@ The Vue 3 renderer for schemgen (D31, D32, D53), as an npm workspace with two pa
 - **`previewApp`** is the preview harness that the Preview tab in `web/index.html` loads
   when "Vue 3 (Web)" is picked. It answers the same `postMessage` envelope as the Compose
   harness (`compose-renderer/composeApp`) and has no renderer code of its own.
+- **`sampleApp`** is a sample consumer: a scheme JSON field, a Light / Dark / System theme
+  switch and the preview in `view` or `select` mode, written as plain Vue single-file
+  components the way a consuming team would. It's the place to see the app's side of the
+  contract (parsing, theme, availability, owning the selection), not the builder's.
 
 The library is a **file-for-file port of `compose-renderer/schemgen-renderer-compose`**
 (D53): the same files, function names, constants, comments and public API. A change to one
@@ -27,6 +31,8 @@ npm test               # typecheck + Vitest (model, layout, parity with format.j
 npm run dev            # harness on http://localhost:5173
 npm run build          # library -> schemgen-renderer-vue/dist
 npm run build:preview  # harness -> previewApp/dist, deployed as vue-preview/
+npm run sample         # sample app on http://localhost:5174
+npm run build:sample   # vue-tsc + sample app -> sampleApp/dist
 ```
 
 With the harness running, open `web/index.html` (served over http, or opened from disk).
@@ -121,6 +127,7 @@ schemgen-renderer-vue/test/
   formatJs.test.ts         runs web/js/format.js and compares on every shared fixture
   SchemeView.test.ts       SSR, colours, taps, keyboard
 previewApp/src/main.ts     harness entry point + postMessage listener (Compose: main.kt)
+sampleApp/src/App.vue      sample consumer: JSON field, theme switch, view/select, selection
 ```
 
 How it translates, so the next port is mechanical:

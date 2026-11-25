@@ -3,12 +3,15 @@
   "private": true,
   "workspaces": [
     "schemgen-renderer-vue",
-    "previewApp"
+    "previewApp",
+    "sampleApp"
   ],
   "scripts": {
     "test": "npm run typecheck -w @uz/schemgen-renderer-vue && npm test -w @uz/schemgen-renderer-vue",
     "build": "npm run build -w @uz/schemgen-renderer-vue",
     "dev": "npm run dev -w schemgen-preview-vue",
-    "build:preview": "npm run build -w schemgen-preview-vue"
+    "build:preview": "npm run build -w schemgen-preview-vue",
+    "sample": "npm run dev -w schemgen-sample-vue",
+    "build:sample": "npm run build -w schemgen-sample-vue"
   }
 }

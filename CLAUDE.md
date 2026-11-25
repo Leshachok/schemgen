@@ -44,8 +44,8 @@ spec with rationale, not just notes.
   Azure feed, set up like `../uz-compose-ui-kit`). `composeApp` next to it is only
   the wasm preview harness. Consumers and the miv-multiplatform hand-off:
   `compose-renderer/INTEGRATION.md`. The Vue one is `@uz/schemgen-renderer-vue` (npm, same
-  two feeds), for Vue 3.4+ and Nuxt 4 with SSR; `previewApp` is its harness, and
-  `vue-renderer/README.md` covers consumers and publishing.
+  two feeds), for Vue 3.4+ and Nuxt 4 with SSR; `previewApp` is its harness, `sampleApp` a
+  sample consumer app, and `vue-renderer/README.md` covers consumers and publishing.
 - **Style lives in the renderer, identical across all three** (D33), from shared
   tokens with `mobile` and `web` presets. **Theme is colors only**, passed in by
   the consumer (D34). Never put colors or sizes in the scheme.
