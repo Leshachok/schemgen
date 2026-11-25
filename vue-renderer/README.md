@@ -157,7 +157,7 @@ read; 0.1.0 is there too, from before `UZmiv-internal` existed.
 
 | Version | `UZmiv-internal` | `UZmiv-public` |
 |---|---|---|
-| 0.1.0 | 2026-11-25 | not yet |
+| 0.1.0 | 2026-11-25 | 2026-11-25 |
 
 ```
 cd vue-renderer/schemgen-renderer-vue

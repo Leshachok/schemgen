@@ -625,8 +625,8 @@ assumed a SwiftUI iOS app, a Compose Android app and an admin import API.
    `format.js` (D53), rendering SVG so it stays SSR-safe (the bus admin is Nuxt 4) and visible
    to screen readers. The framework-free half is published as
    `@uz/schemgen-renderer-vue/core`, which the web sales site can take, with the fixtures,
-   before it takes the component (D49). Next: try it in the bus admin, and publish to
-   `UZmiv-public` too once an external team needs it. The builder's own preview could later move onto the same core.
+   before it takes the component (D49). On `UZmiv-public` too since 2026-11-25. Next: try it
+   in the bus admin. The builder's own preview could later move onto the same core.
 
 8. **iOS renderer for the UIKit sales app.** Technology open (§7 Q9). Port of `format.js`
    logic, same fixtures, same tokens, same theme shape; published as a Swift package.
@@ -799,8 +799,10 @@ project with only the `@uz` scope mapped to the feed installed it (Vue itself ca
 public registry, as a peer dependency should), parsed and validated `bus.json` and
 server-rendered it with `vue/server-renderer`. The same day it went to `UZmiv-internal`,
 which replaces `UZmiv` because every account in the organization can read the old feed
-(`build.md`); a fresh project installed it from there and imported `core`. Not yet on
-`UZmiv-public`. `prepublishOnly` ran the typecheck and all 51 tests before each upload.
+(`build.md`); a fresh project installed it from there and imported `core`. Later that day
+it went to `UZmiv-public` as well, unchanged; a fresh project with the `@uz` scope mapped to
+that feed installed it, validated `bus.json` and server-rendered it. `prepublishOnly` ran the
+typecheck and all 51 tests before each upload.
 
 Not checked: the package inside the real bus admin, or any Nuxt app, and the
 seat-number font. Compose uses the platform default font, and this renderer inherits the
@@ -825,4 +827,4 @@ Immediate actions, in order. The longer view is §9.
    next to the miv admin panel's read-only preview (`compose-renderer/INTEGRATION.md`).
 8. Wire `@uz/schemgen-renderer-vue` into the bus admin (Nuxt 4), with a paste-JSON field like
    the wagon admin's (§9 phase 7, `vue-renderer/README.md`). 0.1.0 is on
-   `UZmiv-internal` since 2026-11-25; publish to `UZmiv-public` when an external team needs it.
+   `UZmiv-internal` and `UZmiv-public` since 2026-11-25.
