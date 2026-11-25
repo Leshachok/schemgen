@@ -544,6 +544,7 @@ schemgen/
   compose-renderer/         Compose Multiplatform renderer (see compose-renderer/README.md)
     schemgen-renderer-compose/       the published library, ua.gov.uz:schemgen-renderer-compose
     composeApp/             wasm preview harness for the web Preview tab
+    sampleApp/              Android demo: Views and Compose wagon lists, release build
   vue-renderer/             Vue 3 renderer, a port of compose-renderer (see vue-renderer/README.md)
     schemgen-renderer-vue/  the published library, @uz/schemgen-renderer-vue
     previewApp/             Vite preview harness for the web Preview tab

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">schemgen sample</string>
+    <string name="screen_views">Views</string>
+    <string name="screen_compose">Compose</string>
+    <string name="mode_view">View</string>
+    <string name="mode_select">Select</string>
+    <string name="add_wagon">Add wagon</string>
+    <string name="add_random">Add 10 random wagons</string>
+    <string name="random_availability">Random availability</string>
+    <string name="all_available">All seats available</string>
+    <string name="clear_selection">Clear selection</string>
+    <string name="clear_list">Clear list</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="paste_json">Paste JSON…</string>
+    <string name="paste_json_hint">Scheme JSON, e.g. copied from the builder</string>
+    <string name="add">Add</string>
+    <string name="cant_parse">Can\'t parse this JSON</string>
+</resources>

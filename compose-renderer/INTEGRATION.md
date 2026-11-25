@@ -100,6 +100,34 @@ Rules a consumer needs to know:
   host screen is dark; copy either one to change single colours.
 - **The API is 0.x.** Expect breaks while the format settles; each one is listed below.
 
+### In a RecyclerView (legacy Views)
+
+The Android sales app is legacy Views, so it will host the renderer in a `ComposeView`
+inside a RecyclerView row. `compose-renderer/sampleApp` does exactly that (its Views screen,
+`ViewsFragment.kt`), and three things went wrong there before they were handled:
+
+- **Turn off change animations.** A seat tap changes the selection, so the row's item
+  changes, and RecyclerView's default animator cross-fades to a second holder built for
+  the new content: the whole scheme flickers on every tap, and the second holder brings its
+  own horizontal position, so the wagon jumps to its start or end. Set
+  `(recyclerView.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false`,
+  and the same row just recomposes.
+- **Keep the horizontal `ScrollState` per wagon, not per row.** A holder is recycled for
+  other wagons, so a `rememberScrollState()` inside it either resets or shows another
+  wagon's position. Keep a `ScrollState` per wagon (the sample keeps a map in the adapter)
+  and pass it to `horizontalScroll`. A LazyColumn doesn't need this: `rememberScrollState()`
+  is saveable, and a LazyColumn keeps saveable state per item key.
+- **Wrap each row's content in `key(wagonId)`.** In 0.2.0 the tap handler restarts when
+  the deck or the seat state changes, not when `onSeatClick` does. A recycled row showing
+  another wagon with the same scheme, the same availability and an empty selection keeps
+  calling the previous wagon's `onSeatClick`, so taps select seats in the wrong wagon.
+  `key` gives every wagon its own composition. This is a renderer bug, to be fixed in the
+  library; the `key` stays harmless after that.
+
+Set the row's content once per holder and change it through state on bind (the sample
+keeps the bound row in a `mutableStateOf`), rather than calling `setContent` on every
+bind, so scrolling doesn't build a new composition for each row it shows.
+
 ### Changes in 0.2.0 (guidelines file, D50–D52)
 
 Breaking:

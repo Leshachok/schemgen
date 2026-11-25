@@ -19,3 +19,4 @@ dependencyResolutionManagement {
 
 include(":schemgen-renderer-compose")   // the published library
 include(":composeApp")         // wasm preview harness for web/index.html
+include(":sampleApp")          // Android demo: Views and Compose screens, release build
