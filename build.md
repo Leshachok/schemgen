@@ -87,20 +87,21 @@ Output: `vue-renderer/previewApp/dist/`: `index.html` and one hashed script unde
 ## Publishing the Vue library
 
 `vue-renderer/schemgen-renderer-vue` is published as `@uz/schemgen-renderer-vue` to the same
-two feeds as the Compose library, by hand for now (0.1.0 on `UZmiv` since 2026-11-25, not yet
-on `UZmiv-public`). Commands, credentials and how consumers
+two feeds as the Compose library, by hand for now (0.1.0 on `UZmiv-internal` since
+2026-11-25, not yet on `UZmiv-public`). Commands, credentials and how consumers
 point npm at the feed are in `vue-renderer/README.md`.
 
 ## Publishing the Compose library
 
 `compose-renderer/schemgen-renderer-compose` is the published renderer (D32),
-`ua.gov.uz:schemgen-renderer-compose` on two Azure Artifacts feeds: `UZmiv`, next to
-`uz-compose-ui-kit`, for internal consumers, and `UZmiv-public`, for external teams. An
-external team's account gets Reader on `UZmiv-public` and nothing else, so it sees this
-library and not the rest of `UZmiv`; feed permissions can't be narrowed per package, hence a
-second feed rather than a role on the first. `UZmiv-public` is scoped to the `uz-schemgen`
-project, which is why its URL has the project in it. It's set up and released the same way as `uz-compose-ui-kit`,
-by hand from a developer machine for now:
+`ua.gov.uz:schemgen-renderer-compose` on two Azure Artifacts feeds: `UZmiv-internal`, for
+internal consumers, and `UZmiv-public`, for external teams. An external team's account gets
+Reader on `UZmiv-public` and nothing else, so it sees this library and not the internal
+packages; feed permissions can't be narrowed per package, hence a second feed rather than a
+role on the first. `UZmiv-public` is scoped to the `uz-schemgen` project, which is why its
+URL has the project in it. `UZmiv-internal` replaced the `UZmiv` feed on 2026-11-25 (see
+"Access for teams outside UZmiv" for why); `uz-compose-ui-kit` is moving there too. It's set
+up and released the same way as `uz-compose-ui-kit`, by hand from a developer machine for now:
 
 ```
 cd compose-renderer
@@ -109,7 +110,7 @@ cd compose-renderer
 ./gradlew :schemgen-renderer-compose:publish        # both feeds
 ```
 
-`publishAllPublicationsToUZmivRepository` and `publishAllPublicationsToUZmivPublicRepository`
+`publishAllPublicationsToUZmivInternalRepository` and `publishAllPublicationsToUZmivPublicRepository`
 publish to one feed each. If one of them fails halfway, rerun only that one: the feed that
 succeeded already holds the version and would refuse it again.
 
@@ -126,40 +127,62 @@ depend on it, and the miv-multiplatform integration, are in
 
 ### Access for teams outside UZmiv
 
-Planned, not set up yet (2026-11-25). Teams outside Azure DevOps, such as the external
-team behind the sales apps, need to read the renderer, but a personal access token can't
-be limited to one package or feed. Its scopes are per area (**Packaging (Read)**) and per
-organization, and it can read whatever its owner can. So the limit has to come from the
-token's owner, not the token:
+Not open yet (2026-11-25): it waits for the old `UZmiv` feed to be deleted, see below.
+Teams outside UZmiv, such as the external team behind the sales apps, need to read the
+renderer, but a personal access token can't be limited to one package or feed. Its scopes
+are per area (**Packaging (Read)**) and per organization, and it can read whatever its owner
+can. So the limit has to come from the token's owner, not the token. The external person
+gets an account in the `UZmiv` organization with:
 
-1. A separate feed, e.g. `schemgen`, holding only `schemgen-renderer-compose`. The renderer
-   depends on nothing from the `UZmiv` feed (serialization and Compose come from Maven
-   Central and Google), so this feed is complete on its own, and nothing else on `UZmiv`,
-   such as the UI kit, is exposed.
-2. A dedicated account (`schemgen-reader`, owned by UZ mobile) that is **Feed Reader** on
-   `schemgen` and has no other permissions. Check that its access level can read feeds;
-   Stakeholder is free, and Basic is free for the first 5 users.
-3. A PAT created as that account: Packaging (Read), organization `UZmiv`, longest expiry
-   allowed (at most a year). The external team keeps it in their CI secrets and adds the
-   feed as a credentialed `maven {}` repository. If it leaks, all it reads is the renderer,
-   and revoking it takes one click.
-4. Publishing to both feeds: a second repository named `Schemgen` next to `UZmiv` in
-   `schemgen-renderer-compose/build.gradle.kts`, released with
-   `publishAllPublicationsToSchemgenRepository` as well.
+1. Access level **Stakeholder**. In a private project a Stakeholder can't open Repos at all,
+   whatever group grants it, while Artifacts stays available. Basic would let them read
+   code wherever some group gives Read.
+2. Membership in `uz-schemgen` through one empty group, `Public feed readers`, and not
+   through Readers or Contributors. A project-scoped feed in a private project follows the
+   project's visibility, so they need to be in the project to reach `UZmiv-public` at all.
+   The group is denied Read on the project's repositories, so an upgrade to Basic later
+   doesn't open the code.
+3. **Feed Reader** on `UZmiv-public`, given to that group.
 
-The cost is owning that account and renewing the token before it expires; their builds
-break on the day it does. Organization policy can block guest accounts or PAT creation, so
-check with the `UZmiv` administrator first.
+They create their own PAT, Packaging (Read), and use it as `compose-renderer/INTEGRATION.md`
+shows. If it leaks, all it reads is `UZmiv-public`; revoking it takes one click. The
+organization isn't connected to Microsoft Entra, so any Microsoft account can be added and
+no guest policy applies.
+
+That only holds if no other feed in the organization is readable by everyone in it, and
+`UZmiv` was. Its permissions list **Project Collection Valid Users** as Reader, marked as
+inherited, so the feed settings can't remove it, and feed roles have no deny to cancel it
+out. Any account added to the organization, the external one included, could read every
+package on it, the UI kit among them. Hence `UZmiv-internal`: organization-scoped, created
+with visibility "Specific people", so Project Collection Valid Users has no role on it
+(checked through the feed permissions API, 2026-11-25), and all its views are private. The
+renderers moved there on 2026-11-25: `@uz/schemgen-renderer-vue` 0.1.0 published again,
+`schemgen-renderer-compose` 0.1.0 and 0.2.0 copied file for file from `UZmiv` (the copy
+compared byte for byte), so `UZmiv-internal` and `UZmiv-public` hold the same build. The old
+name `schemgen-compose` wasn't copied. Once the UI kit and its consumers have moved, a
+Project Collection Administrator deletes `UZmiv`, recycle bin included; only then is the
+external account added. Deleting the feed needs Feed Owner, which a publisher doesn't have.
+
+Pipelines that read `UZmiv-internal` need their build identity on it: Project Collection
+Build Service is there as Collaborator, a project's own build service has to be added, and
+publishing needs Contributor.
 
 Rejected alternatives:
 
+- **A dedicated reader account owned by UZ mobile** whose PAT the external team keeps in
+  their CI. It's the same limit, but someone here has to own the account and renew the
+  token before it expires, and their builds break on the day it does.
+- **A separate Azure DevOps organization** holding only the public feed. The external
+  account would never be in `UZmiv`, so nothing there could leak, but publishing would need
+  a third URL and a second organization's token. It's the fallback if `UZmiv` can't be
+  deleted.
 - **A feed view on `UZmiv`** (restrict `@Release` to that account, promote only schemgen
-  into it). It avoids a second feed, but it fails open: give the account Reader on the feed
-  itself, even by mistake, and it reads all of `UZmiv`.
+  into it). It avoids a second feed, but it fails open: the account reads the whole feed
+  through Project Collection Valid Users anyway.
 - **A public feed.** It needs no token, but only a public project can have one, which
   publishes the renderer to everyone.
-- **A zipped file-based Maven repository per release.** It needs no account or token, and
-  it's a fallback if the account can't be created. But every update is a manual hand-over.
+- **A zipped file-based Maven repository per release.** It needs no account or token, but
+  every update is a manual hand-over.
 
 ## Web app
 

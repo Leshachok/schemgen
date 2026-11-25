@@ -40,8 +40,10 @@ spec with rationale, not just notes.
   edit rights): `YT7hdm4ldCXMNveFQI4Ftu`; the original is `FdfInROVpKQHhPHFFi9MIV`.
 - **Each renderer is a separately published library** (D32) consumed by other
   teams. Public API, versioning and packaging matter. The Compose one is
-  `compose-renderer/schemgen-renderer-compose` (`ua.gov.uz:schemgen-renderer-compose` on the UZmiv
-  Azure feed, set up like `../uz-compose-ui-kit`). `composeApp` next to it is only
+  `compose-renderer/schemgen-renderer-compose` (`ua.gov.uz:schemgen-renderer-compose` on the
+  `UZmiv-internal` and `UZmiv-public` Azure feeds, set up like `../uz-compose-ui-kit`; the old
+  `UZmiv` feed is readable by the whole organization and being retired, so publish nothing
+  new there). `composeApp` next to it is only
   the wasm preview harness. Consumers and the miv-multiplatform hand-off:
   `compose-renderer/INTEGRATION.md`. The Vue one is `@uz/schemgen-renderer-vue` (npm, same
   two feeds), for Vue 3.4+ and Nuxt 4 with SSR; `previewApp` is its harness, `sampleApp` a

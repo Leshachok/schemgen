@@ -9,7 +9,7 @@ an agent working in that repo can follow it without reading this one.
 | | |
 |---|---|
 | Coordinates | `ua.gov.uz:schemgen-renderer-compose` |
-| Feed | Azure Artifacts. Internal: `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv/maven/v1`, the same one `ua.gov.uz:compose-ui-kit` comes from. External teams: `https://pkgs.dev.azure.com/UZmiv/uz-schemgen/_packaging/UZmiv-public/maven/v1`, see below |
+| Feed | Azure Artifacts. Internal: `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv-internal/maven/v1`, which replaces the `UZmiv` feed (`.../_packaging/UZmiv/maven/v1`) as of 2026-11-25; `ua.gov.uz:compose-ui-kit` is moving there too. External teams: `https://pkgs.dev.azure.com/UZmiv/uz-schemgen/_packaging/UZmiv-public/maven/v1`, see below |
 | Targets | Android, iosArm64, iosSimulatorArm64, wasmJs |
 | Built with | Kotlin 2.4.10, Compose Multiplatform 1.11.1. Consumers on these or newer are fine |
 | Transitive API | `kotlinx-serialization-json`, because `SchemeParser.parse(JsonObject)` is public |
@@ -17,10 +17,14 @@ an agent working in that repo can follow it without reading this one.
 `ua.gov.uz:schemgen-compose` 0.1.0, also on the feed, is the same code published under the
 earlier name. Don't depend on it; it gets no further versions.
 
-It's published the same way as `uz-compose-ui-kit`: the vanniktech plugin, the same feed,
-the same credential lookup (`azureUser`/`azureToken` Gradle properties or
+It's published the same way as `uz-compose-ui-kit`: the vanniktech plugin, the same
+credential lookup (`azureUser`/`azureToken` Gradle properties or
 `AZURE_ARTIFACTS_USER`/`SYSTEM_ACCESSTOKEN` env vars). Every version also goes to
 `UZmiv-public`. See `build.md` for how to release.
+
+0.1.0 and 0.2.0 on `UZmiv-internal` are the same files as on the old `UZmiv` feed, copied
+over, not rebuilt. Switching a consumer is only a URL change: the same organization PAT
+reads both feeds.
 
 ### Outside the UZmiv teams
 
@@ -52,9 +56,9 @@ UZmivPublicPassword=<the PAT>
 The library's own dependencies (Compose, kotlinx-serialization) come from `google()` and
 `mavenCentral()`; nothing else is needed from UZmiv.
 
-Teams without access to `UZmiv` (the external team behind the sales apps) will get a
-read-only feed of their own instead. It's planned, not set up yet: see "Access for teams
-outside UZmiv" in `build.md`.
+These accounts aren't handed out yet: the old `UZmiv` feed is readable by every account in
+the organization and has to be deleted first. See "Access for teams outside UZmiv" in
+`build.md`.
 
 ### Public API (0.2.0)
 
@@ -144,9 +148,11 @@ clicked through in a running panel yet. That's step 6.
   shared components from the UI kit, no tests in that repo (verify by compiling and
   running the web target).
 - Check that `ua.gov.uz:schemgen-renderer-compose:0.2.0` is on the feed (or in `~/.m2`, see above).
-  No repository changes are needed: `settings.gradle.kts` already points at the UZmiv
-  feed with the right credentials. If resolution fails with 401, the credentials are
-  missing, not the repo.
+  `settings.gradle.kts` points at the old `UZmiv` feed. Change the URL to
+  `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv-internal/maven/v1` (keep the UI kit
+  resolving: until it has moved, keep the `UZmiv` repository next to the new one). The
+  credentials stay as they are. If resolution fails with 401, the credentials are missing,
+  not the repo.
 - miv is on Kotlin 2.4.20 / Compose 1.12.0. That's newer than the library, which is the
   safe direction. Don't downgrade anything in miv for this.
 

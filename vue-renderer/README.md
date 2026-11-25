@@ -151,16 +151,18 @@ that Enter and Space toggle.
 ## Publishing
 
 `@uz/schemgen-renderer-vue` goes to the same two Azure Artifacts feeds as the Compose library,
-`UZmiv` and `UZmiv-public` (`build.md`). A feed holds npm packages next to Maven ones.
+`UZmiv-internal` and `UZmiv-public` (`build.md`). A feed holds npm packages next to Maven
+ones. Nothing new goes to the old `UZmiv` feed, which every account in the organization can
+read; 0.1.0 is there too, from before `UZmiv-internal` existed.
 
-| Version | `UZmiv` | `UZmiv-public` |
+| Version | `UZmiv-internal` | `UZmiv-public` |
 |---|---|---|
 | 0.1.0 | 2026-11-25 | not yet |
 
 ```
 cd vue-renderer/schemgen-renderer-vue
 # bump "version" in package.json first - a feed refuses a version twice
-npm publish --registry https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv/npm/registry/
+npm publish --registry https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv-internal/npm/registry/
 npm publish --registry https://pkgs.dev.azure.com/UZmiv/uz-schemgen/_packaging/UZmiv-public/npm/registry/
 ```
 
@@ -169,7 +171,7 @@ PAT with **Packaging (Read & write)** in your user `~/.npmrc`, never in the repo
 "Connect to feed → npm" page shows. Consumers map the scope in their project `.npmrc`:
 
 ```
-@uz:registry=https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv/npm/registry/
+@uz:registry=https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv-internal/npm/registry/
 ```
 
 (external teams: the `UZmiv-public` URL), with their read token in their user `~/.npmrc`.

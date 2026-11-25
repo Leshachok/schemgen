@@ -3,8 +3,8 @@
 The Compose Multiplatform renderer for schemgen (D31, D32), as two Gradle modules:
 
 - **`schemgen-renderer-compose`** is the library: Android, iOS (arm64, simulator arm64) and
-  wasmJs. It's published as `ua.gov.uz:schemgen-renderer-compose` to the UZmiv Azure Artifacts
-  feed, set up the same way as `uz-compose-ui-kit`, and to `UZmiv-public` for external teams. Consumers and the
+  wasmJs. It's published as `ua.gov.uz:schemgen-renderer-compose` to the `UZmiv-internal` Azure
+  Artifacts feed, set up the same way as `uz-compose-ui-kit`, and to `UZmiv-public` for external teams. Consumers and the
   miv-multiplatform hand-off are in [INTEGRATION.md](INTEGRATION.md). How to release is
   in `/build.md`.
 - **`composeApp`** is the wasm preview harness that the Preview tab in `web/index.html`

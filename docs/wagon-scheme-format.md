@@ -556,8 +556,8 @@ tokens generated for every platform (§9). Each renderer subfolder is a sibling 
 is the reference implementation and UI shell, not the parent project.
 
 `compose-renderer/` is split along D32's lines: `schemgen-renderer-compose` is the library other
-teams depend on (Android, iOS, wasm targets, published to the UZmiv Azure Artifacts feed
-next to `uz-compose-ui-kit`, and to `UZmiv-public`, the feed external teams can read), and `composeApp` is the thin wasm harness the web Preview tab
+teams depend on (Android, iOS, wasm targets, published to the `UZmiv-internal` Azure Artifacts feed,
+where `uz-compose-ui-kit` is moving too, and to `UZmiv-public`, the feed external teams can read), and `composeApp` is the thin wasm harness the web Preview tab
 drives by `postMessage`. Consumers are documented in `compose-renderer/INTEGRATION.md`.
 
 `vue-renderer/` has the same split (D53): `schemgen-renderer-vue` is the npm library, mirroring
@@ -620,7 +620,7 @@ assumed a SwiftUI iOS app, a Compose Android app and an admin import API.
    needs the phase-4 renderer and a paste-JSON field for the builder's output.
 
 7. **Web renderer, for the bus admin first** — Vue 3. Port done 2026-11-25 (§12), 0.1.0
-   published to the `UZmiv` npm feed the same day. Built as a file-for-file port of the Compose renderer rather than of
+   published to the `UZmiv-internal` npm feed the same day. Built as a file-for-file port of the Compose renderer rather than of
    `format.js` (D53), rendering SVG so it stays SSR-safe (the bus admin is Nuxt 4) and visible
    to screen readers. The framework-free half is published as
    `@uz/schemgen-renderer-vue/core`, which the web sales site can take, with the fixtures,
@@ -782,11 +782,13 @@ from the same parsed shapes as `Icons.kt`. The SVG exports aren't in the repo, s
 through the generator. The Kotlin block came out byte for byte identical, which checked the
 refactor of the generator too.
 
-**Published, 2026-11-25.** 0.1.0 is on the `UZmiv` feed's npm endpoint, not yet on
-`UZmiv-public`. `prepublishOnly` ran the typecheck and all 51 tests before the upload. A fresh
+**Published, 2026-11-25.** 0.1.0 went first to the `UZmiv` feed's npm endpoint. A fresh
 project with only the `@uz` scope mapped to the feed installed it (Vue itself came from the
 public registry, as a peer dependency should), parsed and validated `bus.json` and
-server-rendered it with `vue/server-renderer`.
+server-rendered it with `vue/server-renderer`. The same day it went to `UZmiv-internal`,
+which replaces `UZmiv` because every account in the organization can read the old feed
+(`build.md`); a fresh project installed it from there and imported `core`. Not yet on
+`UZmiv-public`. `prepublishOnly` ran the typecheck and all 51 tests before each upload.
 
 Not checked: the package inside the real bus admin, or any Nuxt app, and the
 seat-number font. Compose uses the platform default font, and this renderer inherits the
@@ -810,5 +812,5 @@ Immediate actions, in order. The longer view is §9.
 7. Publish the next `schemgen-renderer-compose` to the Azure feed, and add a paste-JSON field
    next to the miv admin panel's read-only preview (`compose-renderer/INTEGRATION.md`).
 8. Wire `@uz/schemgen-renderer-vue` into the bus admin (Nuxt 4), with a paste-JSON field like
-   the wagon admin's (§9 phase 7, `vue-renderer/README.md`). 0.1.0 is on `UZmiv` since
-   2026-11-25; publish to `UZmiv-public` when an external team needs it.
+   the wagon admin's (§9 phase 7, `vue-renderer/README.md`). 0.1.0 is on
+   `UZmiv-internal` since 2026-11-25; publish to `UZmiv-public` when an external team needs it.

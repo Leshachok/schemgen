@@ -3,11 +3,11 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 /*
  * The published Compose renderer (D32). Same shape as uz-compose-ui-kit: one KMP
- * library, published with vanniktech to the UZmiv Azure Artifacts feed as
- * ua.gov.uz:schemgen-renderer-compose (artifactId = this module's name).
+ * library, published with vanniktech to the UZmiv-internal and UZmiv-public Azure Artifacts
+ * feeds as ua.gov.uz:schemgen-renderer-compose (artifactId = this module's name).
  *
- *   ./gradlew :schemgen-renderer-compose:publishToMavenLocal                       # try it locally
- *   ./gradlew :schemgen-renderer-compose:publishAllPublicationsToUZmivRepository   # release
+ *   ./gradlew :schemgen-renderer-compose:publishToMavenLocal   # try it locally
+ *   ./gradlew :schemgen-renderer-compose:publish               # release, both feeds
  *
  * Bump `version` on every release - the feed rejects re-publishing a version.
  */
@@ -58,11 +58,13 @@ kotlin {
 
 publishing {
     repositories {
-        // UZmiv (organization-scoped): internal consumers, next to compose-ui-kit.
+        // UZmiv-internal (organization-scoped, readable only by the groups listed on it):
+        // internal consumers. It replaces the UZmiv feed, which every account in the
+        // organization can read (build.md).
         // UZmiv-public (scoped to the uz-schemgen project): the feed external teams get
         // Reader on, so they see this library and nothing else. Release to both.
         mapOf(
-            "UZmiv" to "UZmiv/_packaging/UZmiv",
+            "UZmivInternal" to "UZmiv/_packaging/UZmiv-internal",
             "UZmivPublic" to "UZmiv/uz-schemgen/_packaging/UZmiv-public",
         ).forEach { (repoName, feed) ->
             maven {
