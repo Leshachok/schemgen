@@ -118,8 +118,10 @@ Credentials: `azureUser`/`azureToken` in `~/.gradle/gradle.properties`, or
 `AZURE_ARTIFACTS_USER`/`SYSTEM_ACCESSTOKEN` in the environment (what an Azure pipeline
 provides). The same credentials serve both feeds; the account needs Contributor on each.
 A pipeline publishing from another project needs its build identity added to
-`UZmiv-public` as Contributor. The iOS publications need a Mac with Xcode, so a pipeline that publishes
-needs a macOS agent. The site build above doesn't publish and doesn't need one.
+`UZmiv-public` as Contributor. The iOS publications don't need a Mac: Kotlin cross-compiles
+the iOS libraries, and 0.2.1 was published from Windows with all five artifacts
+(2026-11-25). `iosSimulatorArm64Test` does need macOS; elsewhere it's skipped, so a release
+from Windows or Linux is tested on wasm only. The site build above doesn't publish at all.
 
 To try a build in a consumer before releasing, use `publishToMavenLocal`. How consumers
 depend on it, and the miv-multiplatform integration, are in

@@ -752,6 +752,17 @@ art is no longer hand-copied: `web/tools/figma_icons.py` writes the same exports
 - Not checked: how the canvas looks next to the web builder, and anything on a device.
   The public API changed (listed in `compose-renderer/INTEGRATION.md`), hence 0.2.0.
 
+**Tap fix, 2026-11-25 (0.2.1, published to `UZmiv-internal` and `UZmiv-public`).** The
+Android sample app (`compose-renderer/sampleApp`) showed that `SchemeView`'s tap handler
+kept the `onSeatClick` it was first composed with: it restarts only when the deck or the
+seat state changes, so a RecyclerView row recycled for another wagon with the same scheme
+reported taps to the previous wagon. It now reads the current callback. The Vue renderer
+builds its click handlers on every render, so it never had the bug and has no matching
+change. Checked: the 18 `commonTest` tests on `wasmJsBrowserTest` (iOS simulator tests need
+macOS and were not run; published from Windows), and on a Pixel 9 with the sample app's
+release build, its workaround removed, twelve identical купе wagons and recycled rows: each
+tap selected a seat in the wagon tapped.
+
 ## 12. Vue renderer verification status
 
 **Ported from the Compose renderer, 2026-11-25 (0.1.0).** Node 26.13,

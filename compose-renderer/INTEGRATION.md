@@ -60,7 +60,7 @@ These accounts aren't handed out yet: the old `UZmiv` feed is readable by every 
 the organization and has to be deleted first. See "Access for teams outside UZmiv" in
 `build.md`.
 
-### Public API (0.2.0)
+### Public API (0.2.1)
 
 ```kotlin
 import ua.gov.uz.schemgen.model.SchemeParser   // String or JsonObject -> Scheme
@@ -117,16 +117,22 @@ inside a RecyclerView row. `compose-renderer/sampleApp` does exactly that (its V
   wagon's position. Keep a `ScrollState` per wagon (the sample keeps a map in the adapter)
   and pass it to `horizontalScroll`. A LazyColumn doesn't need this: `rememberScrollState()`
   is saveable, and a LazyColumn keeps saveable state per item key.
-- **Wrap each row's content in `key(wagonId)`.** In 0.2.0 the tap handler restarts when
-  the deck or the seat state changes, not when `onSeatClick` does. A recycled row showing
-  another wagon with the same scheme, the same availability and an empty selection keeps
-  calling the previous wagon's `onSeatClick`, so taps select seats in the wrong wagon.
-  `key` gives every wagon its own composition. This is a renderer bug, to be fixed in the
-  library; the `key` stays harmless after that.
+- **Use 0.2.1 or later.** In 0.2.0 the tap handler restarted when the deck or the seat
+  state changed, not when `onSeatClick` did. A recycled row showing another wagon with the
+  same scheme, the same availability and an empty selection kept calling the previous
+  wagon's `onSeatClick`, so taps selected seats in the wrong wagon. On 0.2.0, wrap each
+  row's content in `key(wagonId)`.
 
 Set the row's content once per holder and change it through state on bind (the sample
 keeps the bound row in a `mutableStateOf`), rather than calling `setContent` on every
 bind, so scrolling doesn't build a new composition for each row it shows.
+
+### Changes in 0.2.1
+
+Fix, no API change: `SchemeView` reads `onSeatClick` at the moment of the tap instead of
+capturing the one it was first composed with. Before, a composition reused for another
+wagon with the same scheme and seat state (a recycled RecyclerView row) reported taps to
+the first wagon's callback.
 
 ### Changes in 0.2.0 (guidelines file, D50–D52)
 
@@ -175,7 +181,7 @@ clicked through in a running panel yet. That's step 6.
 - Read `miv-multiplatform/CLAUDE.md`. Its conventions apply: strings in `strings.xml`,
   shared components from the UI kit, no tests in that repo (verify by compiling and
   running the web target).
-- Check that `ua.gov.uz:schemgen-renderer-compose:0.2.0` is on the feed (or in `~/.m2`, see above).
+- Check that `ua.gov.uz:schemgen-renderer-compose:0.2.1` is on the feed (or in `~/.m2`, see above).
   `settings.gradle.kts` points at the old `UZmiv` feed. Change the URL to
   `https://pkgs.dev.azure.com/UZmiv/_packaging/UZmiv-internal/maven/v1`. The UI kit is
   there only as 0.3.1, so if miv depends on an older one, raise it to 0.3.1 in the same
@@ -190,7 +196,7 @@ Next to the existing UI kit entries:
 
 ```toml
 [versions]
-uz-schemgen-renderer-compose = "0.2.0"
+uz-schemgen-renderer-compose = "0.2.1"
 
 [libraries]
 uz-schemgen-renderer-compose = { module = "ua.gov.uz:schemgen-renderer-compose", version.ref = "uz-schemgen-renderer-compose" }

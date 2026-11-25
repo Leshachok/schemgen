@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.geometry.CornerRadius
@@ -92,6 +94,11 @@ private fun DeckCanvas(
 ) {
     val L = layout(deck)
     val textMeasurer = rememberTextMeasurer()
+    // The tap handler below only restarts when the deck or the seat state changes, so it
+    // reads the callback through this rather than capturing it. Otherwise a host that
+    // reuses this composition for another wagon with the same scheme and seat state (a
+    // recycled RecyclerView row) kept reporting taps to the first wagon's callback.
+    val currentOnSeatClick by rememberUpdatedState(onSeatClick)
     Canvas(
         modifier = Modifier
             .size(width = L.width.dp, height = L.height.dp)
@@ -101,7 +108,7 @@ private fun DeckCanvas(
                     detectTapGestures { p ->
                         // layout units are dp; pointer positions are px
                         val seat = seatAt(deck, p.x / density, p.y / density)
-                        if (seat != null && seatTappable(seat, interaction)) onSeatClick(seat.seat)
+                        if (seat != null && seatTappable(seat, interaction)) currentOnSeatClick(seat.seat)
                     }
                 }
             }

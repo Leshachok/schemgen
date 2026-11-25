@@ -7,7 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ua.gov.uz.schemgen.layout.SchemeMode
@@ -22,10 +21,6 @@ fun schemeColors(dark: Boolean): SchemeColors = if (dark) SchemeColors.Dark else
  * doesn't scroll by itself, so each wagon scrolls horizontally inside the vertical list.
  * [scroll] belongs to the wagon, not to the row showing it, so the position survives a
  * row being recycled for another wagon.
- *
- * Keyed by wagon id, so the renderer's tap handler (keyed on the deck and the seat state,
- * not on [onSeatClick]) can't keep reporting to the wagon a recycled row showed before,
- * when two wagons share a scheme.
  */
 @Composable
 fun WagonScheme(
@@ -37,17 +32,15 @@ fun WagonScheme(
     onSeatClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    key(wagon.id) {
-        SchemeView(
-            scheme = wagon.scheme,
-            modifier = modifier.horizontalScroll(scroll).padding(horizontal = 16.dp),
-            mode = mode,
-            available = wagon.available,
-            selected = selected,
-            colors = schemeColors(dark),
-            onSeatClick = onSeatClick,
-        )
-    }
+    SchemeView(
+        scheme = wagon.scheme,
+        modifier = modifier.horizontalScroll(scroll).padding(horizontal = 16.dp),
+        mode = mode,
+        available = wagon.available,
+        selected = selected,
+        colors = schemeColors(dark),
+        onSeatClick = onSeatClick,
+    )
 }
 
 @Composable
